@@ -2,11 +2,18 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { getCurrentAuthContext } from "@/lib/supabase/auth";
 import { redirect } from "next/navigation";
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ error?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const auth = await getCurrentAuthContext();
   if (auth) {
     redirect(auth.isOnboarded ? "/arena" : "/onboarding");
   }
 
-  return <AuthForm mode="login" />;
+  const resolvedParams = await searchParams;
+  const initialError = resolvedParams.error ?? null;
+
+  return <AuthForm mode="login" initialError={initialError} />;
 }

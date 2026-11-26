@@ -96,7 +96,16 @@ export async function ensureBaseProfileForUser(
       ? user.user_metadata.display_name
       : typeof user.user_metadata?.full_name === "string"
         ? user.user_metadata.full_name
-        : undefined;
+        : typeof user.user_metadata?.name === "string"
+          ? user.user_metadata.name
+          : undefined;
+
+  const avatarUrl =
+    typeof user.user_metadata?.avatar_url === "string"
+      ? user.user_metadata.avatar_url
+      : typeof user.user_metadata?.picture === "string"
+        ? user.user_metadata.picture
+        : null;
 
   const displayName =
     preferredDisplayName?.trim() ||
@@ -112,6 +121,7 @@ export async function ensureBaseProfileForUser(
       email,
       displayName,
       username,
+      avatarUrl,
       role: "student",
     })
     .onConflictDoNothing();

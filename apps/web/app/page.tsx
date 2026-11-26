@@ -75,14 +75,6 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
             <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
-              <Badge
-                variant="secondary"
-                className="mb-6 gap-2 px-3 py-1 text-xs font-semibold"
-              >
-                <Sparkles className="size-3.5 text-primary" />
-                NetMifi Design System • Powered by Lexend & Orbitron
-              </Badge>
-
               <h1 className="font-game text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
                 TEST YOUR WIT. <br />
                 <span className="text-primary">CONQUER THE ARENA.</span>
@@ -113,15 +105,15 @@ export default function Home() {
               <div className="mt-12 grid grid-cols-3 gap-6 border-t border-border pt-8 text-left w-full max-w-lg">
                 <div>
                   <p className="font-game text-2xl font-bold text-foreground">12.4K+</p>
-                  <p className="text-xs text-muted-foreground font-sans">Active Gladiators</p>
+                  <p className="text-xs text-muted-foreground font-sans">Active Students</p>
                 </div>
                 <div>
-                  <p className="font-game text-2xl font-bold text-primary">98.2%</p>
-                  <p className="text-xs text-muted-foreground font-sans">Curriculum Match</p>
+                  <p className="font-game text-2xl font-bold text-primary">50+</p>
+                  <p className="text-xs text-muted-foreground font-sans">University Courses</p>
                 </div>
                 <div>
-                  <p className="font-game text-2xl font-bold text-foreground">50ms</p>
-                  <p className="text-xs text-muted-foreground font-sans">Real-time Sync</p>
+                  <p className="font-game text-2xl font-bold text-foreground">1v1</p>
+                  <p className="text-xs text-muted-foreground font-sans">Live Course Battles</p>
                 </div>
               </div>
             </div>

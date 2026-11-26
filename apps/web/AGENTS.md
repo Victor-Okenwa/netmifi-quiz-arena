@@ -9,6 +9,7 @@
    - All UI components (`components/ui/*`), feature components (`components/*`), fonts (`assets/fonts/*`), brand logos (`assets/netmifi/*`), and theme tokens (`app/globals.css`) reside in `apps/web`.
    - Maintain the NetMifi design system: **Lexend** (`--font-sans`) as primary font, **Orbitron** (`--font-game`) for competitive/arcade headings, and NetMifi oklch color tokens.
    - Never import from or add components to `@repo/ui` (`packages/ui`).
+   - **Production UI Copy Only (No Infrastructure or Meta Placeholders)**: Never include badges, footers, tips, or text in the UI that talk about the app's internal infrastructure, fonts, auth provider, or architecture (e.g., never write *"Powered by Lexend & Orbitron"*, *"Secured by Supabase Auth"*, *"No Crypto Wallet Required"*, or similar meta tips). All UI copy must be natural, student-facing product language.
 3. **Server vs. Client Component Architecture**:
    - Default to **React Server Components (RSC)** for pages, layouts, and initial data loading.
    - Add `"use client"` only at the smallest leaf component requiring interactivity, hooks (`useState`, `useEffect`), Supabase Realtime subscriptions, audio playback, or Solana wallet adapter hooks.

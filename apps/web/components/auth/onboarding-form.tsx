@@ -17,7 +17,6 @@ import {
   BookOpen,
   Building2,
   CheckCircle2,
-  GraduationCap,
   Loader2,
   Swords,
 } from "lucide-react";
@@ -148,22 +147,13 @@ export function OnboardingForm({
       </div>
 
       <Card className="w-full max-w-2xl border-border shadow-lg">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Badge variant="default" className="gap-1.5">
-              <GraduationCap className="size-3.5" />
-              Step 1 of 1 • Academic Profile Setup
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              Nigerian Tertiary Curriculum
-            </span>
-          </div>
+        <CardHeader className="space-y-1.5">
           <CardTitle className="font-game text-2xl font-bold">
-            CONFIGURE YOUR ACADEMIC LOADOUT
+            COMPLETE YOUR PROFILE
           </CardTitle>
           <CardDescription>
-            Select your university, department, and level so Quiz Arena can
-            match you with relevant course battles, peers, and topic diagnoses.
+            Choose your university, department, and level to unlock your course
+            battles.
           </CardDescription>
         </CardHeader>
 
@@ -178,7 +168,7 @@ export function OnboardingForm({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="displayName">Student Display Name</Label>
+                <Label htmlFor="displayName">Display Name</Label>
                 <Input
                   id="displayName"
                   value={displayName}
@@ -192,7 +182,7 @@ export function OnboardingForm({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="username">Arena Handle (@username)</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   value={username}
@@ -214,7 +204,7 @@ export function OnboardingForm({
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5">
                 <Building2 className="size-4 text-primary" />
-                Select Your University
+                University
               </Label>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {universities.map((uni) => {
@@ -250,7 +240,7 @@ export function OnboardingForm({
             {/* Department & Level */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="department">Academic Department</Label>
+                <Label htmlFor="department">Department</Label>
                 <select
                   id="department"
                   value={departmentId}
@@ -268,7 +258,7 @@ export function OnboardingForm({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Academic Level</Label>
+                <Label>Level</Label>
                 <div className="grid grid-cols-5 gap-1.5">
                   {ACADEMIC_LEVELS.map((lvl) => (
                     <button
@@ -292,7 +282,7 @@ export function OnboardingForm({
             <div className="rounded-xl border border-border bg-muted/40 p-4">
               <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-foreground">
                 <BookOpen className="size-4 text-primary" />
-                <span>Unlocked Arena Courses ({courses.length})</span>
+                <span>Department Courses ({courses.length})</span>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {courses.map((course) => (
@@ -325,12 +315,12 @@ export function OnboardingForm({
               {isLoading ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Saving Academic Profile...
+                  Saving Profile...
                 </>
               ) : (
                 <>
                   <Swords className="size-5" />
-                  Complete Setup & Enter Quiz Arena
+                  Continue to Arena
                 </>
               )}
             </Button>

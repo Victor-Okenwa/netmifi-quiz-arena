@@ -1,7 +1,6 @@
 "use client";
 
 import { LogoIcon } from "@/assets/netmifi";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,30 +13,52 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import {
-  AlertCircle,
-  CheckCircle2,
-  GraduationCap,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 interface AuthFormProps {
   mode: "login" | "register";
+  initialError?: string | null;
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
+export function AuthForm({ mode, initialError = null }: AuthFormProps) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOAuthLoading, setIsOAuthLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialError);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -68,7 +89,9 @@ export function AuthForm({ mode }: AuthFormProps) {
       };
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? "Authentication failed. Please try again.");
+        setErrorMessage(
+          data.error ?? "Authentication failed. Please try again."
+        );
         setIsLoading(false);
         return;
       }
@@ -101,6 +124,10 @@ export function AuthForm({ mode }: AuthFormProps) {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
 
@@ -112,7 +139,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Google OAuth is not available right now."
+          : "Google sign-in could not be started."
       );
       setIsOAuthLoading(false);
     }
@@ -132,21 +159,13 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <Card className="w-full max-w-md border-border shadow-lg">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex items-center justify-center">
-            <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs">
-              <GraduationCap className="size-3.5 text-primary" />
-              No Crypto Wallet Required for Academic Battles
-            </Badge>
-          </div>
           <CardTitle className="font-game text-2xl font-bold">
-            {mode === "register"
-              ? "CREATE STUDENT ACCOUNT"
-              : "ENTER THE ARENA"}
+            {mode === "register" ? "CREATE ACCOUNT" : "WELCOME BACK"}
           </CardTitle>
           <CardDescription>
             {mode === "register"
-              ? "Join fellow university students to battle, diagnose weak topics, and master your courses."
-              : "Sign in to your Netmifi academic profile to continue your quiz battles."}
+              ? "Join fellow students to compete in course battles and sharpen your mastery."
+              : "Sign in to continue your academic battles and practice sessions."}
           </CardDescription>
         </CardHeader>
 
@@ -165,14 +184,37 @@ export function AuthForm({ mode }: AuthFormProps) {
             </div>
           ) : null}
 
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2.5 font-medium"
+            onClick={handleGoogleOAuth}
+            disabled={isLoading || isOAuthLoading}
+          >
+            {isOAuthLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <GoogleIcon className="size-4" />
+            )}
+            Continue with Google
+          </Button>
+
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t border-border" />
+            <span className="bg-card px-3 text-xs text-muted-foreground">
+              OR
+            </span>
+            <div className="w-full border-t border-border" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" ? (
               <div className="space-y-1.5">
-                <Label htmlFor="displayName">Full Name / Display Name</Label>
+                <Label htmlFor="displayName">Full Name</Label>
                 <Input
                   id="displayName"
                   type="text"
-                  placeholder="e.g. Chidi Okafor"
+                  placeholder="Chidi Okafor"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
@@ -184,7 +226,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             ) : null}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">University or Personal Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -214,51 +256,27 @@ export function AuthForm({ mode }: AuthFormProps) {
               />
             </div>
 
-            <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   {mode === "register"
-                    ? "Creating Student Account..."
+                    ? "Creating Account..."
                     : "Signing In..."}
                 </>
+              ) : mode === "register" ? (
+                "Create Account"
               ) : (
-                <>
-                  <Sparkles className="size-4" />
-                  {mode === "register"
-                    ? "Create Account & Choose University"
-                    : "Sign In to Arena"}
-                </>
+                "Sign In"
               )}
             </Button>
           </form>
-
-          <div className="relative flex items-center justify-center">
-            <div className="w-full border-t border-border" />
-            <span className="bg-card px-3 text-xs text-muted-foreground">
-              OR
-            </span>
-            <div className="w-full border-t border-border" />
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={handleGoogleOAuth}
-            disabled={isLoading || isOAuthLoading}
-          >
-            {isOAuthLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : null}
-            Continue with Google
-          </Button>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 border-t border-border pt-5 text-center text-xs text-muted-foreground">
+        <CardFooter className="flex flex-col border-t border-border pt-5 text-center text-xs text-muted-foreground">
           {mode === "register" ? (
             <p>
-              Already have a Netmifi student account?{" "}
+              Already have an account?{" "}
               <Link
                 href="/login"
                 className="font-semibold text-primary hover:underline"
@@ -268,21 +286,15 @@ export function AuthForm({ mode }: AuthFormProps) {
             </p>
           ) : (
             <p>
-              New to Netmifi Quiz Arena?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/register"
                 className="font-semibold text-primary hover:underline"
               >
-                Create a Student Account
+                Create Account
               </Link>
             </p>
           )}
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/80">
-            <ShieldCheck className="size-3.5 text-primary" />
-            <span>
-              Secured by Supabase Auth • Solana wallet linking is 100% optional
-            </span>
-          </div>
         </CardFooter>
       </Card>
     </div>

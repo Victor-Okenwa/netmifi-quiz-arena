@@ -10,15 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
-import { asc, courses, db, eq, topics } from "@repo/db";
-import {
-  BookOpen,
-  GraduationCap,
-  Sparkles,
-  Swords,
-  Trophy,
-  UserCheck,
-} from "lucide-react";
+import { asc, courses, db, topics } from "@repo/db";
+import { BookOpen, GraduationCap } from "lucide-react";
 import Link from "next/link";
 
 export default async function ArenaPage() {
@@ -63,7 +56,7 @@ export default async function ArenaPage() {
             </Badge>
             <Link href="/onboarding">
               <Button variant="ghost" size="sm">
-                Edit Academic Profile
+                Edit Profile
               </Button>
             </Link>
             <SignOutButton />
@@ -77,10 +70,6 @@ export default async function ArenaPage() {
           <CardHeader className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Badge variant="default" className="gap-1">
-                  <UserCheck className="size-3" />
-                  Verified Student Gladiator
-                </Badge>
                 <span className="font-mono text-xs text-muted-foreground">
                   @{profile.username}
                 </span>
@@ -119,20 +108,14 @@ export default async function ArenaPage() {
 
         {/* Course & Topic Catalog */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-game text-xl font-bold">
-                YOUR DEPARTMENT COURSES & BATTLE TOPICS
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Select a course topic to challenge a course-mate or practice
-                weak areas.
-              </p>
-            </div>
-            <Badge variant="outline" className="gap-1.5">
-              <Sparkles className="size-3.5 text-primary" />
-              Free Battles Enabled (No Wallet Required)
-            </Badge>
+          <div>
+            <h2 className="font-game text-xl font-bold">
+              COURSES & BATTLE TOPICS
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Select a course topic to challenge a course-mate or practice weak
+              areas.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
