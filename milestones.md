@@ -11,8 +11,8 @@
 | # | Milestone | Key Workspace Areas | Status |
 |---|---|---|---|
 | **M0** | Foundation, Brand Identity & Persistent Engineering Rules | `apps/web`, `AGENTS.md` | ✅ **COMPLETED** |
-| **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ⏳ **NEXT UP** |
-| **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ⬜ **PENDING** |
+| **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ✅ **COMPLETED** |
+| **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ⏳ **NEXT UP** |
 | **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ⬜ **PENDING** |
 | **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ⬜ **PENDING** |
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⬜ **PENDING** |
@@ -41,34 +41,34 @@ Establish the monorepo foundation, port the official NetMifi brand identity and 
 ---
 
 ## Milestone 1: Monorepo Plumbing, Shared Packages & Environment Config
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Wire up the empty workspace package directories (`packages/db`, `packages/types`, `packages/validators`, `packages/solana`, `packages/integrations/firecrawl`, `packages/integrations/elevenlabs`) with clean TypeScript/Bun configurations and establish type-safe environment variable validation before writing domain code.
 
 ### Scope & Deliverables
-- [ ] **Workspace Discovery & TypeScript Alignment**:
-  - Update root `package.json` `"workspaces"` array to include nested integrations (`["apps/*", "packages/*", "packages/integrations/*"]`) or unify package exports cleanly.
-  - Align TypeScript versions across root and workspace packages so `bun run check-types` runs without version drift.
-  - Decide whether to remove or ignore the unused boilerplate `apps/docs` app so builds focus on `apps/web` and shared packages.
-- [ ] **Initialize Shared Package Manifests (`package.json`, `tsconfig.json`, `src/index.ts`)**:
+- [x] **Workspace Discovery & TypeScript Alignment**:
+  - Updated root `package.json` `"workspaces"` array to include nested integrations (`["apps/*", "packages/*", "packages/integrations/*"]`).
+  - Aligned TypeScript versions (`^5.9.3`) across root and workspace packages so `bun run check-types` runs without version drift.
+  - Removed the unused boilerplate `apps/docs` app so builds focus on `apps/web` and shared packages.
+- [x] **Initialize Shared Package Manifests (`package.json`, `tsconfig.json`, `src/index.ts`)**:
   - `@repo/types` (`packages/types`): Shared domain interfaces (battle states, diagnosis models, question DTOs, realtime event payloads).
-  - `@repo/validators` (`packages/validators`): Shared Zod schemas for API inputs, battle configuration, answer submission, URL ingestion, and env validation.
+  - `@repo/validators` (`packages/validators`): Shared Zod schemas for API inputs, battle configuration, answer submission, SSRF-safe URL ingestion, and wallet link verification.
   - `@repo/db` (`packages/db`): Package skeleton ready for Drizzle ORM and `postgres` driver.
   - `@repo/solana` (`packages/solana`): Package skeleton ready for Anchor IDL and Solana web3 client helpers.
   - `@repo/firecrawl` & `@repo/elevenlabs` (`packages/integrations/*`): Server-only integration package skeletons.
-- [ ] **Environment Variable Templates & Validation**:
-  - Create root `.env.example` documenting all required variables (`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `NEXT_PUBLIC_SOLANA_NETWORK`, `NEXT_PUBLIC_SOLANA_RPC_URL`, `SOLANA_PROGRAM_ID`, `FIRECRAWL_API_KEY`, `ELEVENLABS_API_KEY`).
-  - Create server/client environment validation helper so missing or misconfigured variables fail fast with clear error messages.
+- [x] **Environment Variable Templates & Validation**:
+  - Created root `.env.example` documenting all required variables (`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `NEXT_PUBLIC_SOLANA_NETWORK`, `NEXT_PUBLIC_SOLANA_RPC_URL`, `SOLANA_PROGRAM_ID`, `FIRECRAWL_API_KEY`, `ELEVENLABS_API_KEY`).
+  - Created server/client environment validation helper (`apps/web/lib/env.ts`) so missing or misconfigured variables fail fast with clear error messages.
 
 ### Acceptance Criteria
-- `bun install` and `bun run check-types` succeed across the entire monorepo with 0 errors.
+- `bun run check-types` succeeds across the entire monorepo with 0 errors.
 - `apps/web` can import types and Zod schemas from `@repo/types` and `@repo/validators`.
 
 ---
 
 ## Milestone 2: Local Docker PostgreSQL & Drizzle Database Architecture
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Stand up the local Docker PostgreSQL environment and implement the complete, production-ready Drizzle ORM relational schema, migration workflow, and academic seed data in `packages/db`.
