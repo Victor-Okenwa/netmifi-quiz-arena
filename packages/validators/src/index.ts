@@ -92,9 +92,53 @@ export const walletLinkVerifySchema = z.object({
   signatureBase64: z.string().trim().min(32),
 });
 
+export const academicLevelSchema = z.enum(["100L", "200L", "300L", "400L", "500L"]);
+
+export const registerStudentSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "Display name must be at least 2 characters")
+    .max(80, "Display name must be at most 80 characters"),
+  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password is too long"),
+});
+
+export const loginStudentSchema = z.object({
+  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const academicOnboardingSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "Display name must be at least 2 characters")
+    .max(80, "Display name must be at most 80 characters"),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters")
+    .max(24, "Username must be at most 24 characters")
+    .regex(
+      /^[a-z0-9_]+$/,
+      "Username can only contain lowercase letters, numbers, and underscores"
+    ),
+  universityId: z.string().uuid("Please select your university"),
+  departmentId: z.string().uuid("Please select your department"),
+  academicLevel: academicLevelSchema.default("200L"),
+});
+
 export type CreateBattleInput = z.infer<typeof createBattleSchema>;
 export type JoinBattleInput = z.infer<typeof joinBattleSchema>;
 export type SubmitAnswerInput = z.infer<typeof submitAnswerSchema>;
 export type IngestSourceUrlInput = z.infer<typeof ingestSourceUrlSchema>;
 export type QuestionDraftReviewInput = z.infer<typeof questionDraftReviewSchema>;
 export type WalletLinkVerifyInput = z.infer<typeof walletLinkVerifySchema>;
+export type RegisterStudentInput = z.infer<typeof registerStudentSchema>;
+export type SignInStudentInput = z.infer<typeof loginStudentSchema>;
+export type AcademicOnboardingInput = z.infer<typeof academicOnboardingSchema>;

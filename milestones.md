@@ -13,8 +13,8 @@
 | **M0** | Foundation, Brand Identity & Persistent Engineering Rules | `apps/web`, `AGENTS.md` | ✅ **COMPLETED** |
 | **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ✅ **COMPLETED** |
 | **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ✅ **COMPLETED** |
-| **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
-| **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ⬜ **PENDING** |
+| **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ✅ **COMPLETED** |
+| **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ⏳ **NEXT UP** |
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⬜ **PENDING** |
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⬜ **PENDING** |
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⬜ **PENDING** |
@@ -108,20 +108,20 @@ Stand up the local Docker PostgreSQL environment and implement the complete, pro
 ---
 
 ## Milestone 3: Student Authentication & Academic Onboarding (Supabase Auth)
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Enable students to register, log in, and set up their academic profile (University, Department, Courses) using **Supabase Auth** and **Drizzle**, with zero cryptocurrency wallet requirement.
 
 ### Scope & Deliverables
-- [ ] **Supabase Auth Integration (`apps/web/lib/supabase/`)**:
-  - Server client (`server.ts`), browser client (`client.ts`), and Next.js middleware for session refresh using `@supabase/ssr`.
-  - Server-side authentication guard (`requireAuthUser()`) that calls `supabase.auth.getUser()` and loads/syncs the student's Drizzle `profile`.
-- [ ] **Auth Pages & Flows (`apps/web/app/(auth)/`)**:
-  - Registration (`/register`), Login (`/login`), and Auth Callback (`/auth/callback`) supporting Email/Password (and Google OAuth when configured).
-- [ ] **Academic Onboarding Flow (`/onboarding`)**:
-  - Step-by-step selection of the student's University, Department, Academic Level, and primary Courses.
-  - Persists profile to PostgreSQL via Drizzle and redirects to the Arena Dashboard.
+- [x] **Supabase Auth Integration (`apps/web/lib/supabase/`)**:
+  - Server client (`server.ts`), browser client (`client.ts`), admin service-role helper, and Next.js middleware (`apps/web/middleware.ts`) for session refresh using `@supabase/ssr`.
+  - Server-side authentication guards (`getCurrentAuthContext()`, `requireAuthUser()`, `requireOnboardedStudent()`) in `apps/web/lib/supabase/auth.ts` that call `supabase.auth.getUser()` and load/sync the student's Drizzle `profile`.
+- [x] **Auth Pages & Flows (`apps/web/app/(auth)/` & `apps/web/app/api/auth/`)**:
+  - Registration (`/register` & `POST /api/auth/register`), Login (`/login` & `POST /api/auth/login`), Logout (`POST /api/auth/logout`), and Auth Callback (`/auth/callback`) supporting Email/Password and Google OAuth.
+- [x] **Academic Onboarding Flow (`/onboarding` & `POST /api/onboarding`)**:
+  - Step-by-step selection of the student's Nigerian University (`UNILAG`, `UI`, `OAU`, `UNN`, `FUTO`, `ABU`), Department (`Computer Science`), Academic Level (`100L`–`500L`), Display Name, and unique `@username`.
+  - Persists profile to PostgreSQL via Drizzle and redirects to the authenticated Arena Hub (`/arena`).
 
 ### Acceptance Criteria
 - A new student can sign up with email/password, complete academic onboarding without connecting a wallet, and have their profile persisted in PostgreSQL.
@@ -130,7 +130,7 @@ Enable students to register, log in, and set up their academic profile (Universi
 ---
 
 ## Milestone 4: Academic Catalog, Student Dashboard & Arena Lobby UI
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Build the primary student-facing Arena Dashboard, Course/Topic Explorer, and Battle Creation / Matchmaking Lobby in `apps/web` using the NetMifi design system.

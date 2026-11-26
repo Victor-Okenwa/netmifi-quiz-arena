@@ -55,13 +55,17 @@ export default function Home() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button size="sm">
-              <Gamepad2 className="size-4" />
-              Play Now
-            </Button>
+            <a href="/login">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </a>
+            <a href="/register">
+              <Button size="sm">
+                <Gamepad2 className="size-4" />
+                Play Now
+              </Button>
+            </a>
           </div>
         </div>
       </header>
@@ -91,14 +95,18 @@ export default function Home() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className="gap-2 text-base">
-                  <Swords className="size-5" />
-                  Enter Instant Match
-                </Button>
-                <Button size="lg" variant="outline" className="gap-2 text-base">
-                  Explore Arena Rooms
-                  <ChevronRight className="size-4" />
-                </Button>
+                <a href="/arena">
+                  <Button size="lg" className="gap-2 text-base">
+                    <Swords className="size-5" />
+                    Enter Instant Match
+                  </Button>
+                </a>
+                <a href="/register">
+                  <Button size="lg" variant="outline" className="gap-2 text-base">
+                    Create Student Account
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </a>
               </div>
 
               {/* Quick stats banner */}
