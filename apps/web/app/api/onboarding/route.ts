@@ -1,4 +1,13 @@
 import {
+  FALLBACK_DEPARTMENTS,
+  FALLBACK_UNIVERSITIES,
+} from "@/lib/academic-fallback";
+import {
+  getCurrentAuthContext,
+  getStudentProfileById,
+} from "@/lib/supabase/auth";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
   and,
   db,
   departments,
@@ -9,10 +18,6 @@ import {
 } from "@repo/db";
 import { academicOnboardingSchema } from "@repo/validators";
 import { NextResponse } from "next/server";
-import {
-  getCurrentAuthContext,
-  getStudentProfileById,
-} from "@/lib/supabase/auth";
 
 export async function POST(request: Request) {
   try {
@@ -36,92 +41,129 @@ export async function POST(request: Request) {
     const { displayName, username, universityId, departmentId, academicLevel } =
       parsed.data;
 
-    // 1. Verify university exists
-    const [uni] = await db
-      .select({ id: universities.id })
-      .from(universities)
-      .where(eq(universities.id, universityId))
-      .limit(1);
-
-    if (!uni) {
-      return NextResponse.json(
-        { error: "Selected university was not found." },
-        { status: 400 }
-      );
-    }
-
-    // 2. Verify department belongs to the selected university
-    const [dept] = await db
-      .select({ id: departments.id })
-      .from(departments)
-      .where(
-        and(
-          eq(departments.id, departmentId),
-          eq(departments.universityId, universityId)
-        )
-      )
-      .limit(1);
-
-    if (!dept) {
-      return NextResponse.json(
-        {
-          error:
-            "Selected department does not belong to the chosen university.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // 3. Check username uniqueness against other profiles
-    const [conflictingUsername] = await db
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(
-        and(
-          eq(profiles.username, username),
-          ne(profiles.id, authContext.user.id)
-        )
-      )
-      .limit(1);
-
-    if (conflictingUsername) {
-      return NextResponse.json(
-        {
-          error: `Username "@${username}" is already taken. Please choose another handle.`,
-        },
-        { status: 409 }
-      );
-    }
+    let selectedUni = FALLBACK_UNIVERSITIES.find((u) => u.id === universityId);
+    let selectedDept = FALLBACK_DEPARTMENTS.find(
+      (d) => d.id === departmentId && d.universityId === universityId
+    );
 
     const email = (
       authContext.user.email ?? `${authContext.user.id}@student.netmifi.com`
     ).toLowerCase();
 
-    // 4. Upsert student academic profile in PostgreSQL via Drizzle
-    await db
-      .insert(profiles)
-      .values({
-        id: authContext.user.id,
-        email,
-        displayName,
-        username,
-        role: "student",
-        universityId,
-        departmentId,
-        academicLevel,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: profiles.id,
-        set: {
-          displayName,
+    try {
+      // 1. Verify university exists in PostgreSQL
+      const [uni] = await db
+        .select({
+          id: universities.id,
+          name: universities.name,
+          shortCode: universities.shortCode,
+        })
+        .from(universities)
+        .where(eq(universities.id, universityId))
+        .limit(1);
+
+      if (uni) {
+        selectedUni = uni;
+      }
+
+      // 2. Verify department belongs to the selected university
+      const [dept] = await db
+        .select({
+          id: departments.id,
+          universityId: departments.universityId,
+          name: departments.name,
+          code: departments.code,
+        })
+        .from(departments)
+        .where(
+          and(
+            eq(departments.id, departmentId),
+            eq(departments.universityId, universityId)
+          )
+        )
+        .limit(1);
+
+      if (dept) {
+        selectedDept = dept;
+      }
+
+      // 3. Check username uniqueness against other profiles
+      const [conflictingUsername] = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(
+          and(
+            eq(profiles.username, username),
+            ne(profiles.id, authContext.user.id)
+          )
+        )
+        .limit(1);
+
+      if (conflictingUsername) {
+        return NextResponse.json(
+          {
+            error: `Username "@${username}" is already taken. Please choose another handle.`,
+          },
+          { status: 409 }
+        );
+      }
+
+      if (uni && dept) {
+        // 4. Upsert student academic profile in PostgreSQL via Drizzle
+        await db
+          .insert(profiles)
+          .values({
+            id: authContext.user.id,
+            email,
+            displayName,
+            username,
+            role: "student",
+            universityId,
+            departmentId,
+            academicLevel,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: profiles.id,
+            set: {
+              displayName,
+              username,
+              universityId,
+              departmentId,
+              academicLevel,
+              updatedAt: new Date(),
+            },
+          });
+      }
+    } catch {
+      // PostgreSQL unavailable on remote preview; persist to Supabase Auth user_metadata below
+    }
+
+    if (!selectedUni || !selectedDept) {
+      return NextResponse.json(
+        { error: "Please select a valid university and department." },
+        { status: 400 }
+      );
+    }
+
+    // Also sync academic profile into Supabase Auth user_metadata so it persists across deployments
+    try {
+      const supabase = await createServerSupabaseClient();
+      await supabase.auth.updateUser({
+        data: {
+          display_name: displayName,
           username,
-          universityId,
-          departmentId,
-          academicLevel,
-          updatedAt: new Date(),
+          university_id: selectedUni.id,
+          university_name: selectedUni.name,
+          university_short_code: selectedUni.shortCode,
+          department_id: selectedDept.id,
+          department_name: selectedDept.name,
+          academic_level: academicLevel,
         },
       });
+    } catch {
+      // Non-fatal metadata update
+    }
 
     const updatedProfile = await getStudentProfileById(authContext.user.id);
 

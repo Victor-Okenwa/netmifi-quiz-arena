@@ -46,97 +46,149 @@ export function generateFallbackUsername(email: string, userId: string): string 
 }
 
 /**
- * Loads the student's Drizzle profile joined with university and department metadata.
+ * Builds a profile object from Supabase Auth `user.user_metadata` when PostgreSQL is not yet connected
+ * on a remote deployment (e.g. Vercel without production `DATABASE_URL`).
  */
-export async function getStudentProfileById(
-  userId: string
-): Promise<AuthenticatedStudentProfile | null> {
-  const rows = await db
-    .select({
-      id: profiles.id,
-      email: profiles.email,
-      displayName: profiles.displayName,
-      username: profiles.username,
-      avatarUrl: profiles.avatarUrl,
-      role: profiles.role,
-      universityId: profiles.universityId,
-      universityName: universities.name,
-      universityShortCode: universities.shortCode,
-      departmentId: profiles.departmentId,
-      departmentName: departments.name,
-      academicLevel: profiles.academicLevel,
-      xp: profiles.xp,
-      battlesPlayed: profiles.battlesPlayed,
-      battlesWon: profiles.battlesWon,
-    })
-    .from(profiles)
-    .leftJoin(universities, eq(profiles.universityId, universities.id))
-    .leftJoin(departments, eq(profiles.departmentId, departments.id))
-    .where(eq(profiles.id, userId))
-    .limit(1);
-
-  return rows[0] ?? null;
-}
-
-/**
- * Ensures a baseline `profiles` row exists in PostgreSQL for a verified Supabase Auth user.
- */
-export async function ensureBaseProfileForUser(
+export function buildProfileFromUserMetadata(
   user: User,
   preferredDisplayName?: string
-): Promise<AuthenticatedStudentProfile> {
-  const existing = await getStudentProfileById(user.id);
-  if (existing) {
-    return existing;
-  }
-
+): AuthenticatedStudentProfile {
   const email = (user.email ?? `${user.id}@student.netmifi.com`).toLowerCase();
-  const metadataName =
-    typeof user.user_metadata?.display_name === "string"
-      ? user.user_metadata.display_name
-      : typeof user.user_metadata?.full_name === "string"
-        ? user.user_metadata.full_name
-        : typeof user.user_metadata?.name === "string"
-          ? user.user_metadata.name
-          : undefined;
+  const meta = user.user_metadata ?? {};
 
-  const avatarUrl =
-    typeof user.user_metadata?.avatar_url === "string"
-      ? user.user_metadata.avatar_url
-      : typeof user.user_metadata?.picture === "string"
-        ? user.user_metadata.picture
-        : null;
+  const metadataName =
+    typeof meta.display_name === "string"
+      ? meta.display_name
+      : typeof meta.full_name === "string"
+        ? meta.full_name
+        : typeof meta.name === "string"
+          ? meta.name
+          : undefined;
 
   const displayName =
     preferredDisplayName?.trim() ||
     metadataName?.trim() ||
     (email.split("@")[0] ?? "Student");
 
-  const username = generateFallbackUsername(email, user.id);
+  const username =
+    typeof meta.username === "string" && meta.username.trim().length >= 3
+      ? meta.username.trim()
+      : generateFallbackUsername(email, user.id);
 
-  await db
-    .insert(profiles)
-    .values({
-      id: user.id,
-      email,
-      displayName,
-      username,
-      avatarUrl,
-      role: "student",
-    })
-    .onConflictDoNothing();
+  const avatarUrl =
+    typeof meta.avatar_url === "string"
+      ? meta.avatar_url
+      : typeof meta.picture === "string"
+        ? meta.picture
+        : null;
 
-  const created = await getStudentProfileById(user.id);
-  if (!created) {
-    throw new Error("Failed to initialize student profile record.");
+  return {
+    id: user.id,
+    email,
+    displayName,
+    username,
+    avatarUrl,
+    role: "student",
+    universityId:
+      typeof meta.university_id === "string" ? meta.university_id : null,
+    universityName:
+      typeof meta.university_name === "string" ? meta.university_name : null,
+    universityShortCode:
+      typeof meta.university_short_code === "string"
+        ? meta.university_short_code
+        : null,
+    departmentId:
+      typeof meta.department_id === "string" ? meta.department_id : null,
+    departmentName:
+      typeof meta.department_name === "string" ? meta.department_name : null,
+    academicLevel:
+      typeof meta.academic_level === "string" ? meta.academic_level : "200L",
+    xp: typeof meta.xp === "number" ? meta.xp : 0,
+    battlesPlayed:
+      typeof meta.battles_played === "number" ? meta.battles_played : 0,
+    battlesWon: typeof meta.battles_won === "number" ? meta.battles_won : 0,
+  };
+}
+
+/**
+ * Loads the student's Drizzle profile joined with university and department metadata.
+ * Returns `null` if not found or if the database connection is unavailable.
+ */
+export async function getStudentProfileById(
+  userId: string
+): Promise<AuthenticatedStudentProfile | null> {
+  try {
+    const rows = await db
+      .select({
+        id: profiles.id,
+        email: profiles.email,
+        displayName: profiles.displayName,
+        username: profiles.username,
+        avatarUrl: profiles.avatarUrl,
+        role: profiles.role,
+        universityId: profiles.universityId,
+        universityName: universities.name,
+        universityShortCode: universities.shortCode,
+        departmentId: profiles.departmentId,
+        departmentName: departments.name,
+        academicLevel: profiles.academicLevel,
+        xp: profiles.xp,
+        battlesPlayed: profiles.battlesPlayed,
+        battlesWon: profiles.battlesWon,
+      })
+      .from(profiles)
+      .leftJoin(universities, eq(profiles.universityId, universities.id))
+      .leftJoin(departments, eq(profiles.departmentId, departments.id))
+      .where(eq(profiles.id, userId))
+      .limit(1);
+
+    return rows[0] ?? null;
+  } catch {
+    return null;
   }
+}
 
-  return created;
+/**
+ * Ensures a baseline `profiles` row exists in PostgreSQL for a verified Supabase Auth user,
+ * gracefully falling back to Supabase user metadata if the database is unreachable.
+ */
+export async function ensureBaseProfileForUser(
+  user: User,
+  preferredDisplayName?: string
+): Promise<AuthenticatedStudentProfile> {
+  const fallbackProfile = buildProfileFromUserMetadata(
+    user,
+    preferredDisplayName
+  );
+
+  try {
+    const existing = await getStudentProfileById(user.id);
+    if (existing) {
+      return existing;
+    }
+
+    await db
+      .insert(profiles)
+      .values({
+        id: user.id,
+        email: fallbackProfile.email,
+        displayName: fallbackProfile.displayName,
+        username: fallbackProfile.username,
+        avatarUrl: fallbackProfile.avatarUrl,
+        role: "student",
+      })
+      .onConflictDoNothing();
+
+    const created = await getStudentProfileById(user.id);
+    return created ?? fallbackProfile;
+  } catch {
+    return fallbackProfile;
+  }
 }
 
 /**
  * Verifies the user's session on the server via `supabase.auth.getUser()`
- * and fetches their Drizzle profile from PostgreSQL.
+ * and fetches their Drizzle profile (or metadata fallback).
  * Returns `null` if unauthenticated.
  */
 export async function getCurrentAuthContext(): Promise<AuthSessionContext | null> {
@@ -151,7 +203,8 @@ export async function getCurrentAuthContext(): Promise<AuthSessionContext | null
       return null;
     }
 
-    const profile = await getStudentProfileById(user.id);
+    const dbProfile = await getStudentProfileById(user.id);
+    const profile = dbProfile ?? buildProfileFromUserMetadata(user);
     const isOnboarded = Boolean(
       profile && profile.universityId && profile.departmentId
     );

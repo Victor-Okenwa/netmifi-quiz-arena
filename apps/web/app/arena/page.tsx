@@ -9,6 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  FALLBACK_COURSES,
+  FALLBACK_TOPICS,
+} from "@/lib/academic-fallback";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import { asc, courses, db, topics } from "@repo/db";
 import { BookOpen, GraduationCap } from "lucide-react";
@@ -17,26 +21,39 @@ import Link from "next/link";
 export default async function ArenaPage() {
   const { profile } = await requireOnboardedStudent();
 
-  const availableCourses = await db
-    .select({
-      id: courses.id,
-      code: courses.code,
-      title: courses.title,
-      description: courses.description,
-      academicLevel: courses.academicLevel,
-    })
-    .from(courses)
-    .orderBy(asc(courses.code));
+  let availableCourses = FALLBACK_COURSES;
+  let availableTopics = FALLBACK_TOPICS;
 
-  const availableTopics = await db
-    .select({
-      id: topics.id,
-      courseId: topics.courseId,
-      name: topics.name,
-      slug: topics.slug,
-    })
-    .from(topics)
-    .orderBy(asc(topics.orderIndex));
+  try {
+    const [dbCourses, dbTopics] = await Promise.all([
+      db
+        .select({
+          id: courses.id,
+          code: courses.code,
+          title: courses.title,
+          description: courses.description,
+          academicLevel: courses.academicLevel,
+        })
+        .from(courses)
+        .orderBy(asc(courses.code)),
+      db
+        .select({
+          id: topics.id,
+          courseId: topics.courseId,
+          name: topics.name,
+          slug: topics.slug,
+        })
+        .from(topics)
+        .orderBy(asc(topics.orderIndex)),
+    ]);
+
+    if (dbCourses.length > 0) {
+      availableCourses = dbCourses;
+      availableTopics = dbTopics;
+    }
+  } catch {
+    // Fallback catalog used when remote DATABASE_URL is not yet configured
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
