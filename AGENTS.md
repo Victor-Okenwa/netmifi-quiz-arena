@@ -11,6 +11,11 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 
 # Netmifi Quiz Arena — Workspace Engineering Rules
 
+## Milestone Tracking & Sequential Execution (`milestones.md`)
+
+- Always read [`milestones.md`](./milestones.md) at the start of a task to understand current progress, completed milestones, and the active milestone in focus.
+- **Do not build everything at once.** Implement strictly one milestone (or user-requested sub-goal) at a time, verify it thoroughly, and update the checklists and status markers in [`milestones.md`](./milestones.md) as each milestone is completed.
+
 ## Scoped Rule Index
 
 Domain-specific rules are co-located in their respective workspace directories and loaded automatically when working inside them:
