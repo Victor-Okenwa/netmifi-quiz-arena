@@ -7,7 +7,14 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "typecheck": "turbo run check-types"
+    "typecheck": "turbo run check-types",
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
+    "db:generate": "bun run --cwd packages/db db:generate",
+    "db:push": "bun run --cwd packages/db db:push",
+    "db:migrate": "bun run --cwd packages/db db:migrate",
+    "db:seed": "bun run --cwd packages/db db:seed",
+    "db:studio": "bun run --cwd packages/db db:studio"
   },
   "devDependencies": {
     "prettier": "3.9.6",

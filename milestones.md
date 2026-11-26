@@ -12,8 +12,8 @@
 |---|---|---|---|
 | **M0** | Foundation, Brand Identity & Persistent Engineering Rules | `apps/web`, `AGENTS.md` | ✅ **COMPLETED** |
 | **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ✅ **COMPLETED** |
-| **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ⏳ **NEXT UP** |
-| **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ⬜ **PENDING** |
+| **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ✅ **COMPLETED** |
+| **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
 | **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ⬜ **PENDING** |
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⬜ **PENDING** |
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⬜ **PENDING** |
@@ -68,18 +68,18 @@ Wire up the empty workspace package directories (`packages/db`, `packages/types`
 ---
 
 ## Milestone 2: Local Docker PostgreSQL & Drizzle Database Architecture
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Stand up the local Docker PostgreSQL environment and implement the complete, production-ready Drizzle ORM relational schema, migration workflow, and academic seed data in `packages/db`.
 
 ### Scope & Deliverables
-- [ ] **Local Docker PostgreSQL (`infrastructure/docker/docker-compose.yml`)**:
-  - Configure PostgreSQL 16+ container with persistent named volume, healthcheck, local port binding (`127.0.0.1:5432:5432`), and environment-driven credentials matching `.env.example`.
-- [ ] **Drizzle Client & Config (`packages/db`)**:
-  - Configure `packages/db/drizzle.config.ts`.
-  - Implement singleton database connection in `packages/db/src/client.ts` compatible with both local Docker PostgreSQL and production Supabase PostgreSQL connection pooling.
-- [ ] **Complete Relational Schema (`packages/db/src/schema/`)**:
+- [x] **Local Docker PostgreSQL (`infrastructure/docker/docker-compose.yml`)**:
+  - Configured PostgreSQL 16 (`postgres:16-alpine`) container with persistent named volume, healthcheck, local port binding (`127.0.0.1:5432:5432`), and environment-driven credentials matching `.env.example`.
+- [x] **Drizzle Client & Config (`packages/db`)**:
+  - Configured `packages/db/drizzle.config.ts`.
+  - Implemented singleton database connection in `packages/db/src/client.ts` compatible with both local Docker PostgreSQL and production Supabase PostgreSQL connection pooling (`prepare: false`).
+- [x] **Complete Relational Schema (`packages/db/src/schema/`)**:
   - **Identity & Academic Hierarchy**:
     - `profiles` (linked to Supabase Auth `user.id`, display name, avatar, university/department references, XP, rating).
     - `universities`, `departments`, `courses`, `topics` (structured academic catalog for Nigerian universities).
@@ -87,19 +87,19 @@ Stand up the local Docker PostgreSQL environment and implement the complete, pro
     - `content_sources` (submitted URL, title, university/course/topic metadata, permissions, submitted by).
     - `ingestion_jobs` (status enum: `pending`, `crawling`, `processing`, `generating`, `review_required`, `completed`, `failed`, error logs, timestamps).
     - `questions` (course/topic foreign keys, question text, difficulty, explanation, approval status `draft | approved | rejected`, source attribution, reviewer metadata).
-    - `question_options` (options A–D, `is_correct` server-only boolean or structured JSONB options with server-only answer key).
+    - `question_options` (options A–D, server-only `correctOptionKey` on `questions`).
     - `audio_assets` (question/battle reference, Supabase Storage path, voice ID, content SHA-256 hash, duration, status).
   - **Battle Engine & Learning Loop**:
     - `battles` (status enum: `WAITING`, `READY`, `ACTIVE`, `COMPLETED`, `CANCELLED`, `EXPIRED`; mode `free | reward`; course/topic IDs; question count; time per question; stake amount; on-chain battle PDA address).
     - `battle_participants` (unique `(battle_id, user_id)`, ready state, current score, total time ms, deposit tx signature).
     - `battle_questions` (ordered question set assigned to a battle).
     - `answer_submissions` (unique `(battle_id, user_id, question_id)`, selected option, `is_correct`, response time ms, awarded points, submitted at).
-    - `battle_results` & `topic_performance` (winner user ID, draw flag, per-topic accuracy breakdown, recommended practice topic IDs, winner announcement audio reference).
+    - `battle_results` (winner user ID, draw flag, per-participant topic accuracy breakdown & recommended practice topic IDs).
   - **Solana Wallet & Escrow Tracking**:
     - `wallet_links` (unique `user_id` and unique `wallet_address`, verified timestamp) & `wallet_nonces` (expiring challenge nonces).
     - `reward_transactions` (battle ID, tx type `deposit | settle | cancel | refund`, tx signature, amount, status).
-- [ ] **Migrations & Academic Seed Script (`db:generate`, `db:push`, `db:seed`)**:
-  - Seed script populating starter Nigerian universities (e.g., UNILAG, UI, OAU, UNN, FUTO, ABU), Computer Science / Engineering / Science courses, core topics (e.g., Data Structures & Algorithms, Database Systems, Operating Systems), and a curated set of approved multiple-choice questions for immediate battle testing.
+- [x] **Migrations & Academic Seed Script (`db:generate`, `db:push`, `db:seed`)**:
+  - Seed script (`packages/db/src/seed.ts`) populating 6 Nigerian universities (UNILAG, UI, OAU, UNN, FUTO, ABU), Computer Science departments, 3 core courses (`CSC 201`, `CSC 305`, `CSC 309`), 10 topics, and 22 approved battle-ready multiple-choice questions.
 
 ### Acceptance Criteria
 - Docker PostgreSQL container starts cleanly and passes healthchecks.
@@ -108,7 +108,7 @@ Stand up the local Docker PostgreSQL environment and implement the complete, pro
 ---
 
 ## Milestone 3: Student Authentication & Academic Onboarding (Supabase Auth)
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Enable students to register, log in, and set up their academic profile (University, Department, Courses) using **Supabase Auth** and **Drizzle**, with zero cryptocurrency wallet requirement.
