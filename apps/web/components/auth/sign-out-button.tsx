@@ -5,7 +5,11 @@ import { Loader2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function SignOutButton() {
+interface SignOutButtonProps {
+  className?: string;
+}
+
+export function SignOutButton({ className }: SignOutButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,7 +30,7 @@ export function SignOutButton() {
       size="sm"
       onClick={handleSignOut}
       disabled={isLoading}
-      className="gap-1.5"
+      className={`gap-1.5 ${className ?? ""}`}
     >
       {isLoading ? (
         <Loader2 className="size-3.5 animate-spin" />

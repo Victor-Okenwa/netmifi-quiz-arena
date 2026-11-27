@@ -1,6 +1,5 @@
 import { LogoIcon } from "@/assets/netmifi";
-import { ProfileAvatar } from "@/assets/profiles";
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ProfileMenuPopover } from "@/components/arena/profile-menu-popover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
@@ -65,23 +64,7 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
             {profile.academicLevel ?? "200L"}
           </Badge>
 
-          <Link
-            href="/onboarding"
-            className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1 transition-colors hover:bg-muted/60"
-            title="Edit Profile"
-          >
-            <ProfileAvatar
-              avatarUrl={profile.avatarUrl}
-              avatarNumber={profile.avatarNumber}
-              displayName={profile.displayName}
-              className="size-7"
-            />
-            <span className="hidden max-w-[120px] truncate text-xs font-medium sm:inline">
-              {profile.displayName}
-            </span>
-          </Link>
-
-          <SignOutButton />
+          <ProfileMenuPopover profile={profile} />
         </div>
       </div>
     </header>
