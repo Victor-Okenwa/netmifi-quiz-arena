@@ -6,8 +6,6 @@ import type {
 
 /**
  * Built-in Nigerian University, Department, Course, and Topic catalog fallback.
- * Used automatically when `DATABASE_URL` is not yet configured on a remote deployment (e.g. Vercel preview)
- * so onboarding and the Arena hub never crash with HTTP 500.
  */
 export const FALLBACK_UNIVERSITIES: UniversityOption[] = [
   {
@@ -42,13 +40,21 @@ export const FALLBACK_UNIVERSITIES: UniversityOption[] = [
   },
 ];
 
+const FALLBACK_DEPT_DEFS = [
+  { name: "Department of Computer Science", code: "CSC", suffix: "1" },
+  { name: "Department of Statistics", code: "STA", suffix: "2" },
+  { name: "Department of Accountancy", code: "ACC", suffix: "3" },
+] as const;
+
 export const FALLBACK_DEPARTMENTS: DepartmentOption[] =
-  FALLBACK_UNIVERSITIES.map((uni, idx) => ({
-    id: `22222222-2222-4222-8222-22222222220${idx + 1}`,
-    universityId: uni.id,
-    name: "Department of Computer Science",
-    code: "CSC",
-  }));
+  FALLBACK_UNIVERSITIES.flatMap((uni, uniIdx) =>
+    FALLBACK_DEPT_DEFS.map((dept) => ({
+      id: `22222222-2222-4222-8222-222222222${uniIdx + 1}0${dept.suffix}`,
+      universityId: uni.id,
+      name: dept.name,
+      code: dept.code,
+    }))
+  );
 
 export interface FallbackCourseItem extends CoursePreviewOption {
   description: string;
@@ -77,6 +83,38 @@ export const FALLBACK_COURSES: FallbackCourseItem[] = [
     title: "Operating Systems",
     description:
       "Process management, CPU scheduling, threads, concurrency, deadlocks, memory management, and virtual memory paging.",
+    academicLevel: "300L",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333304",
+    code: "STA 201",
+    title: "Probability Theory and Distributions",
+    description:
+      "Sample spaces, conditional probability, Bayes' theorem, discrete and continuous random variables, expectation, and the Central Limit Theorem.",
+    academicLevel: "200L",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333305",
+    code: "STA 305",
+    title: "Statistical Inference and Regression Analysis",
+    description:
+      "Point and interval estimation, Maximum Likelihood Estimation (MLE), hypothesis testing, ANOVA, and linear regression modeling.",
+    academicLevel: "300L",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333306",
+    code: "ACC 201",
+    title: "Principles of Financial Accounting & IFRS",
+    description:
+      "Double-entry bookkeeping, the accounting equation, trial balance, accrual adjustments, depreciation, bank reconciliation, and IAS/IFRS financial statements.",
+    academicLevel: "200L",
+  },
+  {
+    id: "33333333-3333-4333-8333-333333333307",
+    code: "ACC 304",
+    title: "Cost and Management Accounting",
+    description:
+      "Cost classification, overhead absorption, Cost-Volume-Profit (CVP) break-even analysis, budgeting, and standard costing variance analysis.",
     academicLevel: "300L",
   },
 ];
@@ -148,5 +186,77 @@ export const FALLBACK_TOPICS: FallbackTopicItem[] = [
     courseId: "33333333-3333-4333-8333-333333333303",
     name: "Virtual Memory & Paging",
     slug: "virtual-memory-and-paging",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444411",
+    courseId: "33333333-3333-4333-8333-333333333304",
+    name: "Axioms of Probability & Bayes' Theorem",
+    slug: "axioms-and-bayes-theorem",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444412",
+    courseId: "33333333-3333-4333-8333-333333333304",
+    name: "Discrete Random Variables (Binomial & Poisson)",
+    slug: "discrete-random-variables",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444413",
+    courseId: "33333333-3333-4333-8333-333333333304",
+    name: "Continuous Distributions & Central Limit Theorem",
+    slug: "continuous-distributions-and-clt",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444414",
+    courseId: "33333333-3333-4333-8333-333333333305",
+    name: "Point & Interval Estimation (MLE & Confidence Intervals)",
+    slug: "point-and-interval-estimation",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444415",
+    courseId: "33333333-3333-4333-8333-333333333305",
+    name: "Hypothesis Testing, Type I/II Errors & p-Values",
+    slug: "hypothesis-testing-and-errors",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444416",
+    courseId: "33333333-3333-4333-8333-333333333305",
+    name: "Linear Regression, Correlation & ANOVA",
+    slug: "regression-and-anova",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444417",
+    courseId: "33333333-3333-4333-8333-333333333306",
+    name: "Double-Entry Bookkeeping & Accounting Equation",
+    slug: "double-entry-and-accounting-equation",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444418",
+    courseId: "33333333-3333-4333-8333-333333333306",
+    name: "Accruals, Prepayments & Depreciation Methods",
+    slug: "accruals-and-depreciation",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444419",
+    courseId: "33333333-3333-4333-8333-333333333306",
+    name: "Financial Statements & IFRS Conceptual Framework",
+    slug: "ifrs-and-financial-statements",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444420",
+    courseId: "33333333-3333-4333-8333-333333333307",
+    name: "Cost Classification & Overhead Absorption",
+    slug: "cost-classification-and-overheads",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444421",
+    courseId: "33333333-3333-4333-8333-333333333307",
+    name: "Cost-Volume-Profit (CVP) & Break-Even Analysis",
+    slug: "cvp-and-break-even-analysis",
+  },
+  {
+    id: "44444444-4444-4444-8444-444444444422",
+    courseId: "33333333-3333-4333-8333-333333333307",
+    name: "Budgetary Control & Standard Costing Variances",
+    slug: "budgeting-and-variance-analysis",
   },
 ];

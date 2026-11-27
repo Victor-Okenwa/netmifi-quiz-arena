@@ -99,6 +99,18 @@ export function OnboardingForm({
     initialDepartmentId ?? filteredDepartments[0]?.id ?? ""
   );
 
+  const selectedDeptCode = useMemo(() => {
+    const found = departments.find((d) => d.id === departmentId);
+    return found?.code ?? "CSC";
+  }, [departments, departmentId]);
+
+  const matchingDepartmentCourses = useMemo(() => {
+    const filtered = courses.filter((c) =>
+      c.code.toUpperCase().startsWith(selectedDeptCode.toUpperCase())
+    );
+    return filtered.length > 0 ? filtered : courses;
+  }, [courses, selectedDeptCode]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -107,7 +119,11 @@ export function OnboardingForm({
     const matchingDepts = departments.filter(
       (dept) => dept.universityId === newUniId
     );
-    setDepartmentId(matchingDepts[0]?.id ?? "");
+    // Preserve the same department code (e.g. STA or ACC) when switching university
+    const sameCodeDept = matchingDepts.find(
+      (d) => d.code === selectedDeptCode
+    );
+    setDepartmentId(sameCodeDept?.id ?? matchingDepts[0]?.id ?? "");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -385,10 +401,13 @@ export function OnboardingForm({
             <div className="rounded-xl border border-border bg-muted/40 p-4">
               <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-foreground">
                 <BookOpen className="size-4 text-primary" />
-                <span>Department Courses ({courses.length})</span>
+                <span>
+                  {selectedDeptCode} Department Courses (
+                  {matchingDepartmentCourses.length})
+                </span>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {courses.map((course) => (
+                {matchingDepartmentCourses.map((course) => (
                   <div
                     key={course.id}
                     className="rounded-lg border border-border/80 bg-card p-2.5"
