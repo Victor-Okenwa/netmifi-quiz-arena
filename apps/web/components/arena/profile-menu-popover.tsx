@@ -4,7 +4,7 @@ import { ProfileAvatar } from "@/assets/profiles";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
-import { ChevronDown, GraduationCap, UserCog } from "lucide-react";
+import { ChevronDown, Factory, GraduationCap, UserCog } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -105,6 +105,15 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
 
           {/* Menu actions */}
           <div className="mt-2.5 flex flex-col gap-1.5">
+            <Link
+              href="/admin/question-factory"
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              <Factory className="size-4 text-primary" />
+              Question Factory
+            </Link>
+
             <Link
               href="/onboarding"
               onClick={() => setIsOpen(false)}

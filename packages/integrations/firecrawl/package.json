@@ -9,6 +9,9 @@
   "scripts": {
     "check-types": "tsc --noEmit"
   },
+  "dependencies": {
+    "@repo/validators": "workspace:*"
+  },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "typescript": "^5.9.3"

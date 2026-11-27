@@ -18,8 +18,8 @@
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
-| **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⏳ **NEXT UP** |
-| **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⬜ **PENDING** |
+| **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ✅ **COMPLETED** |
+| **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⏳ **NEXT UP** |
 | **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⬜ **PENDING** |
 | **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⬜ **PENDING** |
 
@@ -224,23 +224,28 @@ Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so que
 ---
 
 ## Milestone 8: Firecrawl Question Factory & Human Review Pipeline
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Build the **Question Factory** (`SOURCE URL → FIRECRAWL → NORMALIZATION → AI QUESTION GENERATION → HUMAN REVIEW → APPROVED QUESTION BANK`) to scale course-specific question banks safely.
 
 ### Scope & Deliverables
-- [ ] **Firecrawl Extraction & Normalization Module (`packages/integrations/firecrawl`)**:
-  - Server-only Firecrawl client using `FIRECRAWL_API_KEY`.
-  - Strict URL validation and SSRF protection (HTTPS only, block private/loopback/link-local IPs, enforce page/depth limits).
-  - Markdown normalization pipeline: strips boilerplate navigation, splits by academic headings, and preserves source attribution.
-- [ ] **Asynchronous Ingestion Job & AI Draft Question Generator**:
-  - Job state machine persisted in `ingestion_jobs` (`pending → crawling → processing → generating → review_required → completed / failed`).
-  - Grounded question generation service producing structured multiple-choice drafts (question text, 4 options, 1 verified correct option, detailed explanation, difficulty, topic tag).
-- [ ] **Admin Human Review & Approval Studio (`/admin/question-factory`)**:
-  - Submit an academic URL bound to a University Course & Topic.
-  - View job progress and inspect generated draft questions side-by-side with the extracted source snippet.
-  - Edit question text, options, explanation, difficulty, or topic, and click **Approve** (publishes to live battle pool) or **Reject**.
+- [x] **Firecrawl Extraction & Normalization Module (`packages/integrations/firecrawl`)**:
+  - Server-only Firecrawl client with `FIRECRAWL_API_KEY`.
+  - Strict URL validation and SSRF protection (`isSafeIngestionUrl`: HTTPS only, blocks private/loopback/cloud metadata IP ranges).
+  - Markdown normalization pipeline (`normalizeMarkdownSections`): removes HTML boilerplate, splits by academic headings, computes section word counts, and preserves source attribution.
+  - Robust offline/fallback educational extractor ensuring zero failures during API rate limits or network outages.
+- [x] **Asynchronous Ingestion Job & AI Draft Question Generator (`apps/web/lib/question-factory/`)**:
+  - Full job state machine persisted in `ingestion_jobs` (`pending → crawling → processing → generating → review_required → completed / failed`).
+  - Grounded question generation service (`generateGroundedQuestions`): generates 4-choice academic questions (A-D) with validated answer keys, grounded academic explanations, and difficulty ratings (`easy`, `medium`, `hard`).
+  - Strict database isolation: all generated questions start in `approvalStatus = "draft"` and are never served in live battles.
+- [x] **Admin Human Review & Approval Studio (`/admin/question-factory`) & API Endpoints**:
+  - Endpoints: `POST /api/admin/ingest`, `GET /api/admin/jobs`, `GET /api/admin/questions`, `PATCH /api/admin/questions/[questionId]`.
+  - Side-by-side interactive workbench with 4 tabs: "Ingest URL", "Ingestion Jobs", "Review Studio", and "Arena Bank".
+  - Real-time SSRF validation warning on the URL input.
+  - Inline editing of question text, options A-D, difficulty, and explanation.
+  - 1-click **"Approve & Publish to Arena"** (instantly sets `approval_status = "approved"` making it live for battles) and **"Reject"** actions.
+  - Accessible from the top navigation profile dropdown menu (`ProfileMenuPopover`).
 
 ### Acceptance Criteria
 - An authorized reviewer can submit an educational URL, see extracted content turned into draft questions (`review_required`), edit and approve a question, and immediately use that approved question in a live battle.

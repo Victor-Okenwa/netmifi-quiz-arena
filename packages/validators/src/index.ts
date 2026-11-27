@@ -78,12 +78,20 @@ export const ingestSourceUrlSchema = z.object({
 });
 
 export const questionDraftReviewSchema = z.object({
-  questionId: z.string().uuid("Invalid question ID"),
+  questionId: z.string().uuid("Invalid question ID").optional(),
   action: z.enum(["approve", "reject"]),
   questionText: z.string().trim().min(10).max(1000).optional(),
   explanation: z.string().trim().min(10).max(2000).optional(),
   difficulty: questionDifficultySchema.optional(),
   correctOptionKey: optionKeySchema.optional(),
+  options: z
+    .object({
+      A: z.string().trim().min(1).max(500).optional(),
+      B: z.string().trim().min(1).max(500).optional(),
+      C: z.string().trim().min(1).max(500).optional(),
+      D: z.string().trim().min(1).max(500).optional(),
+    })
+    .optional(),
 });
 
 export const walletLinkVerifySchema = z.object({
