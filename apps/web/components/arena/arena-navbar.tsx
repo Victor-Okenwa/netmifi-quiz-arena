@@ -1,9 +1,8 @@
 import { LogoIcon } from "@/assets/netmifi";
 import { ProfileMenuPopover } from "@/components/arena/profile-menu-popover";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
-import { GraduationCap, PlusCircle, Swords, Trophy } from "lucide-react";
+import { PlusCircle, Swords, Trophy } from "lucide-react";
 import Link from "next/link";
 
 interface ArenaNavbarProps {
@@ -58,12 +57,6 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="hidden gap-1.5 sm:inline-flex">
-            <GraduationCap className="size-3.5 text-primary" />
-            {profile.universityShortCode ?? "UNI"} •{" "}
-            {profile.academicLevel ?? "200L"}
-          </Badge>
-
           <ProfileMenuPopover profile={profile} />
         </div>
       </div>
