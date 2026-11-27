@@ -2,12 +2,12 @@ import { LogoIcon } from "@/assets/netmifi";
 import { ProfileMenuPopover } from "@/components/arena/profile-menu-popover";
 import { Button } from "@/components/ui/button";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
-import { PlusCircle, Swords, Trophy } from "lucide-react";
+import { Brain, PlusCircle, Swords, Trophy } from "lucide-react";
 import Link from "next/link";
 
 interface ArenaNavbarProps {
   profile: AuthenticatedStudentProfile;
-  activeTab?: "lobby" | "new" | "leaderboard";
+  activeTab?: "lobby" | "new" | "practice" | "leaderboard";
 }
 
 export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
@@ -43,6 +43,16 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
                 New Battle
               </Button>
             </Link>
+            <Link href="/arena/practice">
+              <Button
+                variant={activeTab === "practice" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+              >
+                <Brain className="size-4 text-primary" />
+                Practice Drill
+              </Button>
+            </Link>
             <Link href="/leaderboard">
               <Button
                 variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
@@ -67,7 +77,7 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
           <Button
             variant={activeTab === "lobby" ? "secondary" : "ghost"}
             size="sm"
-            className="w-full gap-1.5 text-xs"
+            className="w-full gap-1 px-1.5 text-xs"
           >
             <Swords className="size-3.5 text-primary" />
             Lobby
@@ -77,20 +87,30 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
           <Button
             variant={activeTab === "new" ? "secondary" : "ghost"}
             size="sm"
-            className="w-full gap-1.5 text-xs"
+            className="w-full gap-1 px-1.5 text-xs"
           >
             <PlusCircle className="size-3.5 text-primary" />
-            New Battle
+            Battle
+          </Button>
+        </Link>
+        <Link href="/arena/practice" className="flex-1">
+          <Button
+            variant={activeTab === "practice" ? "secondary" : "ghost"}
+            size="sm"
+            className="w-full gap-1 px-1.5 text-xs"
+          >
+            <Brain className="size-3.5 text-primary" />
+            Practice
           </Button>
         </Link>
         <Link href="/leaderboard" className="flex-1">
           <Button
             variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
             size="sm"
-            className="w-full gap-1.5 text-xs"
+            className="w-full gap-1 px-1.5 text-xs"
           >
             <Trophy className="size-3.5 text-primary" />
-            Rankings
+            Ranks
           </Button>
         </Link>
       </nav>

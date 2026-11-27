@@ -16,8 +16,8 @@
 | **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ✅ **COMPLETED** |
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
-| **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⬜ **PENDING** |
+| **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ✅ **COMPLETED** |
+| **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⏳ **NEXT UP** |
 | **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⬜ **PENDING** |
 | **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⬜ **PENDING** |
 | **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⬜ **PENDING** |
@@ -179,21 +179,21 @@ Implement the server-authoritative quiz battle engine and real-time multiplayer 
 ---
 
 ## Milestone 6: Post-Battle Diagnosis, Targeted Practice & Rematch Loop
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH`**) so every battle turns competition into measurable academic improvement.
 
 ### Scope & Deliverables
-- [ ] **Post-Battle Diagnosis Engine & UI (`/arena/battle/[battleId]/results`)**:
-  - **Winner & Score Summary**: Final scores, accuracy percentage, and average response time comparison.
-  - **Topic-by-Topic Breakdown**: Visual accuracy cards per topic (e.g., *Arrays: 100% Strong*, *Recursion: 25% Needs Practice*).
-  - **Question Review Accordion**: Every battle question with the student's selected answer, the verified correct answer, and the full academic explanation.
-- [ ] **Targeted Practice Mode (`/arena/practice`)**:
-  - Automatically generates a personalized practice drill targeting the weak topic(s) identified in the battle diagnosis.
-  - Immediate explanation feedback after each practice question and tracking of accuracy improvement.
-- [ ] **One-Click Rematch Flow**:
-  - "Challenge Opponent to Rematch" button on the diagnosis/practice completion screen that spawns a new battle in the same course/topic and notifies the opponent via Supabase Realtime.
+- [x] **Post-Battle Diagnosis Engine & UI (`/arena/battle/[battleId]` & `/arena/battle/[battleId]/results`)**:
+  - **Winner & Score Summary**: Final scores, accuracy percentage, and average response time comparison with per-participant shadcn Tabs (`Slot 1` & `Slot 2`).
+  - **Topic-by-Topic Breakdown**: Visual accuracy cards per topic (`Strong` vs. `Review`) with direct **"Practice Weak Topic"** links.
+  - **Question Review List**: Every battle question with the student's selected answer, the verified correct answer, and the full academic explanation.
+- [x] **Targeted Practice Mode (`/arena/practice` & `POST /api/practice/complete`)**:
+  - Generates a personalized practice drill targeting the weak topic(s) identified in the battle diagnosis (or any selected course/topic).
+  - Immediate explanation feedback after each practice question, accuracy tracking, and XP rewards (`+25` to `+50 XP`).
+- [x] **One-Click Rematch Flow (`POST /api/battles/[battleId]/rematch`)**:
+  - "Challenge Opponent to Rematch" button on the diagnosis and practice completion screens that spawns a new battle in the same course/topic and notifies the opponent via Supabase Realtime (`rematch_offered` broadcast banner).
 
 ### Acceptance Criteria
 - After completing a battle, both the winner and loser see their topic-level diagnosis, can launch a targeted practice session on their weakest topic, and can initiate a rematch in one click.
@@ -201,7 +201,7 @@ Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH
 ---
 
 ## Milestone 7: ElevenLabs Voice-Enabled Quiz & Winner Announcements
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so questions can be read aloud during battles and battle outcomes are announced by an AI quiz host without duplicate generation calls.

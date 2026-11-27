@@ -23,12 +23,14 @@ import type { OptionKey, PublicBattleQuestion } from "@repo/types";
 import {
   Award,
   BookOpen,
+  Brain,
   CheckCircle2,
   Clock,
   Eye,
   Loader2,
   Lock,
   PlusCircle,
+  RotateCcw,
   Swords,
   Target,
   Trophy,
@@ -36,6 +38,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -101,6 +104,7 @@ export function LiveBattleQuiz({
   battleId,
   currentUserId,
 }: LiveBattleQuizProps) {
+  const router = useRouter();
   const [viewerRole, setViewerRole] = useState<"participant" | "spectator">(
     "participant"
   );
@@ -121,6 +125,12 @@ export function LiveBattleQuiz({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState<OptionKey | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingRematch, setIsCreatingRematch] = useState(false);
+  const [rematchOffer, setRematchOffer] = useState<{
+    rematchBattleId: string;
+    inviteCode: string;
+    challengerName: string;
+  } | null>(null);
 
   const [questionSecondsLeft, setQuestionSecondsLeft] = useState<number>(15);
   const questionStartedAtRef = useRef<number>(Date.now());
@@ -218,10 +228,6 @@ export function LiveBattleQuiz({
   useEffect(() => {
     void fetchArenaState();
 
-    if (isBattleCompleted) {
-      return;
-    }
-
     let isMounted = true;
 
     try {
@@ -233,6 +239,32 @@ export function LiveBattleQuiz({
             void fetchArenaState();
           }
         })
+        .on(
+          "broadcast",
+          { event: "rematch_offered" },
+          (msg: {
+            payload?: {
+              rematchBattleId?: string;
+              inviteCode?: string;
+              challengerName?: string;
+              challengerUserId?: string;
+            };
+          }) => {
+            if (!isMounted || !msg.payload?.rematchBattleId) return;
+            if (msg.payload.challengerUserId === currentUserId) return;
+            setRematchOffer({
+              rematchBattleId: msg.payload.rematchBattleId,
+              inviteCode: msg.payload.inviteCode ?? "",
+              challengerName: msg.payload.challengerName ?? "Opponent",
+            });
+            toast.info(
+              `${msg.payload.challengerName ?? "Opponent"} challenged you to a rematch!`,
+              {
+                description: "Click Accept Rematch on the results card to join.",
+              }
+            );
+          }
+        )
         .subscribe();
 
       channelRef.current = channel;
@@ -240,15 +272,17 @@ export function LiveBattleQuiz({
       // Fallback to polling
     }
 
-    const interval = setInterval(() => {
-      if (isMounted && !isSubmittingRef.current) {
-        void fetchArenaState();
-      }
-    }, 2500);
+    const interval = !isBattleCompleted
+      ? setInterval(() => {
+          if (isMounted && !isSubmittingRef.current) {
+            void fetchArenaState();
+          }
+        }, 2500)
+      : null;
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       if (channelRef.current) {
         try {
           const supabase = createBrowserSupabaseClient();
@@ -259,7 +293,52 @@ export function LiveBattleQuiz({
         channelRef.current = null;
       }
     };
-  }, [battleId, fetchArenaState, isBattleCompleted]);
+  }, [battleId, currentUserId, fetchArenaState, isBattleCompleted]);
+
+  async function handleChallengeRematch() {
+    setIsCreatingRematch(true);
+    try {
+      const res = await fetch(`/api/battles/${battleId}/rematch`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        rematchBattleId?: string;
+        inviteCode?: string;
+        challengerName?: string;
+        redirectTo?: string;
+      };
+
+      if (!res.ok || !data.rematchBattleId) {
+        toast.error("Could not create rematch room", {
+          description: data.error ?? "Please try again.",
+        });
+        setIsCreatingRematch(false);
+        return;
+      }
+
+      if (channelRef.current) {
+        void channelRef.current.send({
+          type: "broadcast",
+          event: "rematch_offered",
+          payload: {
+            rematchBattleId: data.rematchBattleId,
+            inviteCode: data.inviteCode,
+            challengerName: data.challengerName ?? "Opponent",
+            challengerUserId: currentUserId,
+          },
+        });
+      }
+
+      toast.success("Rematch room created!", {
+        description: `Invite code: ${data.inviteCode}. Redirecting to room...`,
+      });
+      router.push(data.redirectTo ?? `/arena/battle/${data.rematchBattleId}`);
+    } catch {
+      toast.error("Network error creating rematch room.");
+      setIsCreatingRematch(false);
+    }
+  }
 
   function broadcastArenaUpdate() {
     if (channelRef.current) {
@@ -581,6 +660,33 @@ export function LiveBattleQuiz({
           </CardHeader>
 
           <CardContent className="min-w-0 space-y-6">
+            {/* Live Rematch Invitation Banner when opponent challenges */}
+            {rematchOffer ? (
+              <div className="flex flex-col items-center justify-between gap-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 p-4 sm:flex-row">
+                <div className="min-w-0 space-y-1 text-center sm:text-left">
+                  <Badge className="bg-emerald-600 font-game text-[10px] text-white hover:bg-emerald-600">
+                    REMATCH CHALLENGE RECEIVED
+                  </Badge>
+                  <p className="font-game text-sm font-bold text-foreground">
+                    {rematchOffer.challengerName} invited you to a rematch!
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Room code: {rematchOffer.inviteCode} • Join Slot 2 in one
+                    click.
+                  </p>
+                </div>
+                <Link
+                  href={`/arena/battle/${rematchOffer.rematchBattleId}`}
+                  className="w-full shrink-0 sm:w-auto"
+                >
+                  <Button className="w-full gap-2 bg-emerald-600 font-game text-xs font-bold text-white hover:bg-emerald-700 sm:w-auto">
+                    <Swords className="size-4" />
+                    Accept Rematch
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
+
             {/* shadcn Tabs to switch between Player 1 and Player 2 Match Summaries */}
             <Tabs defaultValue={defaultTabValue} className="w-full min-w-0">
               <TabsList>
@@ -700,33 +806,49 @@ export function LiveBattleQuiz({
                           {diag.topicBreakdowns.map((tb) => (
                             <div
                               key={tb.topicId}
-                              className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/20 p-3.5"
+                              className="flex min-w-0 flex-col justify-between gap-2.5 rounded-xl border border-border bg-muted/20 p-3.5"
                             >
-                              <div className="min-w-0 flex-1 pr-2">
-                                <p className="font-game text-xs font-bold break-words text-foreground">
-                                  {tb.topicName}
-                                </p>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                  {tb.correctCount} / {tb.totalQuestions}{" "}
-                                  Correct •{" "}
-                                  {(tb.averageResponseTimeMs / 1000).toFixed(1)}
-                                  s avg
-                                </p>
+                              <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <p className="font-game text-xs font-bold break-words text-foreground">
+                                    {tb.topicName}
+                                  </p>
+                                  <p className="mt-0.5 text-xs text-muted-foreground">
+                                    {tb.correctCount} / {tb.totalQuestions}{" "}
+                                    Correct •{" "}
+                                    {(tb.averageResponseTimeMs / 1000).toFixed(
+                                      1
+                                    )}
+                                    s avg
+                                  </p>
+                                </div>
+
+                                <Badge
+                                  variant={
+                                    tb.needsPractice ? "secondary" : "default"
+                                  }
+                                  className={
+                                    tb.needsPractice
+                                      ? "shrink-0 text-xs"
+                                      : "shrink-0 bg-emerald-600 text-xs text-white hover:bg-emerald-600"
+                                  }
+                                >
+                                  {tb.accuracyPercent}%{" "}
+                                  {tb.needsPractice ? "• Review" : "• Strong"}
+                                </Badge>
                               </div>
 
-                              <Badge
-                                variant={
-                                  tb.needsPractice ? "secondary" : "default"
-                                }
-                                className={
-                                  tb.needsPractice
-                                    ? "shrink-0 text-xs"
-                                    : "shrink-0 bg-emerald-600 text-xs text-white hover:bg-emerald-600"
-                                }
-                              >
-                                {tb.accuracyPercent}%{" "}
-                                {tb.needsPractice ? "• Review" : "• Strong"}
-                              </Badge>
+                              <div className="flex items-center justify-end border-t border-border/50 pt-2">
+                                <Link
+                                  href={`/arena/practice?courseId=${battleMeta.courseId}&topicId=${tb.topicId}&battleId=${battleId}`}
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:underline"
+                                >
+                                  <Brain className="size-3.5" />
+                                  {tb.needsPractice
+                                    ? "Practice Weak Topic"
+                                    : "Drill Topic"}
+                                </Link>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -837,24 +959,61 @@ export function LiveBattleQuiz({
           </CardContent>
 
           <CardFooter className="flex flex-col items-stretch justify-center gap-2.5 border-t border-border pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            {viewerRole === "participant" ? (
+              <Button
+                type="button"
+                onClick={() => void handleChallengeRematch()}
+                disabled={isCreatingRematch}
+                className="w-full gap-2 font-game text-xs font-bold sm:w-auto"
+              >
+                {isCreatingRematch ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="size-4" />
+                )}
+                Challenge Opponent to Rematch
+              </Button>
+            ) : null}
+
+            <Link
+              href={`/arena/practice?courseId=${battleMeta.courseId}${
+                completedSummary?.myDiagnosis?.recommendedPracticeTopicIds &&
+                completedSummary.myDiagnosis.recommendedPracticeTopicIds
+                  .length > 0
+                  ? `&topicId=${completedSummary.myDiagnosis.recommendedPracticeTopicIds.join(",")}`
+                  : ""
+              }&battleId=${battleId}`}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                variant="secondary"
+                className="w-full gap-2 font-game text-xs font-bold sm:w-auto"
+              >
+                <Brain className="size-4 text-primary" />
+                Practice Weak Topics
+              </Button>
+            </Link>
+
             <Link
               href={`/arena/new?courseId=${battleMeta.courseId}`}
               className="w-full sm:w-auto"
             >
-              <Button className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" className="w-full gap-2 sm:w-auto">
                 <PlusCircle className="size-4" />
-                Play Another Battle
+                New Battle
               </Button>
             </Link>
+
             <Link href="/leaderboard" className="w-full sm:w-auto">
               <Button variant="outline" className="w-full gap-2 sm:w-auto">
                 <Award className="size-4 text-primary" />
-                View Leaderboard
+                Leaderboard
               </Button>
             </Link>
+
             <Link href="/arena" className="w-full sm:w-auto">
               <Button variant="ghost" className="w-full sm:w-auto">
-                Return to Arena Lobby
+                Arena Lobby
               </Button>
             </Link>
           </CardFooter>

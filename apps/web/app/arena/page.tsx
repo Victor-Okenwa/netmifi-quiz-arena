@@ -497,14 +497,23 @@ export default async function ArenaPage() {
                     </div>
                   </CardContent>
 
-                  <CardFooter className="border-t border-border/60 pt-4">
+                  <CardFooter className="grid grid-cols-2 gap-2 border-t border-border/60 pt-4">
                     <Link
                       href={`/arena/new?courseId=${course.id}`}
                       className="w-full"
                     >
-                      <Button variant="outline" className="w-full gap-2">
-                        <Swords className="size-4 text-primary" />
-                        Battle in {course.code}
+                      <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                        <Swords className="size-3.5 text-primary" />
+                        Battle
+                      </Button>
+                    </Link>
+                    <Link
+                      href={`/arena/practice?courseId=${course.id}`}
+                      className="w-full"
+                    >
+                      <Button variant="secondary" size="sm" className="w-full gap-1.5 text-xs">
+                        <BookOpen className="size-3.5 text-primary" />
+                        Practice
                       </Button>
                     </Link>
                   </CardFooter>
