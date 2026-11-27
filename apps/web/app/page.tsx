@@ -1,4 +1,5 @@
 import { LogoIcon, MascotIcon } from "@/assets/netmifi";
+import { LandingNavbar } from "@/components/arena/landing-navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,50 +27,7 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       {/* Top Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <LogoIcon className="h-8 w-8" />
-            <span className="font-game text-xl font-bold tracking-tight text-foreground">
-              NETMIFI <span className="text-primary">QUIZ ARENA</span>
-            </span>
-          </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-            <a
-              href="#modes"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Game Modes
-            </a>
-            <a
-              href="#leaderboard"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Leaderboard
-            </a>
-            <a
-              href="#rewards"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Tournaments
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <a href="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </a>
-            <a href="/register">
-              <Button size="sm">
-                <Gamepad2 className="size-4" />
-                Play Now
-              </Button>
-            </a>
-          </div>
-        </div>
-      </header>
-      <div className="h-16 w-full shrink-0" aria-hidden="true" />
+      <LandingNavbar />
 
       <main className="flex-1">
         {/* Hero Section */}
