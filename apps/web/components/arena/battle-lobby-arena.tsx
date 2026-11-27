@@ -12,6 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import {
+  getInjectedSolanaProvider,
+  sendEscrowStakeDeposit,
+} from "@/lib/solana/wallet-client";
 import { formatSol } from "@repo/validators";
 import {
   CheckCircle2,
@@ -68,7 +72,7 @@ const LOCK_THRESHOLD_SECONDS = 10;
 
 function areParticipantsEqual(
   a: LobbyParticipant[],
-  b: LobbyParticipant[]
+  b: LobbyParticipant[],
 ): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -141,18 +145,18 @@ export function BattleLobbyArena({
     useState<LobbyParticipant[]>(initialParticipants);
   const [battleStatus, setBattleStatus] = useState<string>(initialStatus);
   const [countdownEndsAt, setCountdownEndsAt] = useState<string | null>(
-    initialCountdownEndsAt
+    initialCountdownEndsAt,
   );
 
   // Permanent latch: once the match enters ACTIVE or COMPLETED, never unmount LiveBattleQuiz
   const [matchStartedLatch, setMatchStartedLatch] = useState<boolean>(
-    initialStatus === "ACTIVE" || initialStatus === "COMPLETED"
+    initialStatus === "ACTIVE" || initialStatus === "COMPLETED",
   );
 
   const clockOffsetMsRef = useRef<number>(
     Number.isNaN(Date.parse(initialServerNow))
       ? 0
-      : Date.parse(initialServerNow) - Date.now()
+      : Date.parse(initialServerNow) - Date.now(),
   );
 
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(
@@ -161,10 +165,10 @@ export function BattleLobbyArena({
       const diff = Math.ceil(
         (Date.parse(initialCountdownEndsAt) -
           (Date.now() + clockOffsetMsRef.current)) /
-          1000
+          1000,
       );
       return Math.max(0, diff);
-    }
+    },
   );
 
   const [isTogglingReady, setIsTogglingReady] = useState(false);
@@ -173,7 +177,7 @@ export function BattleLobbyArena({
   const [isDepositingEscrow, setIsDepositingEscrow] = useState(false);
   const [spectatorCount, setSpectatorCount] = useState<number>(0);
   const [escrowPdaAddress, setEscrowPdaAddress] = useState<string | null>(
-    onChainBattlePda
+    onChainBattlePda,
   );
 
   const prevParticipantsRef = useRef<LobbyParticipant[]>(initialParticipants);
@@ -182,7 +186,7 @@ export function BattleLobbyArena({
   const announcedStartRef = useRef(false);
   const preloadedStartAudioRef = useRef<HTMLAudioElement | null>(null);
   const preloadedStartSpeechTextRef = useRef<string>(
-    "Battle started! Test your wit and conquer the arena. Good luck!"
+    "Battle started! Test your wit and conquer the arena. Good luck!",
   );
   const channelRef = useRef<ReturnType<
     ReturnType<typeof createBrowserSupabaseClient>["channel"]
@@ -230,7 +234,7 @@ export function BattleLobbyArena({
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           window.speechSynthesis.cancel();
           window.speechSynthesis.speak(
-            new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current)
+            new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current),
           );
         }
       });
@@ -241,7 +245,7 @@ export function BattleLobbyArena({
       try {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(
-          new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current)
+          new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current),
         );
       } catch {
         // Ignore if blocked by browser autoplay policy
@@ -291,7 +295,7 @@ export function BattleLobbyArena({
         setCountdownEndsAt((prev) =>
           prev !== data.battle!.countdownEndsAt
             ? data.battle!.countdownEndsAt
-            : prev
+            : prev,
         );
       }
 
@@ -331,17 +335,14 @@ export function BattleLobbyArena({
         }
       }
     },
-    [currentUserId]
+    [currentUserId],
   );
 
   const fetchLatestSnapshot = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/battles/${battleId}?trackSpectator=true`,
-        {
-          cache: "no-store",
-        }
-      );
+      const res = await fetch(`/api/battles/${battleId}?trackSpectator=true`, {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = (await res.json()) as {
         battle?: { status: string; countdownEndsAt: string | null };
@@ -463,9 +464,7 @@ export function BattleLobbyArena({
     battleStatus === "ACTIVE" ||
     battleStatus === "COMPLETED"
   ) {
-    return (
-      <LiveBattleQuiz battleId={battleId} currentUserId={currentUserId} />
-    );
+    return <LiveBattleQuiz battleId={battleId} currentUserId={currentUserId} />;
   }
 
   const isCountdownLocked =
@@ -477,11 +476,36 @@ export function BattleLobbyArena({
     if (!myParticipant || isDepositingEscrow) return;
     setIsDepositingEscrow(true);
     try {
+      // Fetch escrow details to retrieve the authority/vault destination address
+      const escrowRes = await fetch(`/api/battles/${battleId}/escrow`, {
+        cache: "no-store",
+      });
+      const escrowInfo = (await escrowRes.json()) as {
+        escrow?: { authorityPublicKey?: string; battleEscrowPda?: string };
+      };
+      const vaultAuthority =
+        escrowInfo.escrow?.authorityPublicKey ??
+        escrowInfo.escrow?.battleEscrowPda;
+
+      let clientTxSig: string | undefined = undefined;
+      const provider = getInjectedSolanaProvider();
+
+      // If user has a real browser wallet (Phantom/Solflare), execute the deposit on Solana Devnet!
+      if (provider && vaultAuthority && stakeAmountLamports > 0) {
+        toast.info("Please confirm the stake deposit in your Solana wallet...");
+        clientTxSig = await sendEscrowStakeDeposit({
+          provider,
+          authorityPublicKey: vaultAuthority,
+          stakeAmountLamports,
+        });
+      }
+
       const res = await fetch(`/api/battles/${battleId}/escrow`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "deposit",
+          txSignature: clientTxSig,
           autoLinkDemoWallet: true,
         }),
       });
@@ -512,8 +536,8 @@ export function BattleLobbyArena({
                 depositConfirmed: true,
                 depositTxSignature: data.txSignature ?? null,
               }
-            : p
-        )
+            : p,
+        ),
       );
 
       broadcastLobbyUpdate();
@@ -523,8 +547,12 @@ export function BattleLobbyArena({
       toast.success("Stake Deposited into Solana Devnet Escrow!", {
         description: `Tx: ${data.txSignature?.slice(0, 12)}... • You can now Lock In Ready.`,
       });
-    } catch {
-      toast.error("Network error while depositing stake.");
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Network error while depositing stake.";
+      toast.error("Escrow deposit failed", { description: msg });
     } finally {
       setIsDepositingEscrow(false);
     }
@@ -729,7 +757,10 @@ export function BattleLobbyArena({
                   <ShieldCheck className="size-3.5" />
                   SOLANA DEVNET ESCROW VAULT
                 </Badge>
-                <Badge variant="outline" className="font-mono text-xs text-primary">
+                <Badge
+                  variant="outline"
+                  className="font-mono text-xs text-primary"
+                >
                   POT: {formatSol(stakeAmountLamports * 2)} SOL
                 </Badge>
               </div>
@@ -750,7 +781,8 @@ export function BattleLobbyArena({
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:underline"
                   >
-                    {escrowPdaAddress.slice(0, 10)}...{escrowPdaAddress.slice(-8)}
+                    {escrowPdaAddress.slice(0, 10)}...
+                    {escrowPdaAddress.slice(-8)}
                     <ExternalLink className="size-3" />
                   </a>
                 </p>
@@ -793,7 +825,11 @@ export function BattleLobbyArena({
                 )
               ) : (
                 <Link href="/settings/wallet">
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs"
+                  >
                     <Wallet className="size-3.5 text-primary" />
                     Wallet Settings
                   </Button>

@@ -54,7 +54,7 @@ interface LiveBattleQuizProps {
 
 function areParticipantProgressEqual(
   a: ArenaParticipantState[],
-  b: ArenaParticipantState[]
+  b: ArenaParticipantState[],
 ): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -84,7 +84,7 @@ function areStringArraysEqual(a: string[], b: string[]): boolean {
 
 function areSpectatorFeedsEqual(
   a: Record<string, SpectatorAnsweredQuestionItem[]>,
-  b: Record<string, SpectatorAnsweredQuestionItem[]>
+  b: Record<string, SpectatorAnsweredQuestionItem[]>,
 ): boolean {
   const keysA = Object.keys(a);
   const keysB = Object.keys(b);
@@ -111,14 +111,14 @@ export function LiveBattleQuiz({
 }: LiveBattleQuizProps) {
   const router = useRouter();
   const [viewerRole, setViewerRole] = useState<"participant" | "spectator">(
-    "participant"
+    "participant",
   );
   const [questions, setQuestions] = useState<PublicBattleQuestion[]>([]);
   const [battleMeta, setBattleMeta] = useState<
     SanitizedBattleArenaState["battle"] | null
   >(null);
   const [myAnsweredQuestionIds, setMyAnsweredQuestionIds] = useState<string[]>(
-    []
+    [],
   );
   const [participants, setParticipants] = useState<ArenaParticipantState[]>([]);
   const [spectatorFeeds, setSpectatorFeeds] = useState<
@@ -178,20 +178,20 @@ export function LiveBattleQuiz({
       setMyAnsweredQuestionIds((prev) =>
         areStringArraysEqual(prev, data.myAnsweredQuestionIds)
           ? prev
-          : data.myAnsweredQuestionIds
+          : data.myAnsweredQuestionIds,
       );
 
       setParticipants((prev) =>
         areParticipantProgressEqual(prev, data.participants)
           ? prev
-          : data.participants
+          : data.participants,
       );
 
       if (data.spectatorFeeds) {
         setSpectatorFeeds((prev) =>
           areSpectatorFeedsEqual(prev, data.spectatorFeeds)
             ? prev
-            : data.spectatorFeeds
+            : data.spectatorFeeds,
         );
       }
 
@@ -205,7 +205,7 @@ export function LiveBattleQuiz({
           preloadedWinnerAudioUrlRef.current =
             data.completedSummary.winnerAnnouncementAudioUrl;
           const pre = new Audio(
-            data.completedSummary.winnerAnnouncementAudioUrl
+            data.completedSummary.winnerAnnouncementAudioUrl,
           );
           pre.preload = "auto";
           pre.load();
@@ -280,10 +280,11 @@ export function LiveBattleQuiz({
             toast.info(
               `${msg.payload.challengerName ?? "Opponent"} challenged you to a rematch!`,
               {
-                description: "Click Accept Rematch on the results card to join.",
-              }
+                description:
+                  "Click Accept Rematch on the results card to join.",
+              },
             );
-          }
+          },
         )
         .subscribe();
 
@@ -391,7 +392,7 @@ export function LiveBattleQuiz({
 
       const elapsedMs = Math.max(
         250,
-        Date.now() - questionStartedAtRef.current
+        Date.now() - questionStartedAtRef.current,
       );
 
       try {
@@ -420,7 +421,7 @@ export function LiveBattleQuiz({
         setMyAnsweredQuestionIds((prev) =>
           prev.includes(params.questionId)
             ? prev
-            : [...prev, params.questionId]
+            : [...prev, params.questionId],
         );
         setSelectedKey(null);
 
@@ -433,7 +434,7 @@ export function LiveBattleQuiz({
         setIsSubmitting(false);
       }
     },
-    [battleId, fetchArenaState, viewerRole]
+    [battleId, fetchArenaState, viewerRole],
   );
 
   const submitAnswerRef = useRef(submitAnswer);
@@ -442,11 +443,7 @@ export function LiveBattleQuiz({
   }, [submitAnswer]);
 
   useEffect(() => {
-    if (
-      !currentQuestionId ||
-      isBattleCompleted ||
-      viewerRole === "spectator"
-    ) {
+    if (!currentQuestionId || isBattleCompleted || viewerRole === "spectator") {
       return;
     }
 
@@ -459,12 +456,10 @@ export function LiveBattleQuiz({
 
     const timer = setInterval(() => {
       const elapsedSeconds = Math.floor(
-        (Date.now() - questionStartedAtRef.current) / 1000
+        (Date.now() - questionStartedAtRef.current) / 1000,
       );
       const remaining = Math.max(0, currentQuestionTimeLimit - elapsedSeconds);
-      setQuestionSecondsLeft((prev) =>
-        prev !== remaining ? remaining : prev
-      );
+      setQuestionSecondsLeft((prev) => (prev !== remaining ? remaining : prev));
 
       if (
         remaining === 0 &&
@@ -493,9 +488,7 @@ export function LiveBattleQuiz({
       <Card className="border-border bg-card py-16 text-center shadow-sm">
         <CardContent className="flex flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="font-game text-sm font-bold">
-            LOADING BATTLE ARENA...
-          </p>
+          <p className="font-game text-sm font-bold">LOADING BATTLE ARENA...</p>
         </CardContent>
       </Card>
     );
@@ -532,8 +525,7 @@ export function LiveBattleQuiz({
             battleMeta.stakeAmountLamports > 0 ? (
               <Badge variant="outline" className="gap-1 text-[10px]">
                 <Coins className="size-3 text-primary" />
-                {formatSol(battleMeta.stakeAmountLamports)}{" "}
-                SOL Stake
+                {formatSol(battleMeta.stakeAmountLamports)} SOL Stake
               </Badge>
             ) : null}
           </div>
@@ -570,7 +562,10 @@ export function LiveBattleQuiz({
                     {playerOne?.displayName ?? "Challenger"}
                   </p>
                   {playerOne?.userId === currentUserId ? (
-                    <Badge variant="default" className="shrink-0 px-1.5 py-0 text-[9px]">
+                    <Badge
+                      variant="default"
+                      className="shrink-0 px-1.5 py-0 text-[9px]"
+                    >
                       You
                     </Badge>
                   ) : null}
@@ -586,8 +581,8 @@ export function LiveBattleQuiz({
                         100,
                         Math.round(
                           ((playerOne?.answeredCount ?? 0) / totalQuestions) *
-                            100
-                        )
+                            100,
+                        ),
                       )}%`,
                     }}
                   />
@@ -623,7 +618,10 @@ export function LiveBattleQuiz({
               <div className="min-w-0 flex-1 text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   {playerTwo?.userId === currentUserId ? (
-                    <Badge variant="default" className="shrink-0 px-1.5 py-0 text-[9px]">
+                    <Badge
+                      variant="default"
+                      className="shrink-0 px-1.5 py-0 text-[9px]"
+                    >
                       You
                     </Badge>
                   ) : null}
@@ -642,8 +640,8 @@ export function LiveBattleQuiz({
                         100,
                         Math.round(
                           ((playerTwo?.answeredCount ?? 0) / totalQuestions) *
-                            100
-                        )
+                            100,
+                        ),
                       )}%`,
                     }}
                   />
@@ -678,7 +676,7 @@ export function LiveBattleQuiz({
                   : viewerRole === "spectator"
                     ? `${
                         participants.find(
-                          (p) => p.userId === battleMeta.winnerUserId
+                          (p) => p.userId === battleMeta.winnerUserId,
                         )?.displayName ?? "WINNER"
                       } WON THE BATTLE!`
                     : battleMeta.winnerUserId === currentUserId
@@ -722,13 +720,13 @@ export function LiveBattleQuiz({
                         } points!`
                       : `Congratulations! ${
                           participants.find(
-                            (p) => p.userId === battleMeta.winnerUserId
+                            (p) => p.userId === battleMeta.winnerUserId,
                           )?.displayName ?? "The champion"
                         } has won the ${
                           battleMeta.courseCode
                         } quiz battle with ${
                           participants.find(
-                            (p) => p.userId === battleMeta.winnerUserId
+                            (p) => p.userId === battleMeta.winnerUserId,
                           )?.score ?? 0
                         } points!`
                   }
@@ -744,32 +742,46 @@ export function LiveBattleQuiz({
               <div className="flex flex-col justify-between gap-4 rounded-xl border-2 border-primary/40 bg-primary-light/25 p-4 sm:flex-row sm:items-center">
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="default" className="gap-1 font-game text-[11px]">
-                      <ShieldCheck className="size-3.5" />
-                      SOLANA DEVNET ESCROW SETTLED
-                    </Badge>
-                    <Badge variant="outline" className="gap-1 font-mono text-xs text-primary">
+                    {completedSummary?.settlementTxSignature ? (
+                      <Badge
+                        variant="default"
+                        className="gap-1 font-game text-[11px]"
+                      >
+                        <ShieldCheck className="size-3.5" />
+                        SOLANA DEVNET ESCROW SETTLED
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 font-game text-[11px]"
+                      >
+                        <Clock className="size-3.5" />
+                        ESCROW SETTLEMENT PENDING
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="outline"
+                      className="gap-1 font-mono text-xs text-primary"
+                    >
                       <Coins className="size-3.5 text-primary" />
                       {formatSol(
                         completedSummary?.totalPotLamports ??
-                          battleMeta.stakeAmountLamports * 2
+                          battleMeta.stakeAmountLamports * 2,
                       )}{" "}
                       SOL POT
                     </Badge>
                   </div>
                   <p className="text-xs font-semibold text-foreground">
-                    {battleMeta.isDraw
-                      ? "50/50 Draw Split executed by the authorized backend settlement authority."
-                      : `Winner payout automatically released to ${
-                          participants.find(
-                            (p) => p.userId === battleMeta.winnerUserId
-                          )?.displayName ?? "Winner"
-                        }'s linked Solana wallet.`}
+                    {completedSummary?.settlementTxSignature
+                      ? battleMeta.isDraw
+                        ? "50/50 Draw Split executed by the authorized backend settlement authority."
+                        : "Winner payout automatically released to the winner's linked Solana wallet."
+                      : "Escrow settlement is finalizing on Solana Devnet."}
                   </p>
-                  {completedSummary?.onChainBattlePda ??
-                  battleMeta.onChainBattlePda ? (
+                  {(completedSummary?.onChainBattlePda ??
+                  battleMeta.onChainBattlePda) ? (
                     <p className="truncate font-mono text-[11px] text-muted-foreground">
-                      Escrow PDA:{" "}
+                      Escrow Vault:{" "}
                       {completedSummary?.onChainBattlePda ??
                         battleMeta.onChainBattlePda}
                     </p>
@@ -875,8 +887,7 @@ export function LiveBattleQuiz({
                   completedSummary?.allParticipantDiagnoses?.[
                     participant.userId
                   ] ?? null;
-                const answeredFeed =
-                  spectatorFeeds[participant.userId] ?? [];
+                const answeredFeed = spectatorFeeds[participant.userId] ?? [];
 
                 return (
                   <TabsContent
@@ -900,7 +911,7 @@ export function LiveBattleQuiz({
                             Math.round(
                               (participant.correctAnswersCount /
                                 totalQuestions) *
-                                100
+                                100,
                             )}
                           %
                         </p>
@@ -915,7 +926,7 @@ export function LiveBattleQuiz({
                             (diag?.averageResponseTimeMs ??
                               Math.round(
                                 participant.totalResponseTimeMs /
-                                  totalQuestions
+                                  totalQuestions,
                               )) / 1000
                           ).toFixed(1)}
                           s
@@ -953,7 +964,7 @@ export function LiveBattleQuiz({
                                     {tb.correctCount} / {tb.totalQuestions}{" "}
                                     Correct •{" "}
                                     {(tb.averageResponseTimeMs / 1000).toFixed(
-                                      1
+                                      1,
                                     )}
                                     s avg
                                   </p>
@@ -1224,11 +1235,10 @@ export function LiveBattleQuiz({
                 if (!participant) return null;
                 const tabKey =
                   participant.slotIndex === 1 ? "slot-1" : "slot-2";
-                const answeredFeed =
-                  spectatorFeeds[participant.userId] ?? [];
+                const answeredFeed = spectatorFeeds[participant.userId] ?? [];
                 const remainingCount = Math.max(
                   0,
-                  totalQuestions - answeredFeed.length
+                  totalQuestions - answeredFeed.length,
                 );
 
                 return (
@@ -1241,8 +1251,8 @@ export function LiveBattleQuiz({
                       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center">
                         <Loader2 className="mb-2 size-6 animate-spin text-primary" />
                         <p className="font-game text-sm font-bold break-words">
-                          {participant.displayName.toUpperCase()} IS ON
-                          QUESTION 1
+                          {participant.displayName.toUpperCase()} IS ON QUESTION
+                          1
                         </p>
                         <p className="mt-1 max-w-md text-xs text-muted-foreground">
                           Question 1 will appear here immediately as soon as{" "}
@@ -1341,7 +1351,10 @@ export function LiveBattleQuiz({
                             hidden until {participant.displayName} answers
                           </span>
                         </div>
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 text-[10px]"
+                        >
                           In Progress
                         </Badge>
                       </div>
@@ -1409,9 +1422,9 @@ export function LiveBattleQuiz({
                       Math.round(
                         (questionSecondsLeft /
                           currentQuestion.timeLimitSeconds) *
-                          100
-                      )
-                    )
+                          100,
+                      ),
+                    ),
                   )}%`,
                 }}
               />
@@ -1465,7 +1478,9 @@ export function LiveBattleQuiz({
           <CardFooter className="flex flex-col items-stretch justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Zap className="size-3.5 shrink-0 text-primary" />
-              <span>Faster correct answers earn up to +50 speed bonus points</span>
+              <span>
+                Faster correct answers earn up to +50 speed bonus points
+              </span>
             </p>
 
             <Button

@@ -9,6 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  getInjectedSolanaProvider,
+  uint8ArrayToBase64,
+} from "@/lib/solana/wallet-client";
 import { formatSol } from "@repo/validators";
 import {
   CheckCircle2,
@@ -49,41 +53,9 @@ interface RewardTransactionItem {
   explorerUrl: string;
 }
 
-interface InjectedSolanaProvider {
-  isPhantom?: boolean;
-  isSolflare?: boolean;
-  publicKey?: { toString: () => string } | null;
-  connect: (options?: {
-    onlyIfTrusted?: boolean;
-  }) => Promise<{ publicKey: { toString: () => string } }>;
-  disconnect?: () => Promise<void>;
-  signMessage?: (
-    message: Uint8Array,
-    display?: "utf8" | "hex"
-  ) => Promise<{ signature: Uint8Array } | Uint8Array>;
-}
-
-function getInjectedSolanaProvider(): InjectedSolanaProvider | undefined {
-  if (typeof window === "undefined") return undefined;
-  const win = window as unknown as {
-    phantom?: { solana?: InjectedSolanaProvider };
-    solflare?: InjectedSolanaProvider;
-    solana?: InjectedSolanaProvider;
-  };
-  return win.phantom?.solana ?? win.solana ?? win.solflare;
-}
-
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i] ?? 0);
-  }
-  return typeof window !== "undefined" ? window.btoa(binary) : "";
-}
-
 export function WalletLinkStudio() {
   const [linkedWallet, setLinkedWallet] = useState<LinkedWalletInfo | null>(
-    null
+    null,
   );
   const [transactions, setTransactions] = useState<RewardTransactionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -108,7 +80,7 @@ export function WalletLinkStudio() {
               walletAddress: data.linkedWallet?.walletAddress ?? null,
               balanceSol: data.linkedWallet?.balanceSol ?? null,
             },
-          })
+          }),
         );
       }
     } catch {

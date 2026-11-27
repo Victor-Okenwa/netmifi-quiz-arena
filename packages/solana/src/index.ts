@@ -9,3 +9,12 @@ export * from "./state";
 export * from "./instructions";
 export * from "./settlement";
 export * from "./errors";
+export {
+  Connection,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";

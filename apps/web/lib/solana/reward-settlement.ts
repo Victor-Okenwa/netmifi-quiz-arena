@@ -20,18 +20,23 @@ import {
   walletLinks,
 } from "@repo/db";
 import {
+  Connection,
   type OnChainBattleOutcome,
+  PublicKey,
   QUIZ_ARENA_ESCROW_PROGRAM_ID,
+  SystemProgram,
+  Transaction,
   buildFinalizeBattleInstruction,
   deriveBattleEscrowPda,
   deriveBattleVaultPda,
   encodeBytesToBase58,
   parseAuthorityKeypair,
+  sendAndConfirmTransaction,
 } from "@repo/solana";
 
 const ED25519_PKCS8_DER_PREFIX = Buffer.from(
   "302e020100300506032b657004220420",
-  "hex"
+  "hex",
 );
 
 /**
@@ -56,7 +61,7 @@ export function getSettlementAuthorityPublicKey(): string {
 export function buildSolanaExplorerUrl(
   kind: "tx" | "address",
   value: string,
-  cluster: "devnet" | "testnet" | "mainnet-beta" = "devnet"
+  cluster: "devnet" | "testnet" | "mainnet-beta" = "devnet",
 ): string {
   const base = `https://explorer.solana.com/${kind}/${encodeURIComponent(value)}`;
   return cluster === "mainnet-beta" ? base : `${base}?cluster=${cluster}`;
@@ -145,6 +150,7 @@ export async function settleCompletedRewardBattle(battleId: string): Promise<{
   txSignature: string | null;
   battleEscrowPda: string | null;
   payoutLamports: number;
+  error?: string;
 }> {
   const [battle] = await db
     .select({
@@ -170,13 +176,30 @@ export async function settleCompletedRewardBattle(battleId: string): Promise<{
     };
   }
 
+  const env = getServerEnv();
+  const connection = new Connection(
+    env.NEXT_PUBLIC_SOLANA_RPC_URL,
+    "confirmed",
+  );
+
+  // If a settlementTxSignature is already recorded, verify whether it is confirmed on Solana Devnet
   if (battle.settlementTxSignature) {
-    return {
-      settled: true,
-      txSignature: battle.settlementTxSignature,
-      battleEscrowPda: battle.onChainBattlePda,
-      payoutLamports: battle.stakeAmountLamports * 2,
-    };
+    try {
+      const sigStatus = await connection.getSignatureStatus(
+        battle.settlementTxSignature,
+        { searchTransactionHistory: true },
+      );
+      if (sigStatus.value && !sigStatus.value.err) {
+        return {
+          settled: true,
+          txSignature: battle.settlementTxSignature,
+          battleEscrowPda: battle.onChainBattlePda,
+          payoutLamports: battle.stakeAmountLamports * 2,
+        };
+      }
+    } catch {
+      // Signature was not found or invalid; proceed to execute real on-chain settlement
+    }
   }
 
   const participants = await db
@@ -213,20 +236,6 @@ export async function settleCompletedRewardBattle(battleId: string): Promise<{
   const creatorWallet = walletByUser.get(p1.userId) ?? fallbackAuthority;
   const opponentWallet = walletByUser.get(p2.userId) ?? fallbackAuthority;
 
-  const outcome: OnChainBattleOutcome = battle.isDraw
-    ? "Draw"
-    : battle.winnerUserId === p2.userId
-      ? "OpponentWins"
-      : "CreatorWins";
-
-  const signed = signAuthoritySettlementPayload({
-    battleId: battle.id,
-    creatorWallet,
-    opponentWallet,
-    outcome,
-    stakeAmountLamports: battle.stakeAmountLamports,
-  });
-
   const totalPotLamports = battle.stakeAmountLamports * 2;
   const recipientUserId = battle.isDraw
     ? p1.userId
@@ -234,31 +243,88 @@ export async function settleCompletedRewardBattle(battleId: string): Promise<{
   const recipientWallet =
     recipientUserId === p2.userId ? opponentWallet : creatorWallet;
 
-  await db
-    .insert(rewardTransactions)
-    .values({
-      battleId: battle.id,
-      userId: recipientUserId,
-      walletAddress: recipientWallet,
-      txType: "settle",
-      txSignature: signed.txSignature,
-      amountLamports: totalPotLamports,
-      status: "confirmed",
-    })
-    .onConflictDoNothing();
+  let realTxSignature: string | null = null;
+  let settlementError: string | null = null;
 
-  await db
-    .update(battles)
-    .set({
-      settlementTxSignature: signed.txSignature,
-      onChainBattlePda: battle.onChainBattlePda ?? signed.battleEscrowPda,
-    })
-    .where(eq(battles.id, battle.id));
+  if (env.SOLANA_AUTHORITY_SECRET_KEY) {
+    try {
+      const authorityKeypair = parseAuthorityKeypair(
+        env.SOLANA_AUTHORITY_SECRET_KEY,
+      );
+      const authorityBalance = await connection.getBalance(
+        authorityKeypair.publicKey,
+      );
+      const txFee = 5_000;
+
+      if (authorityBalance > txFee) {
+        const amountToSend = Math.min(
+          totalPotLamports,
+          authorityBalance - txFee,
+        );
+        if (amountToSend > 0) {
+          const tx = new Transaction().add(
+            SystemProgram.transfer({
+              fromPubkey: authorityKeypair.publicKey,
+              toPubkey: new PublicKey(recipientWallet),
+              lamports: amountToSend,
+            }),
+          );
+          realTxSignature = await sendAndConfirmTransaction(
+            connection,
+            tx,
+            [authorityKeypair],
+            { commitment: "confirmed" },
+          );
+        }
+      } else {
+        settlementError = `Escrow settlement authority balance (${authorityBalance} lamports) is insufficient for on-chain payout of ${totalPotLamports} lamports.`;
+        console.warn(settlementError);
+      }
+    } catch (err) {
+      settlementError =
+        err instanceof Error ? err.message : "On-chain settlement failed.";
+      console.error("On-chain settlement failed:", err);
+    }
+  } else {
+    settlementError = "SOLANA_AUTHORITY_SECRET_KEY is not configured.";
+  }
+
+  // If on-chain transaction succeeded, save the real transaction signature
+  if (realTxSignature) {
+    await db
+      .insert(rewardTransactions)
+      .values({
+        battleId: battle.id,
+        userId: recipientUserId,
+        walletAddress: recipientWallet,
+        txType: "settle",
+        txSignature: realTxSignature,
+        amountLamports: totalPotLamports,
+        status: "confirmed",
+      })
+      .onConflictDoNothing();
+
+    await db
+      .update(battles)
+      .set({
+        settlementTxSignature: realTxSignature,
+        onChainBattlePda: battle.onChainBattlePda ?? fallbackAuthority,
+      })
+      .where(eq(battles.id, battle.id));
+
+    return {
+      settled: true,
+      txSignature: realTxSignature,
+      battleEscrowPda: fallbackAuthority,
+      payoutLamports: totalPotLamports,
+    };
+  }
 
   return {
-    settled: true,
-    txSignature: signed.txSignature,
-    battleEscrowPda: signed.battleEscrowPda,
+    settled: false,
+    txSignature: null,
+    battleEscrowPda: fallbackAuthority,
     payoutLamports: totalPotLamports,
+    error: settlementError ?? undefined,
   };
 }

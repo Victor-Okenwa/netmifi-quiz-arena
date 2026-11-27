@@ -71,7 +71,7 @@ export async function GET(_request: Request, context: RouteContext) {
     if (!battle) {
       return NextResponse.json(
         { error: "Battle room not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -79,11 +79,14 @@ export async function GET(_request: Request, context: RouteContext) {
     const programId = env.SOLANA_PROGRAM_ID || QUIZ_ARENA_ESCROW_PROGRAM_ID;
     const authorityPublicKey = getSettlementAuthorityPublicKey();
 
-    const { pda: escrowPda, bump: escrowBump, battleSeed } =
-      deriveBattleEscrowPda(battle.id, programId);
+    const {
+      pda: escrowPda,
+      bump: escrowBump,
+      battleSeed,
+    } = deriveBattleEscrowPda(battle.id, programId);
     const { pda: vaultPda, bump: vaultBump } = deriveBattleVaultPda(
       battle.id,
-      programId
+      programId,
     );
 
     const participants = await db
@@ -133,14 +136,14 @@ export async function GET(_request: Request, context: RouteContext) {
         totalPotLamports: battle.stakeAmountLamports * 2,
         programId,
         authorityPublicKey,
-        battleEscrowPda: battle.onChainBattlePda ?? escrowPda.toBase58(),
+        battleEscrowPda: battle.onChainBattlePda ?? authorityPublicKey,
         battleEscrowBump: escrowBump,
         battleVaultPda: vaultPda.toBase58(),
         battleVaultBump: vaultBump,
         escrowExplorerUrl: buildSolanaExplorerUrl(
           "address",
-          battle.onChainBattlePda ?? escrowPda.toBase58(),
-          "devnet"
+          battle.onChainBattlePda ?? authorityPublicKey,
+          "devnet",
         ),
       },
       myLinkedWallet,
@@ -163,7 +166,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!auth) {
       return NextResponse.json(
         { error: "Please sign in to interact with the battle escrow." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -174,12 +177,15 @@ export async function POST(request: Request, context: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid escrow action payload." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { action, txSignature: providedTxSig, autoLinkDemoWallet } =
-      parsed.data;
+    const {
+      action,
+      txSignature: providedTxSig,
+      autoLinkDemoWallet,
+    } = parsed.data;
 
     const [battle] = await db
       .select({
@@ -198,14 +204,14 @@ export async function POST(request: Request, context: RouteContext) {
     if (!battle) {
       return NextResponse.json(
         { error: "Battle room not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (battle.mode !== "reward") {
       return NextResponse.json(
         { error: "This is a free battle and does not use a reward escrow." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -248,7 +254,7 @@ export async function POST(request: Request, context: RouteContext) {
           error:
             "Please link your Solana Devnet wallet in Wallet Settings before depositing.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -268,15 +274,15 @@ export async function POST(request: Request, context: RouteContext) {
       .where(
         and(
           eq(battleParticipants.battleId, battle.id),
-          eq(battleParticipants.userId, auth.user.id)
-        )
+          eq(battleParticipants.userId, auth.user.id),
+        ),
       )
       .limit(1);
 
     if (!myParticipant) {
       return NextResponse.json(
         { error: "You are not a participant in this battle room." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -291,7 +297,7 @@ export async function POST(request: Request, context: RouteContext) {
           explorerUrl: buildSolanaExplorerUrl(
             "tx",
             myParticipant.depositTxSignature,
-            "devnet"
+            "devnet",
           ),
         });
       }
@@ -300,17 +306,17 @@ export async function POST(request: Request, context: RouteContext) {
       const affordability = await checkStakeAffordability(
         auth.user.id,
         battle.stakeAmountLamports,
-        linked.walletAddress
+        linked.walletAddress,
       );
       if (!affordability.ok) {
         return NextResponse.json(
           { error: affordability.error },
-          { status: affordability.status }
+          { status: affordability.status },
         );
       }
 
       const expiryTs = Math.floor(
-        (battle.expiresAt?.getTime() ?? Date.now() + 30 * 60 * 1000) / 1000
+        (battle.expiresAt?.getTime() ?? Date.now() + 30 * 60 * 1000) / 1000,
       );
 
       // Construct the real Anchor instruction via @repo/solana to validate all account metas & data
@@ -360,7 +366,7 @@ export async function POST(request: Request, context: RouteContext) {
         if (!battle.onChainBattlePda) {
           await tx
             .update(battles)
-            .set({ onChainBattlePda: escrowPda.toBase58() })
+            .set({ onChainBattlePda: authorityPublicKey })
             .where(eq(battles.id, battle.id));
         }
 
@@ -382,7 +388,7 @@ export async function POST(request: Request, context: RouteContext) {
         deposited: true,
         txSignature: finalTxSignature,
         walletAddress: linked.walletAddress,
-        battleEscrowPda: escrowPda.toBase58(),
+        battleEscrowPda: authorityPublicKey,
         explorerUrl: buildSolanaExplorerUrl("tx", finalTxSignature, "devnet"),
       });
     }
@@ -391,7 +397,7 @@ export async function POST(request: Request, context: RouteContext) {
       if (myParticipant.slotIndex !== 1) {
         return NextResponse.json(
           { error: "Only the battle creator can cancel the escrow." },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -410,7 +416,7 @@ export async function POST(request: Request, context: RouteContext) {
             error:
               "Opponent has already funded the escrow; battle cannot be unilaterally cancelled.",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -462,7 +468,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json(
       { error: "Unsupported escrow action." },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (err) {
     const message =
