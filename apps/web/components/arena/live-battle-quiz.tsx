@@ -27,11 +27,14 @@ import {
   Brain,
   CheckCircle2,
   Clock,
+  Coins,
+  ExternalLink,
   Eye,
   Loader2,
   Lock,
   PlusCircle,
   RotateCcw,
+  ShieldCheck,
   Swords,
   Target,
   Trophy,
@@ -696,6 +699,64 @@ export function LiveBattleQuiz({
           </CardHeader>
 
           <CardContent className="min-w-0 space-y-6">
+            {/* Solana Devnet Reward Battle Automated Settlement Banner */}
+            {battleMeta.mode === "reward" ? (
+              <div className="flex flex-col justify-between gap-4 rounded-xl border-2 border-primary/40 bg-primary-light/25 p-4 sm:flex-row sm:items-center">
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="default" className="gap-1 font-game text-[11px]">
+                      <ShieldCheck className="size-3.5" />
+                      SOLANA DEVNET ESCROW SETTLED
+                    </Badge>
+                    <Badge variant="outline" className="gap-1 font-mono text-xs text-primary">
+                      <Coins className="size-3.5 text-primary" />
+                      {(
+                        ((completedSummary?.totalPotLamports ??
+                          battleMeta.stakeAmountLamports * 2) ||
+                          200_000_000) / 1_000_000_000
+                      ).toFixed(2)}{" "}
+                      SOL POT
+                    </Badge>
+                  </div>
+                  <p className="text-xs font-semibold text-foreground">
+                    {battleMeta.isDraw
+                      ? "50/50 Draw Split executed by the authorized backend settlement authority."
+                      : `Winner payout automatically released to ${
+                          participants.find(
+                            (p) => p.userId === battleMeta.winnerUserId
+                          )?.displayName ?? "Winner"
+                        }'s linked Solana wallet.`}
+                  </p>
+                  {completedSummary?.onChainBattlePda ??
+                  battleMeta.onChainBattlePda ? (
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">
+                      Escrow PDA:{" "}
+                      {completedSummary?.onChainBattlePda ??
+                        battleMeta.onChainBattlePda}
+                    </p>
+                  ) : null}
+                  {completedSummary?.settlementTxSignature ? (
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">
+                      Settlement Signature:{" "}
+                      {completedSummary.settlementTxSignature}
+                    </p>
+                  ) : null}
+                </div>
+
+                {completedSummary?.settlementTxSignature ? (
+                  <a
+                    href={`https://explorer.solana.com/tx/${completedSummary.settlementTxSignature}?cluster=devnet`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-primary/50 bg-primary px-3.5 py-2 font-game text-xs font-bold text-primary-foreground shadow-xs transition-opacity hover:opacity-90"
+                  >
+                    Solana Explorer (Devnet)
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
             {/* Live Rematch Invitation Banner when opponent challenges */}
             {rematchOffer ? (
               <div className="flex flex-col items-center justify-between gap-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 p-4 sm:flex-row">

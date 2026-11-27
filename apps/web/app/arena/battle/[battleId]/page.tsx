@@ -56,6 +56,7 @@ export default async function BattleRoomPage({
       questionCount: battles.questionCount,
       timePerQuestionSeconds: battles.timePerQuestionSeconds,
       stakeAmountLamports: battles.stakeAmountLamports,
+      onChainBattlePda: battles.onChainBattlePda,
       creatorUserId: battles.creatorUserId,
       startedAt: battles.startedAt,
       courseCode: courses.code,
@@ -95,6 +96,8 @@ export default async function BattleRoomPage({
       userId: battleParticipants.userId,
       slotIndex: battleParticipants.slotIndex,
       isReady: battleParticipants.isReady,
+      depositConfirmed: battleParticipants.depositConfirmed,
+      depositTxSignature: battleParticipants.depositTxSignature,
       score: battleParticipants.score,
       displayName: profiles.displayName,
       username: profiles.username,
@@ -192,6 +195,9 @@ export default async function BattleRoomPage({
           inviteCode={battle.inviteCode}
           currentUserId={user.id}
           initialStatus={battle.status}
+          battleMode={battle.mode}
+          stakeAmountLamports={battle.stakeAmountLamports}
+          onChainBattlePda={battle.onChainBattlePda}
           initialCountdownEndsAt={
             battle.startedAt ? battle.startedAt.toISOString() : null
           }

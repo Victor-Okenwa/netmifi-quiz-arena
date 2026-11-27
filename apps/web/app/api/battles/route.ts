@@ -17,6 +17,7 @@ import {
   topics,
   universities,
 } from "@repo/db";
+import { deriveBattleEscrowPda } from "@repo/solana";
 import { createBattleSchema } from "@repo/validators";
 import { NextResponse } from "next/server";
 
@@ -179,6 +180,15 @@ export async function POST(request: Request) {
 
       if (!insertedBattle) {
         throw new Error("Failed to create battle record.");
+      }
+
+      if (mode === "reward") {
+        const { pda } = deriveBattleEscrowPda(insertedBattle.id);
+        await tx
+          .update(battles)
+          .set({ onChainBattlePda: pda.toBase58() })
+          .where(eq(battles.id, insertedBattle.id));
+        insertedBattle.onChainBattlePda = pda.toBase58();
       }
 
       await tx.insert(battleParticipants).values({

@@ -20,8 +20,8 @@
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
 | **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ✅ **COMPLETED** |
 | **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ✅ **COMPLETED** |
-| **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⏳ **NEXT UP** |
-| **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⬜ **PENDING** |
+| **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ✅ **COMPLETED** |
+| **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⏳ **NEXT UP** |
 
 ---
 
@@ -281,24 +281,24 @@ Build, test, and verify the custom Rust + Anchor smart contract in `programs/` a
 ---
 
 ## Milestone 10: Wallet Linking & End-to-End Reward Battle Settlement
-**Status:** ⬜ **PENDING**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Connect the Next.js application to the Solana Devnet escrow program so students who want optional financial stakes can link a verified wallet, fund a reward battle, and receive automatic on-chain settlement upon battle completion.
 
 ### Scope & Deliverables
-- [ ] **Cryptographic Wallet Linking (`/settings/wallet` & Battle Lobby)**:
-  - Solana Wallet Adapter integration (`@solana/wallet-adapter-react`) in `apps/web`.
-  - Server endpoint generating an expiring challenge nonce (`wallet_nonces`), wallet message signing (`signMessage`), server ed25519 signature verification, and 1:1 persistence in `wallet_links`.
-- [ ] **Reward Battle Escrow Flow in Arena UI**:
-  - When creating or joining a **Reward Battle**, prompt the linked wallet to sign the `create_battle` or `join_battle` Devnet deposit transaction.
-  - Verify on-chain escrow funding state on the backend before transitioning the reward battle to `ACTIVE`.
-- [ ] **Automated Backend Settlement on Battle Finalization**:
-  - When `finalizeBattle` completes a reward battle off-chain, the backend authority signer submits `finalize_battle` to the Solana Devnet program, records the settlement transaction signature in `reward_transactions`, and displays the Solana Explorer Devnet transaction link on the Battle Diagnosis screen.
+- [x] **Cryptographic Wallet Linking (`/settings/wallet` & Battle Lobby)**:
+  - Dual wallet support in `apps/web/components/wallet/wallet-link-studio.tsx`: supports injected Solana browser wallets (`window.solana` — Phantom/Solflare) and a 1-Click Cryptographic Ed25519 Devnet Demo Wallet.
+  - Server endpoints (`POST /api/wallet/nonce`, `POST /api/wallet/verify`, `GET/POST/DELETE /api/wallet`) generating expiring challenge nonces (`wallet_nonces`), verifying 64-byte Ed25519 signatures via `node:crypto`, and enforcing 1:1 persistence in `wallet_links`.
+- [x] **Reward Battle Escrow Flow in Arena UI**:
+  - Automatic deterministic `BattleEscrowState` PDA derivation (`onChainBattlePda`) on Reward Battle creation (`POST /api/battles`).
+  - Interactive **Solana Devnet Escrow Vault Card** in the Battle Lobby (`BattleLobbyArena`) and `GET/POST /api/battles/[battleId]/escrow` endpoint recording deposit signatures (`depositTxSignature`, `depositConfirmed`) in `battle_participants` and `reward_transactions` before allowing players to lock in Ready.
+- [x] **Automated Backend Settlement on Battle Finalization**:
+  - When `submitParticipantAnswer` completes a Reward Battle off-chain, `settleCompletedRewardBattle` automatically signs the `finalize_battle` instruction with `SOLANA_AUTHORITY_SECRET_KEY`, records the settlement transaction in `reward_transactions` and `battles.settlementTxSignature`, and renders the **Solana Devnet Escrow Settlement Card** with Solana Explorer Devnet links on the Battle Diagnosis screen.
 
 ### Acceptance Criteria
 - Free battles continue to work with zero wallet connection.
-- Two wallet-linked students can deposit Devnet test tokens into a Reward Battle, play the quiz battle, and see the on-chain escrow automatically settled to the winner with a verifiable Devnet transaction signature.
+- Two wallet-linked students can deposit Devnet test stakes into a Reward Battle, play the quiz battle, and see the on-chain escrow automatically settled to the winner (or split 50/50 on draw) with a verifiable Devnet transaction signature.
 
 ---
 

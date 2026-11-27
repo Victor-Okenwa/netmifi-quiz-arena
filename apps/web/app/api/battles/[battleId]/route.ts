@@ -31,6 +31,9 @@ async function getBattleLobbySnapshot(battleId: string) {
     .select({
       id: battles.id,
       status: battles.status,
+      mode: battles.mode,
+      stakeAmountLamports: battles.stakeAmountLamports,
+      onChainBattlePda: battles.onChainBattlePda,
       inviteCode: battles.inviteCode,
       creatorUserId: battles.creatorUserId,
       startedAt: battles.startedAt,
@@ -49,6 +52,8 @@ async function getBattleLobbySnapshot(battleId: string) {
       userId: battleParticipants.userId,
       slotIndex: battleParticipants.slotIndex,
       isReady: battleParticipants.isReady,
+      depositConfirmed: battleParticipants.depositConfirmed,
+      depositTxSignature: battleParticipants.depositTxSignature,
       score: battleParticipants.score,
       displayName: profiles.displayName,
       username: profiles.username,
@@ -90,6 +95,9 @@ async function getBattleLobbySnapshot(battleId: string) {
     battle: {
       id: battle.id,
       status: currentStatus,
+      mode: battle.mode,
+      stakeAmountLamports: battle.stakeAmountLamports,
+      onChainBattlePda: battle.onChainBattlePda,
       inviteCode: battle.inviteCode,
       creatorUserId: battle.creatorUserId,
       countdownEndsAt: countdownTargetIso,
@@ -157,6 +165,7 @@ export async function POST(request: Request, context: RouteContext) {
       .select({
         id: battles.id,
         status: battles.status,
+        mode: battles.mode,
         startedAt: battles.startedAt,
         creatorUserId: battles.creatorUserId,
       })
@@ -188,6 +197,7 @@ export async function POST(request: Request, context: RouteContext) {
         userId: battleParticipants.userId,
         slotIndex: battleParticipants.slotIndex,
         isReady: battleParticipants.isReady,
+        depositConfirmed: battleParticipants.depositConfirmed,
       })
       .from(battleParticipants)
       .where(eq(battleParticipants.battleId, battleId))
@@ -225,6 +235,20 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (action === "toggle_ready") {
       const nextReadyState = !callerParticipant.isReady;
+
+      if (
+        battle.mode === "reward" &&
+        nextReadyState &&
+        !callerParticipant.depositConfirmed
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Please deposit your SOL stake into the Solana Devnet Escrow Vault before locking in Ready.",
+          },
+          { status: 409 }
+        );
+      }
 
       await db.transaction(async (tx) => {
         await tx

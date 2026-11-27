@@ -15,12 +15,16 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   CheckCircle2,
   Clock,
+  Coins,
+  ExternalLink,
   Loader2,
   Lock,
   LogOut,
   ShieldAlert,
+  ShieldCheck,
   Swords,
   UserPlus,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,6 +36,8 @@ export interface LobbyParticipant {
   userId: string;
   slotIndex: number;
   isReady: boolean;
+  depositConfirmed?: boolean;
+  depositTxSignature?: string | null;
   score?: number;
   displayName: string;
   username: string;
@@ -46,6 +52,9 @@ interface BattleLobbyArenaProps {
   inviteCode: string;
   currentUserId: string;
   initialStatus: string;
+  battleMode?: "free" | "reward";
+  stakeAmountLamports?: number;
+  onChainBattlePda?: string | null;
   initialCountdownEndsAt: string | null;
   initialServerNow: string;
   initialParticipants: LobbyParticipant[];
@@ -67,6 +76,7 @@ function areParticipantsEqual(
       pA.userId !== pB.userId ||
       pA.slotIndex !== pB.slotIndex ||
       pA.isReady !== pB.isReady ||
+      Boolean(pA.depositConfirmed) !== Boolean(pB.depositConfirmed) ||
       pA.displayName !== pB.displayName
     ) {
       return false;
@@ -114,6 +124,9 @@ export function BattleLobbyArena({
   inviteCode,
   currentUserId,
   initialStatus,
+  battleMode = "free",
+  stakeAmountLamports = 0,
+  onChainBattlePda = null,
   initialCountdownEndsAt,
   initialServerNow,
   initialParticipants,
@@ -153,6 +166,10 @@ export function BattleLobbyArena({
 
   const [isTogglingReady, setIsTogglingReady] = useState(false);
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
+  const [isDepositingEscrow, setIsDepositingEscrow] = useState(false);
+  const [escrowPdaAddress, setEscrowPdaAddress] = useState<string | null>(
+    onChainBattlePda
+  );
 
   const prevParticipantsRef = useRef<LobbyParticipant[]>(initialParticipants);
   const announcedSelfJoinRef = useRef(false);
@@ -442,6 +459,60 @@ export function BattleLobbyArena({
     remainingSeconds !== null &&
     remainingSeconds <= LOCK_THRESHOLD_SECONDS;
 
+  async function handleDepositEscrowStake() {
+    if (!myParticipant || isDepositingEscrow) return;
+    setIsDepositingEscrow(true);
+    try {
+      const res = await fetch(`/api/battles/${battleId}/escrow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deposit",
+          autoLinkDemoWallet: true,
+        }),
+      });
+
+      const data = (await res.json()) as {
+        error?: string;
+        deposited?: boolean;
+        txSignature?: string;
+        battleEscrowPda?: string;
+      };
+
+      if (!res.ok || !data.deposited) {
+        toast.error("Escrow deposit failed", {
+          description: data.error ?? "Could not deposit stake.",
+        });
+        return;
+      }
+
+      if (data.battleEscrowPda) {
+        setEscrowPdaAddress(data.battleEscrowPda);
+      }
+
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.userId === currentUserId
+            ? {
+                ...p,
+                depositConfirmed: true,
+                depositTxSignature: data.txSignature ?? null,
+              }
+            : p
+        )
+      );
+
+      broadcastLobbyUpdate();
+      toast.success("Stake Deposited into Solana Devnet Escrow!", {
+        description: `Tx: ${data.txSignature?.slice(0, 12)}... • You can now Lock In Ready.`,
+      });
+    } catch {
+      toast.error("Network error while depositing stake.");
+    } finally {
+      setIsDepositingEscrow(false);
+    }
+  }
+
   async function handleToggleReady() {
     if (!myParticipant || isCountdownLocked) return;
 
@@ -583,6 +654,91 @@ export function BattleLobbyArena({
                   {isCountdownLocked ? "Locked" : "Counting"}
                 </span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Solana Devnet Reward Battle Escrow Vault Banner */}
+      {battleMode === "reward" ? (
+        <Card className="w-full min-w-0 overflow-hidden border-2 border-primary/40 bg-card shadow-md">
+          <CardContent className="flex flex-col justify-between gap-4 px-4 py-5 sm:flex-row sm:items-center sm:px-6">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="default" className="gap-1 font-game text-xs">
+                  <ShieldCheck className="size-3.5" />
+                  SOLANA DEVNET ESCROW VAULT
+                </Badge>
+                <Badge variant="outline" className="font-mono text-xs text-primary">
+                  POT: {((stakeAmountLamports * 2) / 1_000_000_000).toFixed(2)} SOL
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Each challenger stakes{" "}
+                <span className="font-semibold text-foreground">
+                  {(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL
+                </span>{" "}
+                into the program-controlled Battle Escrow PDA before locking in
+                Ready.
+              </p>
+              {escrowPdaAddress ? (
+                <p className="truncate font-mono text-[11px] text-muted-foreground">
+                  Escrow PDA:{" "}
+                  <a
+                    href={`https://explorer.solana.com/address/${escrowPdaAddress}?cluster=devnet`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {escrowPdaAddress.slice(0, 10)}...{escrowPdaAddress.slice(-8)}
+                    <ExternalLink className="size-3" />
+                  </a>
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              {myParticipant ? (
+                myParticipant.depositConfirmed ? (
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className="gap-1.5 bg-emerald-600 px-3 py-1 font-game text-xs text-white hover:bg-emerald-600">
+                      <CheckCircle2 className="size-3.5" />
+                      STAKE FUNDED ({(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL)
+                    </Badge>
+                    {myParticipant.depositTxSignature ? (
+                      <a
+                        href={`https://explorer.solana.com/tx/${myParticipant.depositTxSignature}?cluster=devnet`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-mono text-[10px] text-primary hover:underline"
+                      >
+                        Tx: {myParticipant.depositTxSignature.slice(0, 10)}...
+                        <ExternalLink className="size-2.5" />
+                      </a>
+                    ) : null}
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => void handleDepositEscrowStake()}
+                    disabled={isDepositingEscrow}
+                    className="gap-2 font-game text-xs font-bold"
+                  >
+                    {isDepositingEscrow ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Coins className="size-4" />
+                    )}
+                    Deposit {(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL to Escrow
+                  </Button>
+                )
+              ) : (
+                <Link href="/settings/wallet">
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <Wallet className="size-3.5 text-primary" />
+                    Wallet Settings
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

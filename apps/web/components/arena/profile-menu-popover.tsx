@@ -4,7 +4,13 @@ import { ProfileAvatar } from "@/assets/profiles";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
-import { ChevronDown, Factory, GraduationCap, UserCog } from "lucide-react";
+import {
+  ChevronDown,
+  Factory,
+  GraduationCap,
+  UserCog,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -105,6 +111,15 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
 
           {/* Menu actions */}
           <div className="mt-2.5 flex flex-col gap-1.5">
+            <Link
+              href="/settings/wallet"
+              onClick={() => setIsOpen(false)}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              <Wallet className="size-4 text-primary" />
+              Solana Wallet (Devnet)
+            </Link>
+
             <Link
               href="/arena/factory"
               onClick={() => setIsOpen(false)}

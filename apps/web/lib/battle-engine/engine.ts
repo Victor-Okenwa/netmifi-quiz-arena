@@ -1,6 +1,7 @@
 import {
   getOrCreateCachedAudioAsset,
 } from "@/lib/audio/tts-cache";
+import { settleCompletedRewardBattle } from "@/lib/solana/reward-settlement";
 import {
   and,
   answerSubmissions,
@@ -76,6 +77,9 @@ export interface CompletedBattleSummary {
   allParticipantDiagnoses: Record<string, StoredParticipantDiagnosis>;
   xpAwarded: number;
   winnerAnnouncementAudioUrl: string | null;
+  settlementTxSignature: string | null;
+  onChainBattlePda: string | null;
+  totalPotLamports: number;
 }
 
 export interface SanitizedBattleArenaState {
@@ -85,6 +89,8 @@ export interface SanitizedBattleArenaState {
     inviteCode: string;
     status: string;
     mode: "free" | "reward";
+    stakeAmountLamports: number;
+    onChainBattlePda: string | null;
     courseId: string;
     courseCode: string;
     courseTitle: string;
@@ -148,6 +154,9 @@ export async function getSanitizedBattleArenaState(
       inviteCode: battles.inviteCode,
       status: battles.status,
       mode: battles.mode,
+      stakeAmountLamports: battles.stakeAmountLamports,
+      onChainBattlePda: battles.onChainBattlePda,
+      settlementTxSignature: battles.settlementTxSignature,
       courseId: battles.courseId,
       courseCode: courses.code,
       courseTitle: courses.title,
@@ -380,6 +389,16 @@ export async function getSanitizedBattleArenaState(
       .where(eq(battleResults.battleId, battleId))
       .limit(1);
 
+    let settlementTxSignature = battleRow.settlementTxSignature ?? null;
+    if (battleRow.mode === "reward" && !settlementTxSignature) {
+      try {
+        const settled = await settleCompletedRewardBattle(battleId);
+        settlementTxSignature = settled.txSignature;
+      } catch {
+        // Non-blocking fallback
+      }
+    }
+
     const isWinner = resultRow
       ? resultRow.winnerUserId === userId
       : battleRow.winnerUserId === userId;
@@ -412,6 +431,9 @@ export async function getSanitizedBattleArenaState(
       allParticipantDiagnoses: resultRow?.participantDiagnoses ?? {},
       xpAwarded,
       winnerAnnouncementAudioUrl,
+      settlementTxSignature,
+      onChainBattlePda: battleRow.onChainBattlePda,
+      totalPotLamports: battleRow.stakeAmountLamports * 2,
     };
   }
 
@@ -422,6 +444,8 @@ export async function getSanitizedBattleArenaState(
       inviteCode: battleRow.inviteCode,
       status: currentStatus,
       mode: battleRow.mode,
+      stakeAmountLamports: battleRow.stakeAmountLamports,
+      onChainBattlePda: battleRow.onChainBattlePda,
       courseId: battleRow.courseId,
       courseCode: battleRow.courseCode,
       courseTitle: battleRow.courseTitle,
@@ -833,8 +857,14 @@ export async function submitParticipantAnswer(params: {
     };
   });
 
-  // Warm the Winner Announcement audio cache in the background as soon as the battle completes
+  // Settle Reward Battle on Solana Devnet and warm Winner Announcement audio cache
   if (result.battleStatus === "COMPLETED" && !result.alreadySubmitted) {
+    try {
+      await settleCompletedRewardBattle(params.battleId);
+    } catch {
+      // Non-blocking settlement fallback
+    }
+
     void (async () => {
       try {
         const [battleMeta] = await db
