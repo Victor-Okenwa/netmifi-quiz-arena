@@ -1,3 +1,4 @@
+import { buildSolanaExplorerUrl } from "@/lib/solana/reward-settlement";
 import {
   buildWalletChallengeMessage,
   generateWalletNonce,
@@ -6,7 +7,7 @@ import {
   ensureBaseProfileForUser,
   getCurrentAuthContext,
 } from "@/lib/supabase/auth";
-import { db, eq, walletLinks, walletNonces } from "@repo/db";
+import { and, db, eq, isNotNull, walletLinks, walletNonces } from "@repo/db";
 import { isValidSolanaAddress } from "@repo/solana";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -62,6 +63,43 @@ export async function POST(request: Request) {
         },
         { status: 409 }
       );
+    }
+
+    // If this student has ALREADY cryptographically verified this exact wallet address before,
+    // allow instant re-linking without forcing another signature popup.
+    const [previouslyVerified] = await db
+      .select({ id: walletNonces.id })
+      .from(walletNonces)
+      .where(
+        and(
+          eq(walletNonces.userId, auth.user.id),
+          eq(walletNonces.walletAddress, walletAddress),
+          isNotNull(walletNonces.consumedAt)
+        )
+      )
+      .limit(1);
+
+    if (previouslyVerified) {
+      const now = new Date();
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(walletLinks)
+          .where(eq(walletLinks.userId, auth.user.id));
+
+        await tx.insert(walletLinks).values({
+          userId: auth.user.id,
+          walletAddress,
+          verifiedAt: now,
+        });
+      });
+
+      return NextResponse.json({
+        alreadyVerified: true,
+        verified: true,
+        walletAddress,
+        verifiedAt: now.toISOString(),
+        explorerUrl: buildSolanaExplorerUrl("address", walletAddress, "devnet"),
+      });
     }
 
     const nonce = generateWalletNonce();

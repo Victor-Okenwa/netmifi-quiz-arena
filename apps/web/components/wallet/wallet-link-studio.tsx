@@ -50,11 +50,25 @@ interface RewardTransactionItem {
 interface InjectedSolanaProvider {
   isPhantom?: boolean;
   isSolflare?: boolean;
-  connect: () => Promise<{ publicKey: { toString: () => string } }>;
+  publicKey?: { toString: () => string } | null;
+  connect: (options?: {
+    onlyIfTrusted?: boolean;
+  }) => Promise<{ publicKey: { toString: () => string } }>;
+  disconnect?: () => Promise<void>;
   signMessage?: (
     message: Uint8Array,
     display?: "utf8" | "hex"
   ) => Promise<{ signature: Uint8Array } | Uint8Array>;
+}
+
+function getInjectedSolanaProvider(): InjectedSolanaProvider | undefined {
+  if (typeof window === "undefined") return undefined;
+  const win = window as unknown as {
+    phantom?: { solana?: InjectedSolanaProvider };
+    solflare?: InjectedSolanaProvider;
+    solana?: InjectedSolanaProvider;
+  };
+  return win.phantom?.solana ?? win.solana ?? win.solflare;
 }
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -109,21 +123,23 @@ export function WalletLinkStudio() {
   async function handleConnectBrowserWallet() {
     setIsConnectingBrowser(true);
     try {
-      const provider =
-        typeof window !== "undefined"
-          ? (window as unknown as { solana?: InjectedSolanaProvider }).solana
-          : undefined;
+      const provider = getInjectedSolanaProvider();
 
       if (!provider || typeof provider.connect !== "function") {
         toast.error("No Solana browser wallet detected", {
           description:
-            "Install Phantom or Solflare, or click '1-Click Devnet Wallet' to connect immediately.",
+            "Install Phantom or Solflare, or click 'Use Demo Wallet' to connect a test wallet.",
         });
         return;
       }
 
       const connectRes = await provider.connect();
-      const walletAddress = connectRes.publicKey.toString();
+      const pubkeyObj = connectRes?.publicKey ?? provider.publicKey;
+      if (!pubkeyObj) {
+        toast.error("Could not read public key from wallet.");
+        return;
+      }
+      const walletAddress = pubkeyObj.toString();
 
       const nonceRes = await fetch("/api/wallet/nonce", {
         method: "POST",
@@ -133,14 +149,30 @@ export function WalletLinkStudio() {
 
       const nonceData = (await nonceRes.json()) as {
         error?: string;
+        alreadyVerified?: boolean;
+        verified?: boolean;
         nonce?: string;
         message?: string;
       };
 
-      if (!nonceRes.ok || !nonceData.nonce || !nonceData.message) {
-        toast.error("Failed to request verification challenge", {
+      if (!nonceRes.ok) {
+        toast.error("Failed to connect wallet", {
           description: nonceData.error ?? "Please try again.",
         });
+        return;
+      }
+
+      // If this user previously verified this exact Phantom wallet, it re-links immediately
+      if (nonceData.alreadyVerified && nonceData.verified) {
+        toast.success("Phantom / Solflare Wallet Switched & Connected!", {
+          description: `Active wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+        });
+        await loadWalletState();
+        return;
+      }
+
+      if (!nonceData.nonce || !nonceData.message) {
+        toast.error("Failed to request verification challenge.");
         return;
       }
 
@@ -208,18 +240,18 @@ export function WalletLinkStudio() {
       };
 
       if (!res.ok || !data.linked) {
-        toast.error("Failed to connect Devnet Wallet", {
+        toast.error("Failed to connect Demo Wallet", {
           description: data.error ?? "Please try again.",
         });
         return;
       }
 
-      toast.success("Devnet Wallet Connected!", {
+      toast.success("Demo Wallet Connected!", {
         description: `Linked ${data.walletAddress?.slice(0, 6)}...${data.walletAddress?.slice(-4)}`,
       });
       await loadWalletState();
     } catch {
-      toast.error("Network error while connecting Devnet wallet.");
+      toast.error("Network error while connecting Demo wallet.");
     } finally {
       setIsLinkingDemo(false);
     }
@@ -335,11 +367,25 @@ export function WalletLinkStudio() {
                   <ExternalLink className="size-3.5" />
                 </a>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={isLinkingDemo}
+                    disabled={isConnectingBrowser || isLinkingDemo}
+                    onClick={() => void handleConnectBrowserWallet()}
+                    className="gap-1.5 text-xs"
+                  >
+                    {isConnectingBrowser ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <KeyRound className="size-3.5 text-primary" />
+                    )}
+                    Switch to Phantom / Solflare
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isLinkingDemo || isConnectingBrowser}
                     onClick={() => void handleLinkDemoWallet()}
                     className="gap-1.5 text-xs"
                   >
@@ -348,7 +394,7 @@ export function WalletLinkStudio() {
                     ) : (
                       <Sparkles className="size-3.5 text-primary" />
                     )}
-                    Switch Demo Wallet
+                    Use Demo Wallet
                   </Button>
                   <Button
                     variant="outline"
@@ -389,7 +435,7 @@ export function WalletLinkStudio() {
                 ) : (
                   <Sparkles className="size-4 text-primary" />
                 )}
-                1-Click Devnet Wallet
+                Use Demo Wallet
               </Button>
             </div>
           )}
