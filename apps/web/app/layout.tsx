@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
@@ -30,7 +31,10 @@ export default function RootLayout({
       lang="en"
       className={`${lexend.variable} ${orbitron.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <Toaster position="bottom-right" richColors closeButton />
+      </body>
     </html>
   );
 }

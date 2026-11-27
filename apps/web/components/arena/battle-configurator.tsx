@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export interface ConfiguratorCourse {
   id: string;
@@ -124,13 +125,17 @@ export function BattleConfigurator({
       };
 
       if (!response.ok) {
-        setErrorMessage(
-          data.error ?? "Could not create battle room. Please try again."
-        );
+        const msg =
+          data.error ?? "Could not create battle room. Please try again.";
+        setErrorMessage(msg);
+        toast.error("Failed to create battle", { description: msg });
         setIsLoading(false);
         return;
       }
 
+      toast.success("Battle room created!", {
+        description: "Share your invite code with an opponent to begin.",
+      });
       router.push(data.redirectTo ?? "/arena");
       router.refresh();
     } catch (err) {

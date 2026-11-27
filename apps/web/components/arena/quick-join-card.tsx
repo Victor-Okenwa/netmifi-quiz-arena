@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { AlertCircle, ArrowRight, KeyRound, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 export function QuickJoinCard() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export function QuickJoinCard() {
 
   async function handleJoinByCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const cleaned = inviteCode.trim().toUpperCase();
+    const cleaned = inviteCode.trim();
     if (!cleaned) return;
 
     setErrorMessage(null);
@@ -36,23 +37,40 @@ export function QuickJoinCard() {
 
       const data = (await response.json()) as {
         error?: string;
+        inviteCode?: string;
+        alreadyParticipant?: boolean;
         redirectTo?: string;
       };
 
       if (!response.ok) {
-        setErrorMessage(
-          data.error ?? "No active battle room found with that invite code."
-        );
+        const msg =
+          data.error ?? "No active battle room found with that invite code.";
+        setErrorMessage(msg);
+        toast.error("Could not join battle", {
+          description: msg,
+        });
         setIsLoading(false);
         return;
       }
 
+      toast.success(
+        data.alreadyParticipant
+          ? "Re-entering battle room"
+          : "Joined battle room!",
+        {
+          description: data.inviteCode
+            ? `Room code: ${data.inviteCode}`
+            : undefined,
+        }
+      );
+
       router.push(data.redirectTo ?? "/arena");
       router.refresh();
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to look up invite code."
-      );
+      const msg =
+        err instanceof Error ? err.message : "Failed to look up invite code.";
+      setErrorMessage(msg);
+      toast.error("Connection error", { description: msg });
       setIsLoading(false);
     }
   }
@@ -69,7 +87,7 @@ export function QuickJoinCard() {
               JOIN WITH INVITE CODE
             </CardTitle>
             <CardDescription className="text-xs">
-              Have a challenge code from a classmate? Enter it below.
+              Paste an 8-character invite code or a shared battle room link.
             </CardDescription>
           </div>
         </div>
@@ -80,19 +98,11 @@ export function QuickJoinCard() {
           <div className="flex gap-2">
             <Input
               value={inviteCode}
-              onChange={(e) =>
-                setInviteCode(
-                  e.target.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9-]/g, "")
-                    .slice(0, 12)
-                )
-              }
-              placeholder="e.g. K7M9P2X4"
-              className="font-mono tracking-wider uppercase"
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder="e.g. HRR824K3 or room link"
+              className="font-mono text-xs"
               required
               minLength={4}
-              maxLength={12}
               disabled={isLoading}
             />
             <Button

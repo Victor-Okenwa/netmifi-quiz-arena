@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, Copy, Link2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface CopyInviteButtonProps {
   inviteCode: string;
@@ -20,9 +21,12 @@ export function CopyInviteButton({
     try {
       await navigator.clipboard.writeText(inviteCode);
       setCopiedCode(true);
+      toast.success("Invite code copied!", {
+        description: `Share code ${inviteCode} with your opponent.`,
+      });
       setTimeout(() => setCopiedCode(false), 2000);
     } catch {
-      // Clipboard fallback
+      toast.error("Could not copy invite code");
     }
   }
 
@@ -31,9 +35,12 @@ export function CopyInviteButton({
       const url = `${window.location.origin}/arena/battle/${battleId}`;
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
+      toast.success("Battle room link copied!", {
+        description: "Send this link to a classmate to join directly.",
+      });
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      // Clipboard fallback
+      toast.error("Could not copy room link");
     }
   }
 
@@ -49,12 +56,12 @@ export function CopyInviteButton({
         {copiedCode ? (
           <>
             <Check className="size-3.5 text-primary" />
-            Copied Code
+            Copied ({inviteCode})
           </>
         ) : (
           <>
             <Copy className="size-3.5" />
-            Copy Code ({inviteCode})
+            Copy Code: {inviteCode}
           </>
         )}
       </Button>

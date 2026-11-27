@@ -1,5 +1,6 @@
 import { ProfileAvatar } from "@/assets/profiles";
 import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { BattleRoomLiveWatcher } from "@/components/arena/battle-room-live-watcher";
 import { CopyInviteButton } from "@/components/arena/copy-invite-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { joinBattleAsOpponent } from "@/lib/battle-join";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import {
   asc,
@@ -40,10 +42,10 @@ interface BattleRoomPageProps {
 }
 
 export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
-  const { profile } = await requireOnboardedStudent();
+  const { user, profile } = await requireOnboardedStudent();
   const { battleId } = await params;
 
-  const [battle] = await db
+  const [initialBattle] = await db
     .select({
       id: battles.id,
       inviteCode: battles.inviteCode,
@@ -64,9 +66,26 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     .where(eq(battles.id, battleId))
     .limit(1);
 
-  if (!battle) {
+  if (!initialBattle) {
     notFound();
   }
+
+  // If the current authenticated student is not the creator and visits the room while Slot 2 is open,
+  // automatically enroll them into Slot 2 (`battle_participants`)
+  let justJoinedSlotTwo = false;
+  if (
+    user.id !== initialBattle.creatorUserId &&
+    initialBattle.status === "WAITING"
+  ) {
+    const joinResult = await joinBattleAsOpponent(initialBattle.id, user);
+    if (joinResult.joined && !joinResult.alreadyParticipant) {
+      justJoinedSlotTwo = true;
+    }
+  }
+
+  const battle = justJoinedSlotTwo
+    ? { ...initialBattle, status: "READY" as const }
+    : initialBattle;
 
   const participants = await db
     .select({
@@ -94,6 +113,13 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} />
+      <BattleRoomLiveWatcher
+        battleId={battle.id}
+        initialParticipantCount={participants.length}
+        initialBattleStatus={battle.status}
+        justJoinedSlotTwo={justJoinedSlotTwo}
+        inviteCode={battle.inviteCode}
+      />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">

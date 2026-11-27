@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export interface UniversityOption {
   id: string;
@@ -134,13 +135,15 @@ export function OnboardingForm({
       };
 
       if (!response.ok) {
-        setErrorMessage(
-          data.error ?? "Failed to save academic profile. Please try again."
-        );
+        const msg =
+          data.error ?? "Failed to save academic profile. Please try again.";
+        setErrorMessage(msg);
+        toast.error("Could not save profile", { description: msg });
         setIsLoading(false);
         return;
       }
 
+      toast.success("Academic profile saved!");
       router.push(data.redirectTo ?? "/arena");
       router.refresh();
     } catch (err) {
