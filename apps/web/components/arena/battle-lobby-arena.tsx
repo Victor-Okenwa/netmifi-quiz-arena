@@ -158,9 +158,74 @@ export function BattleLobbyArena({
   const announcedSelfJoinRef = useRef(false);
   const announcedLockRef = useRef(false);
   const announcedStartRef = useRef(false);
+  const preloadedStartAudioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadedStartSpeechTextRef = useRef<string>(
+    "Battle started! Test your wit and conquer the arena. Good luck!"
+  );
   const channelRef = useRef<ReturnType<
     ReturnType<typeof createBrowserSupabaseClient>["channel"]
   > | null>(null);
+
+  // Preload the reusable "Battle Started" voice statement in the background while in the lobby / countdown
+  useEffect(() => {
+    if (matchStartedLatch) return;
+
+    let cancelled = false;
+    async function preloadBattleStartVoice() {
+      try {
+        const res = await fetch("/api/audio/battle-start");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          audioUrl?: string | null;
+          speechText?: string;
+        };
+        if (cancelled) return;
+        if (data.speechText) {
+          preloadedStartSpeechTextRef.current = data.speechText;
+        }
+        if (data.audioUrl && typeof window !== "undefined") {
+          const audio = new Audio(data.audioUrl);
+          audio.preload = "auto";
+          audio.load();
+          preloadedStartAudioRef.current = audio;
+        }
+      } catch {
+        // Fallback to Web Speech API at 00s if fetch fails
+      }
+    }
+
+    void preloadBattleStartVoice();
+    return () => {
+      cancelled = true;
+    };
+  }, [matchStartedLatch]);
+
+  const playBattleStartVoice = useCallback(() => {
+    const preloaded = preloadedStartAudioRef.current;
+    if (preloaded) {
+      preloaded.currentTime = 0;
+      void preloaded.play().catch(() => {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(
+            new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current)
+          );
+        }
+      });
+      return;
+    }
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(
+          new SpeechSynthesisUtterance(preloadedStartSpeechTextRef.current)
+        );
+      } catch {
+        // Ignore if blocked by browser autoplay policy
+      }
+    }
+  }, []);
 
   const playerOne = participants.find((p) => p.slotIndex === 1) ?? null;
   const playerTwo = participants.find((p) => p.slotIndex === 2) ?? null;
@@ -351,6 +416,7 @@ export function BattleLobbyArena({
 
       if (secs === 0 && !announcedStartRef.current) {
         announcedStartRef.current = true;
+        playBattleStartVoice();
         setBattleStatus("ACTIVE");
         setMatchStartedLatch(true);
       }
@@ -359,7 +425,7 @@ export function BattleLobbyArena({
     updateTimer();
     const timer = setInterval(updateTimer, 200);
     return () => clearInterval(timer);
-  }, [bothReady, countdownEndsAt, matchStartedLatch]);
+  }, [bothReady, countdownEndsAt, matchStartedLatch, playBattleStartVoice]);
 
   if (
     matchStartedLatch ||

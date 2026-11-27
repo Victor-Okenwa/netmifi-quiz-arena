@@ -11,6 +11,7 @@ interface VoiceAudioButtonProps {
   initialAudioUrl?: string | null;
   fallbackText: string;
   label?: string;
+  autoPlay?: boolean;
   variant?: "default" | "secondary" | "outline" | "ghost";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
@@ -23,6 +24,7 @@ export function VoiceAudioButton({
   initialAudioUrl = null,
   fallbackText,
   label = "Read Aloud",
+  autoPlay = false,
   variant = "outline",
   size = "sm",
   className,
@@ -34,6 +36,8 @@ export function VoiceAudioButton({
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadedAudioRef = useRef<HTMLAudioElement | null>(null);
+  const autoPlayedEntityRef = useRef<string | null>(null);
   const activeEntityKey = mode === "question" ? questionId : battleId;
 
   const stopPlayback = useCallback(() => {
@@ -48,16 +52,7 @@ export function VoiceAudioButton({
     setIsPlaying(false);
   }, []);
 
-  // Stop any playing audio and reset cached URL when the active question or battle changes
-  useEffect(() => {
-    stopPlayback();
-    setCachedAudioUrl(initialAudioUrl);
-    return () => {
-      stopPlayback();
-    };
-  }, [activeEntityKey, initialAudioUrl, stopPlayback]);
-
-  function playWithBrowserSpeechSynthesis(text: string) {
+  const playWithBrowserSpeechSynthesis = useCallback((text: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       setIsPlaying(false);
       return;
@@ -75,29 +70,136 @@ export function VoiceAudioButton({
     } catch {
       setIsPlaying(false);
     }
-  }
+  }, []);
 
-  async function playAudioUrlOrFallback(url: string | null, textToSpeak: string) {
-    if (!url) {
-      playWithBrowserSpeechSynthesis(textToSpeak);
-      return;
-    }
+  const playAudioUrlOrFallback = useCallback(
+    async (url: string | null, textToSpeak: string) => {
+      if (!url) {
+        playWithBrowserSpeechSynthesis(textToSpeak);
+        return;
+      }
 
-    try {
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
+      try {
+        // Reuse preloaded HTMLAudioElement if it matches the URL for instant zero-lag playback
+        const audio =
+          preloadedAudioRef.current && preloadedAudioRef.current.src === url
+            ? preloadedAudioRef.current
+            : new Audio(url);
+        audio.currentTime = 0;
+        audioRef.current = audio;
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          audioRef.current = null;
+          playWithBrowserSpeechSynthesis(textToSpeak);
+        };
+        setIsPlaying(true);
+        await audio.play();
+      } catch {
         audioRef.current = null;
         playWithBrowserSpeechSynthesis(textToSpeak);
-      };
-      setIsPlaying(true);
-      await audio.play();
-    } catch {
-      audioRef.current = null;
-      playWithBrowserSpeechSynthesis(textToSpeak);
+      }
+    },
+    [playWithBrowserSpeechSynthesis]
+  );
+
+  // Stop any playing audio and reset cached URL when the active question or battle changes
+  useEffect(() => {
+    stopPlayback();
+    setCachedAudioUrl(initialAudioUrl);
+    if (initialAudioUrl && typeof window !== "undefined") {
+      const pre = new Audio(initialAudioUrl);
+      pre.preload = "auto";
+      pre.load();
+      preloadedAudioRef.current = pre;
     }
-  }
+    return () => {
+      stopPlayback();
+    };
+  }, [activeEntityKey, initialAudioUrl, stopPlayback]);
+
+  // Automatic preload + autoplay when `autoPlay` is enabled (e.g., Winner Announcement)
+  useEffect(() => {
+    if (!autoPlay || !activeEntityKey) return;
+    if (autoPlayedEntityRef.current === activeEntityKey) return;
+    autoPlayedEntityRef.current = activeEntityKey;
+
+    let cancelled = false;
+
+    async function preloadAndAutoPlay() {
+      if (initialAudioUrl) {
+        if (!cancelled) {
+          await playAudioUrlOrFallback(initialAudioUrl, fallbackText);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const endpoint =
+          mode === "question" ? "/api/audio/question" : "/api/audio/winner";
+        const payload =
+          mode === "question"
+            ? { questionId: questionId ?? "" }
+            : { battleId: battleId ?? "" };
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (cancelled) return;
+
+        if (!res.ok) {
+          playWithBrowserSpeechSynthesis(fallbackText);
+          return;
+        }
+
+        const data = (await res.json()) as {
+          audioUrl?: string | null;
+          speechText?: string;
+        };
+
+        if (cancelled) return;
+
+        const nextUrl = data.audioUrl ?? null;
+        const speechText = data.speechText || fallbackText;
+        if (nextUrl) {
+          setCachedAudioUrl(nextUrl);
+          const pre = new Audio(nextUrl);
+          pre.preload = "auto";
+          pre.load();
+          preloadedAudioRef.current = pre;
+        }
+
+        await playAudioUrlOrFallback(nextUrl, speechText);
+      } catch {
+        if (!cancelled) {
+          playWithBrowserSpeechSynthesis(fallbackText);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void preloadAndAutoPlay();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    autoPlay,
+    activeEntityKey,
+    battleId,
+    fallbackText,
+    initialAudioUrl,
+    mode,
+    playAudioUrlOrFallback,
+    playWithBrowserSpeechSynthesis,
+    questionId,
+  ]);
 
   async function handleToggleAudio() {
     if (isPlaying) {

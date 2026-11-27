@@ -139,6 +139,7 @@ export function LiveBattleQuiz({
   const autoSubmittedForQuestionRef = useRef<string | null>(null);
   const announcedCompletionRef = useRef<boolean>(false);
   const isSubmittingRef = useRef<boolean>(false);
+  const preloadedWinnerAudioUrlRef = useRef<string | null>(null);
 
   const channelRef = useRef<ReturnType<
     ReturnType<typeof createBrowserSupabaseClient>["channel"]
@@ -191,6 +192,20 @@ export function LiveBattleQuiz({
       }
 
       if (data.completedSummary) {
+        if (
+          data.completedSummary.winnerAnnouncementAudioUrl &&
+          typeof window !== "undefined" &&
+          preloadedWinnerAudioUrlRef.current !==
+            data.completedSummary.winnerAnnouncementAudioUrl
+        ) {
+          preloadedWinnerAudioUrlRef.current =
+            data.completedSummary.winnerAnnouncementAudioUrl;
+          const pre = new Audio(
+            data.completedSummary.winnerAnnouncementAudioUrl
+          );
+          pre.preload = "auto";
+          pre.load();
+        }
         setCompletedSummary((prev) => prev ?? data.completedSummary);
       }
 
@@ -395,9 +410,6 @@ export function LiveBattleQuiz({
         };
 
         if (!res.ok) {
-          toast.error("Could not submit answer", {
-            description: data.error ?? "Please try again.",
-          });
           return;
         }
 
@@ -408,20 +420,10 @@ export function LiveBattleQuiz({
         );
         setSelectedKey(null);
 
-        if (params.timedOut) {
-          toast.warning("Time expired on question", {
-            description: "Moving to the next question.",
-          });
-        } else {
-          toast.success(`Answer locked in (${params.optionKey})`, {
-            description: `Progress: ${data.answeredCount ?? 0} / ${data.totalQuestions ?? 0} answered`,
-          });
-        }
-
         broadcastArenaUpdate();
         await fetchArenaState();
       } catch {
-        toast.error("Network error submitting answer");
+        // Silent during active battle to prevent toast distraction
       } finally {
         isSubmittingRef.current = false;
         setIsSubmitting(false);
@@ -662,6 +664,7 @@ export function LiveBattleQuiz({
                 <VoiceAudioButton
                   mode="winner"
                   battleId={battleId}
+                  autoPlay
                   initialAudioUrl={
                     completedSummary?.winnerAnnouncementAudioUrl ?? null
                   }
@@ -686,7 +689,7 @@ export function LiveBattleQuiz({
                           )?.score ?? 0
                         } points!`
                   }
-                  label="Play Winner Announcement"
+                  label="Replay Winner Announcement"
                 />
               </div>
             </div>

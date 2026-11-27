@@ -1,4 +1,7 @@
 import {
+  getOrCreateCachedAudioAsset,
+} from "@/lib/audio/tts-cache";
+import {
   and,
   answerSubmissions,
   asc,
@@ -20,6 +23,7 @@ import {
   type StoredParticipantDiagnosis,
   type StoredTopicBreakdown,
 } from "@repo/db";
+import { buildWinnerAnnouncementScript } from "@repo/elevenlabs";
 import type {
   OptionKey,
   PublicBattleQuestion,
@@ -460,7 +464,7 @@ export async function submitParticipantAnswer(params: {
   clientElapsedMs: number;
   timedOut: boolean;
 }): Promise<SubmitAnswerResult> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [battle] = await tx
       .select({
         id: battles.id,
@@ -828,4 +832,66 @@ export async function submitParticipantAnswer(params: {
       battleStatus: finalStatus,
     };
   });
+
+  // Warm the Winner Announcement audio cache in the background as soon as the battle completes
+  if (result.battleStatus === "COMPLETED" && !result.alreadySubmitted) {
+    void (async () => {
+      try {
+        const [battleMeta] = await db
+          .select({
+            id: battles.id,
+            winnerUserId: battles.winnerUserId,
+            isDraw: battles.isDraw,
+            courseCode: courses.code,
+            courseTitle: courses.title,
+          })
+          .from(battles)
+          .innerJoin(courses, eq(battles.courseId, courses.id))
+          .where(eq(battles.id, params.battleId))
+          .limit(1);
+
+        if (!battleMeta) return;
+
+        const participantRows = await db
+          .select({
+            userId: battleParticipants.userId,
+            slotIndex: battleParticipants.slotIndex,
+            score: battleParticipants.score,
+            displayName: profiles.displayName,
+          })
+          .from(battleParticipants)
+          .innerJoin(profiles, eq(battleParticipants.userId, profiles.id))
+          .where(eq(battleParticipants.battleId, params.battleId))
+          .orderBy(asc(battleParticipants.slotIndex));
+
+        const p1 = participantRows.find((p) => p.slotIndex === 1) ?? null;
+        const p2 = participantRows.find((p) => p.slotIndex === 2) ?? null;
+        const winnerP =
+          participantRows.find((p) => p.userId === battleMeta.winnerUserId) ??
+          p1;
+        const loserP =
+          participantRows.find((p) => p.userId !== winnerP?.userId) ?? p2;
+
+        const script = buildWinnerAnnouncementScript({
+          courseCode: battleMeta.courseCode,
+          courseTitle: battleMeta.courseTitle,
+          isDraw: battleMeta.isDraw,
+          winnerName: winnerP?.displayName ?? "Player 1",
+          winnerScore: winnerP?.score ?? 0,
+          loserName: loserP?.displayName ?? "Player 2",
+          loserScore: loserP?.score ?? 0,
+        });
+
+        await getOrCreateCachedAudioAsset({
+          assetType: "winner_announcement",
+          text: script,
+          battleId: battleMeta.id,
+        });
+      } catch {
+        // Non-blocking background cache warm
+      }
+    })();
+  }
+
+  return result;
 }

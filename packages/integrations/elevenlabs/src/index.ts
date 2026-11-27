@@ -10,6 +10,15 @@ export const DEFAULT_ELEVENLABS_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 export const DEFAULT_ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
 export const QUIZ_AUDIO_STORAGE_BUCKET = "quiz-audio";
 
+/**
+ * Shared, reusable "Battle Started" voice statement across all battles.
+ * Because this text is constant, its SHA-256 content hash is identical across every battle,
+ * so it is generated once by ElevenLabs, cached in `audio_assets` / Supabase Storage,
+ * and preloaded during the 20-second lobby countdown for zero-latency playback at 00s.
+ */
+export const BATTLE_START_ANNOUNCEMENT_SCRIPT =
+  "Battle started! Test your wit and conquer the arena. Good luck!";
+
 export interface VoiceSynthesisOptions {
   text: string;
   voiceId?: string;
