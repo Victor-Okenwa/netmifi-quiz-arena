@@ -466,18 +466,18 @@ export function BattleLobbyArena({
   const onesDigit = formattedSeconds[1] ?? "0";
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {/* 20-Second 3D Turning-Box Countdown Banner */}
       {bothReady && remainingSeconds !== null ? (
         <Card
-          className={`overflow-hidden border-2 transition-all ${
+          className={`w-full min-w-0 overflow-hidden border-2 transition-all ${
             isCountdownLocked
               ? "border-primary bg-primary-light/30 shadow-lg"
               : "border-emerald-500/50 bg-emerald-500/5 shadow-md"
           }`}
         >
-          <CardContent className="flex flex-col items-center justify-between gap-6 py-6 sm:flex-row sm:px-8">
-            <div className="space-y-1.5 text-center sm:text-left">
+          <CardContent className="flex flex-col items-center justify-between gap-6 px-4 py-6 sm:flex-row sm:px-8">
+            <div className="min-w-0 space-y-1.5 text-center sm:text-left">
               <div className="flex items-center justify-center gap-2 sm:justify-start">
                 {isCountdownLocked ? (
                   <Badge variant="default" className="gap-1.5 font-game">
@@ -492,7 +492,7 @@ export function BattleLobbyArena({
                 )}
               </div>
 
-              <h3 className="font-game text-xl font-extrabold tracking-tight sm:text-2xl">
+              <h3 className="font-game text-lg font-extrabold tracking-tight break-words sm:text-2xl">
                 {isCountdownLocked
                   ? "PREPARE FOR BATTLE — CONTROLS LOCKED"
                   : "MATCH STARTING IN..."}
@@ -506,7 +506,7 @@ export function BattleLobbyArena({
             </div>
 
             {/* 3D Turning Digit Boxes */}
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <TurningDigitBox digit={tensDigit} isLocked={isCountdownLocked} />
               <TurningDigitBox digit={onesDigit} isLocked={isCountdownLocked} />
               <div className="ml-1 flex flex-col text-left">
@@ -526,7 +526,7 @@ export function BattleLobbyArena({
       <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-11">
         {/* Player 1 Slot (Challenger) */}
         <Card
-          className={`flex flex-col justify-between border-2 transition-all md:col-span-5 ${
+          className={`flex min-w-0 flex-col justify-between overflow-hidden border-2 transition-all md:col-span-5 ${
             playerOne?.isReady
               ? "border-emerald-500/70 bg-emerald-500/5 shadow-md"
               : "border-border bg-card shadow-sm"
@@ -626,7 +626,7 @@ export function BattleLobbyArena({
 
         {/* Player 2 Slot (Opponent) */}
         <Card
-          className={`flex flex-col justify-between border-2 transition-all md:col-span-5 ${
+          className={`flex min-w-0 flex-col justify-between overflow-hidden border-2 transition-all md:col-span-5 ${
             playerTwo?.isReady
               ? "border-emerald-500/70 bg-emerald-500/5 shadow-md"
               : "border-border bg-card shadow-sm"

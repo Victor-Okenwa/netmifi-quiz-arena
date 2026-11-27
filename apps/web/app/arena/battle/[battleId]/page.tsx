@@ -113,16 +113,16 @@ export default async function BattleRoomPage({
   const isSpectator = !isParticipant;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background text-foreground">
       <ArenaNavbar profile={profile} />
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/arena"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="size-3.5" />
+            <ArrowLeft className="size-3.5 shrink-0" />
             Back to Arena Lobby
           </Link>
 
@@ -141,9 +141,9 @@ export default async function BattleRoomPage({
         </div>
 
         {/* Battle Room Header Card */}
-        <Card className="border-primary/30 bg-card shadow-md">
-          <CardHeader className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="space-y-1.5">
+        <Card className="w-full min-w-0 overflow-hidden border-primary/30 bg-card shadow-md">
+          <CardHeader className="flex min-w-0 flex-col justify-between gap-4 px-4 sm:flex-row sm:items-center sm:px-6">
+            <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="default" className="font-game">
                   {battle.courseCode}
@@ -157,10 +157,10 @@ export default async function BattleRoomPage({
                   </Badge>
                 ) : null}
               </div>
-              <CardTitle className="font-game text-2xl font-bold">
+              <CardTitle className="font-game text-lg font-bold break-words sm:text-2xl">
                 {battle.courseTitle}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="break-words">
                 Topic: {battle.topicName ?? "All Course Topics"} • Invite Code:{" "}
                 <span className="font-mono font-semibold text-foreground">
                   {battle.inviteCode}
@@ -168,16 +168,16 @@ export default async function BattleRoomPage({
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs">
+            <div className="flex flex-wrap items-center gap-3 self-start rounded-xl border border-border bg-muted/40 px-3.5 py-2.5 text-xs sm: shrink-0 sm:gap-4 sm:self-center sm:px-4 sm:py-3">
               <div className="flex items-center gap-1.5">
-                <HelpCircle className="size-4 text-primary" />
+                <HelpCircle className="size-4 shrink-0 text-primary" />
                 <span className="font-semibold">
                   {battle.questionCount} Questions
                 </span>
               </div>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-1.5">
-                <Clock className="size-4 text-primary" />
+                <Clock className="size-4 shrink-0 text-primary" />
                 <span className="font-semibold">
                   {battle.timePerQuestionSeconds}s / Question
                 </span>

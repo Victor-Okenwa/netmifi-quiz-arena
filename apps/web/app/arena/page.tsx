@@ -169,23 +169,23 @@ export default async function ArenaPage() {
       : 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background text-foreground">
       <ArenaNavbar profile={profile} activeTab="lobby" />
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
         {/* Student Identity & Quick Actions Banner */}
-        <Card className="border-primary/30 bg-card shadow-sm">
-          <CardHeader className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-4">
+        <Card className="w-full min-w-0 overflow-hidden border-primary/30 bg-card shadow-sm">
+          <CardHeader className="flex min-w-0 flex-col justify-between gap-5 px-4 sm:px-6 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 items-center gap-3.5 sm:gap-4">
               <ProfileAvatar
                 avatarUrl={profile.avatarUrl}
                 avatarNumber={profile.avatarNumber}
                 displayName={profile.displayName}
-                className="size-16 ring-2 ring-primary/30"
+                className="size-14 shrink-0 ring-2 ring-primary/30 sm:size-16"
               />
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
+              <div className="min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="truncate font-mono text-xs text-muted-foreground">
                     @{profile.username}
                   </span>
                   {profile.universityShortCode ? (
@@ -194,53 +194,53 @@ export default async function ArenaPage() {
                     </Badge>
                   ) : null}
                 </div>
-                <CardTitle className="font-game text-2xl font-bold">
+                <CardTitle className="font-game text-lg font-bold break-words sm:text-2xl">
                   Welcome back, {profile.displayName}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="break-words text-xs sm:text-sm">
                   {profile.universityName} • {profile.departmentName} (
                   {profile.academicLevel})
                 </CardDescription>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="grid grid-cols-4 gap-4 rounded-xl border border-border bg-muted/40 px-5 py-3 text-center">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 lg:w-auto">
+              <div className="grid w-full grid-cols-2 gap-3 rounded-xl border border-border bg-muted/40 px-4 py-3 text-center sm:w-auto sm:grid-cols-4 sm:gap-4 sm:px-5">
                 <div>
-                  <p className="font-game text-lg font-bold text-primary">
+                  <p className="font-game text-base font-bold text-primary sm:text-lg">
                     {profile.xp}
                   </p>
                   <p className="text-[11px] text-muted-foreground">Total XP</p>
                 </div>
                 <div>
-                  <p className="font-game text-lg font-bold text-foreground">
+                  <p className="font-game text-base font-bold text-foreground sm:text-lg">
                     {profile.battlesPlayed}
                   </p>
                   <p className="text-[11px] text-muted-foreground">Battles</p>
                 </div>
                 <div>
-                  <p className="font-game text-lg font-bold text-foreground">
+                  <p className="font-game text-base font-bold text-foreground sm:text-lg">
                     {profile.battlesWon}
                   </p>
                   <p className="text-[11px] text-muted-foreground">Victories</p>
                 </div>
                 <div>
-                  <p className="font-game text-lg font-bold text-foreground">
+                  <p className="font-game text-base font-bold text-foreground sm:text-lg">
                     {winRate}%
                   </p>
                   <p className="text-[11px] text-muted-foreground">Win Rate</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <Link href="/arena/new">
-                  <Button size="lg" className="gap-2">
+              <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:items-center">
+                <Link href="/arena/new" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full gap-2 sm:w-auto">
                     <PlusCircle className="size-4" />
                     Create Battle
                   </Button>
                 </Link>
-                <Link href="/leaderboard">
-                  <Button variant="outline" size="lg" className="gap-2">
+                <Link href="/leaderboard" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
                     <Trophy className="size-4 text-primary" />
                     Rankings
                   </Button>
@@ -294,12 +294,12 @@ export default async function ArenaPage() {
           </div>
 
           {/* Open & Live Challenges Feed */}
-          <Card className="border-border bg-card shadow-sm lg:col-span-8">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div>
+          <Card className="w-full min-w-0 overflow-hidden border-border bg-card shadow-sm lg:col-span-8">
+            <CardHeader className="flex flex-col items-start justify-between gap-3 pb-4 sm:flex-row sm:items-center">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Users className="size-4 text-primary" />
-                  <CardTitle className="font-game text-lg font-bold">
+                  <Users className="size-4 shrink-0 text-primary" />
+                  <CardTitle className="font-game text-base font-bold sm:text-lg">
                     OPEN & LIVE ARENA ROOMS
                   </CardTitle>
                 </div>
@@ -307,7 +307,7 @@ export default async function ArenaPage() {
                   Accept an open challenge or spectate a live match in progress.
                 </CardDescription>
               </div>
-              <Link href="/arena/new">
+              <Link href="/arena/new" className="shrink-0">
                 <Button variant="secondary" size="sm" className="gap-1.5">
                   <Swords className="size-3.5 text-primary" />
                   Host Room
@@ -484,10 +484,11 @@ export default async function ArenaPage() {
                         <Link
                           key={topic.id}
                           href={`/arena/new?courseId=${course.id}&topicId=${topic.id}`}
+                          className="max-w-full"
                         >
                           <Badge
                             variant="outline"
-                            className="cursor-pointer text-[11px] font-normal transition-colors hover:border-primary hover:bg-primary-light hover:text-primary"
+                            className="max-w-full cursor-pointer whitespace-normal text-left text-[11px] font-normal transition-colors hover:border-primary hover:bg-primary-light hover:text-primary"
                           >
                             {topic.name}
                           </Badge>

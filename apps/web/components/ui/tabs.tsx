@@ -55,7 +55,7 @@ function Tabs({
     >
       <div
         data-slot="tabs"
-        className={cn("flex flex-col gap-4", className)}
+        className={cn("flex w-full min-w-0 flex-col gap-4", className)}
         {...props}
       >
         {children}
@@ -70,7 +70,7 @@ function TabsList({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
       role="tablist"
       data-slot="tabs-list"
       className={cn(
-        "inline-flex h-11 w-full items-center justify-center rounded-xl bg-muted p-1 text-muted-foreground",
+        "grid min-h-11 w-full min-w-0 grid-cols-1 items-center gap-1 rounded-xl bg-muted p-1 text-muted-foreground sm:grid-cols-2",
         className
       )}
       {...props}
@@ -101,7 +101,7 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       onClick={() => onValueChange(value)}
       className={cn(
-        "inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg px-2.5 py-2 text-xs font-medium transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:px-3",
         isActive
           ? "bg-card text-foreground shadow-xs ring-1 ring-border/60"
           : "text-muted-foreground hover:text-foreground",
@@ -134,7 +134,7 @@ function TabsContent({
       role="tabpanel"
       data-state="active"
       data-slot="tabs-content"
-      className={cn("outline-none", className)}
+      className={cn("w-full min-w-0 outline-none", className)}
       {...props}
     >
       {children}

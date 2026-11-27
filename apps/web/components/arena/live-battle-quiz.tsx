@@ -426,26 +426,26 @@ export function LiveBattleQuiz({
   const defaultTabValue = playerOne ? "slot-1" : "slot-2";
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {/* Top Head-to-Head Live Scoreboard & Progress Bar */}
-      <Card className="border-primary/30 bg-card shadow-sm">
+      <Card className="w-full min-w-0 overflow-hidden border-primary/30 bg-card shadow-sm">
         <CardContent className="grid grid-cols-1 items-center gap-4 py-4 sm:grid-cols-11">
           {/* Player 1 Score & Progress */}
-          <div className="flex items-center justify-between gap-3 sm:col-span-5">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center justify-between gap-3 sm:col-span-5">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <ProfileAvatar
                 avatarUrl={playerOne?.avatarUrl}
                 avatarNumber={playerOne?.avatarNumber}
                 displayName={playerOne?.displayName}
-                className="size-11"
+                className="size-10 shrink-0 sm:size-11"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <p className="truncate font-game text-xs font-bold text-foreground">
                     {playerOne?.displayName ?? "Challenger"}
                   </p>
                   {playerOne?.userId === currentUserId ? (
-                    <Badge variant="default" className="px-1.5 py-0 text-[9px]">
+                    <Badge variant="default" className="shrink-0 px-1.5 py-0 text-[9px]">
                       You
                     </Badge>
                   ) : null}
@@ -453,7 +453,7 @@ export function LiveBattleQuiz({
                 <p className="text-[11px] text-muted-foreground">
                   {playerOne?.answeredCount ?? 0} / {totalQuestions} Answered
                 </p>
-                <div className="mt-1 h-1.5 w-28 overflow-hidden rounded-full bg-muted">
+                <div className="mt-1 h-1.5 w-full max-w-28 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full bg-primary transition-all duration-300"
                     style={{
@@ -470,7 +470,7 @@ export function LiveBattleQuiz({
               </div>
             </div>
 
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <p className="font-game text-lg font-extrabold text-primary">
                 {playerOne?.score ?? 0}
               </p>
@@ -486,19 +486,19 @@ export function LiveBattleQuiz({
           </div>
 
           {/* Player 2 Score & Progress */}
-          <div className="flex items-center justify-between gap-3 sm:col-span-5">
-            <div className="text-left">
+          <div className="flex min-w-0 items-center justify-between gap-3 border-t border-border/50 pt-3 sm:col-span-5 sm:border-t-0 sm:pt-0">
+            <div className="shrink-0 text-left">
               <p className="font-game text-lg font-extrabold text-primary">
                 {playerTwo?.score ?? 0}
               </p>
               <p className="text-[10px] text-muted-foreground">PTS</p>
             </div>
 
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="min-w-0 text-right">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+              <div className="min-w-0 flex-1 text-right">
                 <div className="flex items-center justify-end gap-1.5">
                   {playerTwo?.userId === currentUserId ? (
-                    <Badge variant="default" className="px-1.5 py-0 text-[9px]">
+                    <Badge variant="default" className="shrink-0 px-1.5 py-0 text-[9px]">
                       You
                     </Badge>
                   ) : null}
@@ -509,7 +509,7 @@ export function LiveBattleQuiz({
                 <p className="text-[11px] text-muted-foreground">
                   {playerTwo?.answeredCount ?? 0} / {totalQuestions} Answered
                 </p>
-                <div className="mt-1 ml-auto h-1.5 w-28 overflow-hidden rounded-full bg-muted">
+                <div className="mt-1 ml-auto h-1.5 w-full max-w-28 overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full bg-emerald-600 transition-all duration-300"
                     style={{
@@ -528,7 +528,7 @@ export function LiveBattleQuiz({
                 avatarUrl={playerTwo?.avatarUrl}
                 avatarNumber={playerTwo?.avatarNumber}
                 displayName={playerTwo?.displayName}
-                className="size-11"
+                className="size-10 shrink-0 sm:size-11"
               />
             </div>
           </div>
@@ -537,17 +537,17 @@ export function LiveBattleQuiz({
 
       {/* CASE 1: Battle Completed -> Full Match Summary with shadcn Tabs for Both Participants */}
       {isBattleCompleted ? (
-        <Card className="border-2 border-primary/40 bg-card shadow-lg">
-          <CardHeader className="space-y-3 text-center">
+        <Card className="w-full min-w-0 overflow-hidden border-2 border-primary/40 bg-card shadow-lg">
+          <CardHeader className="min-w-0 space-y-3 text-center">
             <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary-light text-primary">
               <Trophy className="size-7" />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <Badge variant="default" className="mb-2 font-game">
                 BATTLE COMPLETED
               </Badge>
-              <CardTitle className="font-game text-3xl font-extrabold">
+              <CardTitle className="font-game text-xl font-extrabold break-words sm:text-3xl">
                 {battleMeta.isDraw
                   ? "IT'S A DRAW!"
                   : viewerRole === "spectator"
@@ -562,7 +562,7 @@ export function LiveBattleQuiz({
                           opponentParticipant?.displayName ?? "OPPONENT"
                         } WON THE BATTLE`}
               </CardTitle>
-              <CardDescription className="mt-1">
+              <CardDescription className="mt-1 break-words">
                 Final Score: {playerOne?.displayName ?? "Player 1"} (
                 {playerOne?.score ?? 0} PTS) vs{" "}
                 {playerTwo?.displayName ?? "Player 2"} ({playerTwo?.score ?? 0}{" "}
@@ -580,9 +580,9 @@ export function LiveBattleQuiz({
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="min-w-0 space-y-6">
             {/* shadcn Tabs to switch between Player 1 and Player 2 Match Summaries */}
-            <Tabs defaultValue={defaultTabValue} className="w-full">
+            <Tabs defaultValue={defaultTabValue} className="w-full min-w-0">
               <TabsList>
                 {playerOne ? (
                   <TabsTrigger value="slot-1">
@@ -590,12 +590,15 @@ export function LiveBattleQuiz({
                       avatarUrl={playerOne.avatarUrl}
                       avatarNumber={playerOne.avatarNumber}
                       displayName={playerOne.displayName}
-                      className="size-5"
+                      className="size-5 shrink-0"
                     />
-                    <span className="truncate font-game text-xs font-bold">
+                    <span className="min-w-0 truncate font-game text-xs font-bold">
                       {playerOne.displayName}
                     </span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="shrink-0 px-1.5 py-0 text-[10px]"
+                    >
                       {playerOne.score} PTS
                     </Badge>
                   </TabsTrigger>
@@ -607,12 +610,15 @@ export function LiveBattleQuiz({
                       avatarUrl={playerTwo.avatarUrl}
                       avatarNumber={playerTwo.avatarNumber}
                       displayName={playerTwo.displayName}
-                      className="size-5"
+                      className="size-5 shrink-0"
                     />
-                    <span className="truncate font-game text-xs font-bold">
+                    <span className="min-w-0 truncate font-game text-xs font-bold">
                       {playerTwo.displayName}
                     </span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="shrink-0 px-1.5 py-0 text-[10px]"
+                    >
                       {playerTwo.score} PTS
                     </Badge>
                   </TabsTrigger>
@@ -634,20 +640,20 @@ export function LiveBattleQuiz({
                   <TabsContent
                     key={participant.userId}
                     value={tabKey}
-                    className="space-y-6 pt-2"
+                    className="min-w-0 space-y-6 pt-2"
                   >
                     {/* Participant Performance Metrics */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                        <p className="font-game text-2xl font-bold text-primary">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                      <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-xl font-bold text-primary sm:text-2xl">
                           {participant.score} PTS
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Final Score
                         </p>
                       </div>
-                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                        <p className="font-game text-2xl font-bold text-foreground">
+                      <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-xl font-bold text-foreground sm:text-2xl">
                           {diag?.accuracyPercent ??
                             Math.round(
                               (participant.correctAnswersCount /
@@ -661,8 +667,8 @@ export function LiveBattleQuiz({
                           {totalQuestions})
                         </p>
                       </div>
-                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                        <p className="font-game text-2xl font-bold text-foreground">
+                      <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-xl font-bold text-foreground sm:text-2xl">
                           {(
                             (diag?.averageResponseTimeMs ??
                               Math.round(
@@ -681,10 +687,10 @@ export function LiveBattleQuiz({
                     {/* Topic Breakdown */}
                     {diag?.topicBreakdowns &&
                     diag.topicBreakdowns.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="min-w-0 space-y-3">
                         <div className="flex items-center gap-2">
-                          <Target className="size-4 text-primary" />
-                          <h3 className="font-game text-sm font-bold">
+                          <Target className="size-4 shrink-0 text-primary" />
+                          <h3 className="min-w-0 font-game text-xs font-bold break-words sm:text-sm">
                             {participant.displayName.toUpperCase()}&apos;S TOPIC
                             BREAKDOWN
                           </h3>
@@ -694,10 +700,10 @@ export function LiveBattleQuiz({
                           {diag.topicBreakdowns.map((tb) => (
                             <div
                               key={tb.topicId}
-                              className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3.5"
+                              className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-muted/20 p-3.5"
                             >
-                              <div className="min-w-0 pr-3">
-                                <p className="truncate font-game text-xs font-bold text-foreground">
+                              <div className="min-w-0 flex-1 pr-2">
+                                <p className="font-game text-xs font-bold break-words text-foreground">
                                   {tb.topicName}
                                 </p>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -714,8 +720,8 @@ export function LiveBattleQuiz({
                                 }
                                 className={
                                   tb.needsPractice
-                                    ? "text-xs"
-                                    : "bg-emerald-600 text-xs text-white hover:bg-emerald-600"
+                                    ? "shrink-0 text-xs"
+                                    : "shrink-0 bg-emerald-600 text-xs text-white hover:bg-emerald-600"
                                 }
                               >
                                 {tb.accuracyPercent}%{" "}
@@ -729,26 +735,29 @@ export function LiveBattleQuiz({
 
                     {/* Question-by-Question Summary for this Participant */}
                     {answeredFeed.length > 0 ? (
-                      <div className="space-y-3">
-                        <h3 className="font-game text-sm font-bold">
+                      <div className="min-w-0 space-y-3">
+                        <h3 className="font-game text-xs font-bold sm:text-sm">
                           ANSWERED QUESTIONS REVIEW ({answeredFeed.length})
                         </h3>
                         <div className="space-y-3">
                           {answeredFeed.map((item) => (
                             <div
                               key={item.questionId}
-                              className="rounded-xl border border-border bg-muted/15 p-4 space-y-2.5"
+                              className="min-w-0 space-y-2.5 rounded-xl border border-border bg-muted/15 p-3.5 sm:p-4"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="font-game">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <Badge
+                                    variant="outline"
+                                    className="shrink-0 font-game"
+                                  >
                                     Q{item.questionIndex}
                                   </Badge>
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="min-w-0 truncate text-xs text-muted-foreground">
                                     {item.topicName}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex shrink-0 items-center gap-2">
                                   <span className="text-xs text-muted-foreground">
                                     {(item.responseTimeMs / 1000).toFixed(1)}s
                                   </span>
@@ -768,7 +777,7 @@ export function LiveBattleQuiz({
                                 </div>
                               </div>
 
-                              <p className="text-sm font-semibold text-foreground">
+                              <p className="text-sm font-semibold break-words text-foreground">
                                 {item.questionText}
                               </p>
 
@@ -781,7 +790,7 @@ export function LiveBattleQuiz({
                                   return (
                                     <div
                                       key={opt.id}
-                                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                                      className={`flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
                                         isCorrectKey
                                           ? "border-emerald-500/60 bg-emerald-500/10 font-semibold text-foreground"
                                           : isChosen
@@ -789,14 +798,16 @@ export function LiveBattleQuiz({
                                             : "border-border/60 bg-card text-muted-foreground"
                                       }`}
                                     >
-                                      <span className="font-game font-bold">
+                                      <span className="shrink-0 font-game font-bold">
                                         {opt.key}.
                                       </span>
-                                      <span className="flex-1">{opt.text}</span>
+                                      <span className="min-w-0 flex-1 break-words">
+                                        {opt.text}
+                                      </span>
                                       {isChosen ? (
                                         <Badge
                                           variant="secondary"
-                                          className="text-[9px]"
+                                          className="shrink-0 text-[9px]"
                                         >
                                           Picked
                                         </Badge>
@@ -807,7 +818,7 @@ export function LiveBattleQuiz({
                               </div>
 
                               {item.explanation ? (
-                                <p className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+                                <p className="rounded-lg bg-muted/50 p-2.5 text-xs break-words text-muted-foreground">
                                   <span className="font-semibold text-foreground">
                                     Explanation:{" "}
                                   </span>
@@ -825,28 +836,33 @@ export function LiveBattleQuiz({
             </Tabs>
           </CardContent>
 
-          <CardFooter className="flex flex-wrap items-center justify-center gap-3 border-t border-border pt-6">
-            <Link href={`/arena/new?courseId=${battleMeta.courseId}`}>
-              <Button className="gap-2">
+          <CardFooter className="flex flex-col items-stretch justify-center gap-2.5 border-t border-border pt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <Link
+              href={`/arena/new?courseId=${battleMeta.courseId}`}
+              className="w-full sm:w-auto"
+            >
+              <Button className="w-full gap-2 sm:w-auto">
                 <PlusCircle className="size-4" />
                 Play Another Battle
               </Button>
             </Link>
-            <Link href="/leaderboard">
-              <Button variant="outline" className="gap-2">
+            <Link href="/leaderboard" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full gap-2 sm:w-auto">
                 <Award className="size-4 text-primary" />
                 View Leaderboard
               </Button>
             </Link>
-            <Link href="/arena">
-              <Button variant="ghost">Return to Arena Lobby</Button>
+            <Link href="/arena" className="w-full sm:w-auto">
+              <Button variant="ghost" className="w-full sm:w-auto">
+                Return to Arena Lobby
+              </Button>
             </Link>
           </CardFooter>
         </Card>
       ) : viewerRole === "spectator" ? (
         /* CASE 2: Live Spectator View with shadcn Tabs (Only Already-Answered Questions Shown) */
-        <Card className="border-border bg-card shadow-md">
-          <CardHeader className="space-y-2">
+        <Card className="w-full min-w-0 overflow-hidden border-border bg-card shadow-md">
+          <CardHeader className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Badge variant="default" className="gap-1.5 font-game">
                 <Eye className="size-3.5" />
@@ -856,7 +872,7 @@ export function LiveBattleQuiz({
                 Questions appear live as each participant locks in their answer
               </span>
             </div>
-            <CardTitle className="font-game text-xl font-bold">
+            <CardTitle className="font-game text-lg font-bold sm:text-xl">
               WATCH PARTICIPANT PROGRESS
             </CardTitle>
             <CardDescription className="text-xs">
@@ -865,8 +881,8 @@ export function LiveBattleQuiz({
             </CardDescription>
           </CardHeader>
 
-          <CardContent>
-            <Tabs defaultValue={defaultTabValue} className="w-full">
+          <CardContent className="min-w-0">
+            <Tabs defaultValue={defaultTabValue} className="w-full min-w-0">
               <TabsList>
                 {playerOne ? (
                   <TabsTrigger value="slot-1">
@@ -874,12 +890,15 @@ export function LiveBattleQuiz({
                       avatarUrl={playerOne.avatarUrl}
                       avatarNumber={playerOne.avatarNumber}
                       displayName={playerOne.displayName}
-                      className="size-5"
+                      className="size-5 shrink-0"
                     />
-                    <span className="truncate font-game text-xs font-bold">
+                    <span className="min-w-0 truncate font-game text-xs font-bold">
                       {playerOne.displayName}
                     </span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="shrink-0 px-1.5 py-0 text-[10px]"
+                    >
                       {playerOne.answeredCount}/{totalQuestions}
                     </Badge>
                   </TabsTrigger>
@@ -891,12 +910,15 @@ export function LiveBattleQuiz({
                       avatarUrl={playerTwo.avatarUrl}
                       avatarNumber={playerTwo.avatarNumber}
                       displayName={playerTwo.displayName}
-                      className="size-5"
+                      className="size-5 shrink-0"
                     />
-                    <span className="truncate font-game text-xs font-bold">
+                    <span className="min-w-0 truncate font-game text-xs font-bold">
                       {playerTwo.displayName}
                     </span>
-                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="shrink-0 px-1.5 py-0 text-[10px]"
+                    >
                       {playerTwo.answeredCount}/{totalQuestions}
                     </Badge>
                   </TabsTrigger>
@@ -918,12 +940,12 @@ export function LiveBattleQuiz({
                   <TabsContent
                     key={participant.userId}
                     value={tabKey}
-                    className="space-y-4 pt-3"
+                    className="min-w-0 space-y-4 pt-3"
                   >
                     {answeredFeed.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center">
+                      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center">
                         <Loader2 className="mb-2 size-6 animate-spin text-primary" />
-                        <p className="font-game text-sm font-bold">
+                        <p className="font-game text-sm font-bold break-words">
                           {participant.displayName.toUpperCase()} IS ON
                           QUESTION 1
                         </p>
@@ -937,19 +959,22 @@ export function LiveBattleQuiz({
                         {answeredFeed.map((item) => (
                           <div
                             key={item.questionId}
-                            className="rounded-xl border border-border bg-muted/15 p-4 space-y-3"
+                            className="min-w-0 space-y-3 rounded-xl border border-border bg-muted/15 p-3.5 sm:p-4"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 <Badge variant="default" className="font-game">
                                   Question {item.questionIndex} of{" "}
                                   {totalQuestions}
                                 </Badge>
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge
+                                  variant="secondary"
+                                  className="max-w-full truncate text-xs"
+                                >
                                   {item.topicName}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex shrink-0 items-center gap-2">
                                 <span className="text-xs text-muted-foreground">
                                   Answered in{" "}
                                   {(item.responseTimeMs / 1000).toFixed(1)}s
@@ -966,7 +991,7 @@ export function LiveBattleQuiz({
                               </div>
                             </div>
 
-                            <p className="text-sm font-semibold text-foreground">
+                            <p className="text-sm font-semibold break-words text-foreground">
                               {item.questionText}
                             </p>
 
@@ -977,22 +1002,24 @@ export function LiveBattleQuiz({
                                 return (
                                   <div
                                     key={opt.id}
-                                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                                    className={`flex min-w-0 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${
                                       isChosen
                                         ? "border-primary bg-primary-light/60 font-semibold text-foreground ring-1 ring-primary/30"
                                         : "border-border/60 bg-card text-muted-foreground"
                                     }`}
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-game font-bold">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <span className="shrink-0 font-game font-bold">
                                         {opt.key}.
                                       </span>
-                                      <span>{opt.text}</span>
+                                      <span className="min-w-0 break-words">
+                                        {opt.text}
+                                      </span>
                                     </div>
                                     {isChosen ? (
                                       <Badge
                                         variant="default"
-                                        className="text-[9px]"
+                                        className="shrink-0 text-[9px]"
                                       >
                                         Locked In
                                       </Badge>
@@ -1008,10 +1035,10 @@ export function LiveBattleQuiz({
 
                     {/* Locked Placeholder for Unanswered Questions */}
                     {remainingCount > 0 ? (
-                      <div className="flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Lock className="size-4 text-primary" />
-                          <span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Lock className="size-4 shrink-0 text-primary" />
+                          <span className="break-words">
                             {remainingCount} remaining{" "}
                             {remainingCount === 1
                               ? "question is"
@@ -1019,7 +1046,7 @@ export function LiveBattleQuiz({
                             hidden until {participant.displayName} answers
                           </span>
                         </div>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="shrink-0 text-[10px]">
                           In Progress
                         </Badge>
                       </div>
@@ -1032,17 +1059,20 @@ export function LiveBattleQuiz({
         </Card>
       ) : currentQuestion ? (
         /* CASE 3: Active Participant Question Display */
-        <Card className="border-border bg-card shadow-md">
-          <CardHeader className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
+        <Card className="w-full min-w-0 overflow-hidden border-border bg-card shadow-md">
+          <CardHeader className="min-w-0 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <Badge variant="default" className="font-game">
                   Question {currentQuestion.questionIndex} of{" "}
                   {currentQuestion.totalQuestions}
                 </Badge>
-                <Badge variant="secondary" className="gap-1">
-                  <BookOpen className="size-3 text-primary" />
-                  {currentQuestion.topicName}
+                <Badge
+                  variant="secondary"
+                  className="max-w-full gap-1 whitespace-normal text-left"
+                >
+                  <BookOpen className="size-3 shrink-0 text-primary" />
+                  <span className="truncate">{currentQuestion.topicName}</span>
                 </Badge>
                 <Badge variant="outline" className="capitalize">
                   {currentQuestion.difficulty}
@@ -1050,7 +1080,7 @@ export function LiveBattleQuiz({
               </div>
 
               <div
-                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 font-game text-sm font-bold ${
+                className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 font-game text-sm font-bold ${
                   questionSecondsLeft <= 5
                     ? "border-destructive bg-destructive/10 text-destructive"
                     : "border-primary/40 bg-primary-light/50 text-primary"
@@ -1082,12 +1112,12 @@ export function LiveBattleQuiz({
               />
             </div>
 
-            <CardTitle className="pt-2 text-lg leading-relaxed font-semibold text-foreground sm:text-xl">
+            <CardTitle className="pt-2 text-base leading-relaxed font-semibold break-words text-foreground sm:text-xl">
               {currentQuestion.questionText}
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-3">
+          <CardContent className="min-w-0 space-y-3">
             <div className="grid grid-cols-1 gap-3">
               {currentQuestion.options.map((option) => {
                 const isSelected = selectedKey === option.key;
@@ -1097,13 +1127,13 @@ export function LiveBattleQuiz({
                     type="button"
                     disabled={isSubmitting}
                     onClick={() => setSelectedKey(option.key)}
-                    className={`flex items-center justify-between rounded-xl border-2 p-4 text-left transition-all ${
+                    className={`flex min-w-0 items-center justify-between rounded-xl border-2 p-3.5 text-left transition-all sm:p-4 ${
                       isSelected
                         ? "border-primary bg-primary-light/60 ring-2 ring-primary/30"
                         : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
                     }`}
                   >
-                    <div className="flex items-center gap-3.5 pr-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 pr-2 sm:gap-3.5">
                       <span
                         className={`flex size-8 shrink-0 items-center justify-center rounded-lg font-game text-xs font-bold ${
                           isSelected
@@ -1113,7 +1143,7 @@ export function LiveBattleQuiz({
                       >
                         {option.key}
                       </span>
-                      <span className="text-sm font-medium text-foreground sm:text-base">
+                      <span className="min-w-0 flex-1 text-sm font-medium break-words text-foreground sm:text-base">
                         {option.text}
                       </span>
                     </div>
@@ -1127,10 +1157,10 @@ export function LiveBattleQuiz({
             </div>
           </CardContent>
 
-          <CardFooter className="flex items-center justify-between border-t border-border pt-5">
+          <CardFooter className="flex flex-col items-stretch justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Zap className="size-3.5 text-primary" />
-              Faster correct answers earn up to +50 speed bonus points
+              <Zap className="size-3.5 shrink-0 text-primary" />
+              <span>Faster correct answers earn up to +50 speed bonus points</span>
             </p>
 
             <Button
@@ -1145,7 +1175,7 @@ export function LiveBattleQuiz({
                   timedOut: false,
                 });
               }}
-              className="gap-2 font-game text-xs font-bold"
+              className="w-full gap-2 font-game text-xs font-bold sm:w-auto"
             >
               {isSubmitting ? (
                 <>
@@ -1163,12 +1193,12 @@ export function LiveBattleQuiz({
         </Card>
       ) : (
         /* CASE 4: Current student finished all questions; waiting for opponent */
-        <Card className="border-border bg-card py-12 text-center shadow-sm">
+        <Card className="w-full min-w-0 overflow-hidden border-border bg-card py-12 text-center shadow-sm">
           <CardContent className="flex flex-col items-center justify-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
               <CheckCircle2 className="size-6" />
             </div>
-            <h3 className="font-game text-xl font-bold">
+            <h3 className="font-game text-lg font-bold sm:text-xl">
               YOU COMPLETED ALL {totalQuestions} QUESTIONS!
             </h3>
             <p className="max-w-md text-xs text-muted-foreground">
