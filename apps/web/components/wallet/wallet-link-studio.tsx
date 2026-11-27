@@ -96,6 +96,15 @@ export function WalletLinkStudio() {
       setLinkedWallet(data.linkedWallet);
       setSolanaConfig(data.solanaConfig);
       setTransactions(data.transactions ?? []);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("netmifi:wallet-updated", {
+            detail: {
+              walletAddress: data.linkedWallet?.walletAddress ?? null,
+            },
+          })
+        );
+      }
     } catch {
       // Non-fatal
     } finally {

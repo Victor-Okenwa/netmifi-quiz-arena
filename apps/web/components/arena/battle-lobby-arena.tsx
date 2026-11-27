@@ -503,6 +503,9 @@ export function BattleLobbyArena({
       );
 
       broadcastLobbyUpdate();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("netmifi:wallet-updated"));
+      }
       toast.success("Stake Deposited into Solana Devnet Escrow!", {
         description: `Tx: ${data.txSignature?.slice(0, 12)}... • You can now Lock In Ready.`,
       });

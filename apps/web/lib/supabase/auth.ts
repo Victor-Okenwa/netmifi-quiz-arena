@@ -4,6 +4,7 @@ import {
   eq,
   profiles,
   universities,
+  walletLinks,
 } from "@repo/db";
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
@@ -26,6 +27,7 @@ export interface AuthenticatedStudentProfile {
   xp: number;
   battlesPlayed: number;
   battlesWon: number;
+  walletAddress?: string | null;
 }
 
 export interface AuthSessionContext {
@@ -151,10 +153,12 @@ export async function getStudentProfileById(
         xp: profiles.xp,
         battlesPlayed: profiles.battlesPlayed,
         battlesWon: profiles.battlesWon,
+        walletAddress: walletLinks.walletAddress,
       })
       .from(profiles)
       .leftJoin(universities, eq(profiles.universityId, universities.id))
       .leftJoin(departments, eq(profiles.departmentId, departments.id))
+      .leftJoin(walletLinks, eq(profiles.id, walletLinks.userId))
       .where(eq(profiles.id, userId))
       .limit(1);
 
