@@ -14,8 +14,8 @@
 | **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ✅ **COMPLETED** |
 | **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ✅ **COMPLETED** |
 | **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ⏳ **NEXT UP** |
-| **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⬜ **PENDING** |
+| **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ✅ **COMPLETED** |
+| **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⬜ **PENDING** |
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⬜ **PENDING** |
 | **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⬜ **PENDING** |
@@ -130,29 +130,30 @@ Enable students to register, log in, and set up their academic profile (Universi
 ---
 
 ## Milestone 4: Academic Catalog, Student Dashboard & Arena Lobby UI
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Build the primary student-facing Arena Dashboard, Course/Topic Explorer, and Battle Creation / Matchmaking Lobby in `apps/web` using the NetMifi design system.
 
 ### Scope & Deliverables
-- [ ] **Arena Dashboard (`/dashboard` or `/arena`)**:
-  - Displays student's academic profile, XP, win/loss record, recent battle diagnoses, and recommended practice topics.
-  - Lists open challenges in the student's courses and a quick-join invite code input.
-- [ ] **Course & Topic Battle Configurator (`/arena/new`)**:
-  - Filter by University Course and specific Topic(s).
-  - Select Battle Mode: **Free Academic Battle** (default, no wallet needed) or **Reward Battle** (shows wallet requirement badge).
-  - Configure question count (e.g., 5 or 10 questions), timer per question (e.g., 15s / 20s), and visibility (Open Matchmaking vs. Private Friend Challenge Link/Code).
-- [ ] **Leaderboard View (`/leaderboard`)**:
-  - Course-specific and university-wide XP and accuracy rankings.
+- [x] **Shared Arena Navigation Bar (`apps/web/components/arena/arena-navbar.tsx`)**:
+  - Top navbar with Arena Lobby (`/arena`), New Battle (`/arena/new`), Leaderboard (`/leaderboard`), student university/level badge, `<ProfileAvatar />` (`1`–`5` fallback + `avatarUrl`), and Sign Out button.
+- [x] **Arena Dashboard & Matchmaking Lobby (`/arena`)**:
+  - Displays student's academic profile, `<ProfileAvatar />`, XP, battles played, victories, win rate, recent battles, Quick-Join by Invite Code card (`quick-join-card.tsx`), Open Challenges feed, and Courses & Battle Topics Explorer.
+- [x] **Course & Topic Battle Configurator (`/arena/new` & `POST /api/battles`)**:
+  - Filter by University Course and specific Topic (or All Course Topics), with URL query pre-selection (`?courseId=...&topicId=...`).
+  - Select Battle Mode (**Standard Battle** or **Reward Battle**), Question Count (`3`, `5`, `10`), Timer per Question (`10s`, `15s`, `20s`, `30s`), and Visibility (*Open Lobby* vs. *Private Friend Invite*).
+  - Creates the battle, assigns approved questions, generates an 8-character invite code, and opens `/arena/battle/[battleId]`.
+- [x] **Leaderboard View (`/leaderboard`)**:
+  - Inter-University Standings (`UNILAG`, `UI`, `OAU`, `UNN`, `FUTO`, `ABU`) and Top Student Rankings by XP and victories.
 
 ### Acceptance Criteria
-- Authenticated students can browse courses/topics, configure a new battle, generate a shareable challenge code/link, and view open battles in the lobby.
+- Authenticated students can browse courses/topics, configure a new battle, generate a shareable challenge code/link, join by invite code, view open battles in the lobby, and inspect the leaderboard.
 
 ---
 
 ## Milestone 5: Core Battle Engine & Real-Time Multiplayer Synchronization
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Implement the server-authoritative quiz battle engine and real-time multiplayer synchronization using **Drizzle transactions** (source of truth) and **Supabase Realtime** (event broadcast & presence).

@@ -1,0 +1,89 @@
+import { LogoIcon } from "@/assets/netmifi";
+import { ProfileAvatar } from "@/assets/profiles";
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
+import { GraduationCap, PlusCircle, Swords, Trophy } from "lucide-react";
+import Link from "next/link";
+
+interface ArenaNavbarProps {
+  profile: AuthenticatedStudentProfile;
+  activeTab?: "lobby" | "new" | "leaderboard";
+}
+
+export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-6">
+          <Link href="/arena" className="flex items-center gap-3">
+            <LogoIcon className="h-8 w-8" />
+            <span className="font-game text-lg font-bold tracking-tight sm:text-xl">
+              NETMIFI <span className="text-primary">QUIZ ARENA</span>
+            </span>
+          </Link>
+
+          <nav className="hidden items-center gap-1 md:flex">
+            <Link href="/arena">
+              <Button
+                variant={activeTab === "lobby" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+              >
+                <Swords className="size-4 text-primary" />
+                Arena Lobby
+              </Button>
+            </Link>
+            <Link href="/arena/new">
+              <Button
+                variant={activeTab === "new" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+              >
+                <PlusCircle className="size-4 text-primary" />
+                New Battle
+              </Button>
+            </Link>
+            <Link href="/leaderboard">
+              <Button
+                variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-1.5"
+              >
+                <Trophy className="size-4 text-primary" />
+                Leaderboard
+              </Button>
+            </Link>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="hidden gap-1.5 sm:inline-flex">
+            <GraduationCap className="size-3.5 text-primary" />
+            {profile.universityShortCode ?? "UNI"} •{" "}
+            {profile.academicLevel ?? "200L"}
+          </Badge>
+
+          <Link
+            href="/onboarding"
+            className="flex items-center gap-2 rounded-full border border-border bg-card py-1 pr-3 pl-1 transition-colors hover:bg-muted/60"
+            title="Edit Profile"
+          >
+            <ProfileAvatar
+              avatarUrl={profile.avatarUrl}
+              avatarNumber={profile.avatarNumber}
+              displayName={profile.displayName}
+              className="size-7"
+            />
+            <span className="hidden max-w-[120px] truncate text-xs font-medium sm:inline">
+              {profile.displayName}
+            </span>
+          </Link>
+
+          <SignOutButton />
+        </div>
+      </div>
+    </header>
+  );
+}
