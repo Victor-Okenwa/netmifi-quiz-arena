@@ -21,6 +21,7 @@ import type {
 } from "@/lib/battle-engine/engine";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { OptionKey, PublicBattleQuestion } from "@repo/types";
+import { formatSol } from "@repo/validators";
 import {
   Award,
   BookOpen,
@@ -531,7 +532,7 @@ export function LiveBattleQuiz({
             battleMeta.stakeAmountLamports > 0 ? (
               <Badge variant="outline" className="gap-1 text-[10px]">
                 <Coins className="size-3 text-primary" />
-                {(battleMeta.stakeAmountLamports / 1_000_000_000).toFixed(2)}{" "}
+                {formatSol(battleMeta.stakeAmountLamports)}{" "}
                 SOL Stake
               </Badge>
             ) : null}
@@ -749,11 +750,10 @@ export function LiveBattleQuiz({
                     </Badge>
                     <Badge variant="outline" className="gap-1 font-mono text-xs text-primary">
                       <Coins className="size-3.5 text-primary" />
-                      {(
-                        ((completedSummary?.totalPotLamports ??
-                          battleMeta.stakeAmountLamports * 2) ||
-                          200_000_000) / 1_000_000_000
-                      ).toFixed(2)}{" "}
+                      {formatSol(
+                        completedSummary?.totalPotLamports ??
+                          battleMeta.stakeAmountLamports * 2
+                      )}{" "}
                       SOL POT
                     </Badge>
                   </div>

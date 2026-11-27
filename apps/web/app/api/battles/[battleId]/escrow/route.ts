@@ -4,6 +4,7 @@ import {
   buildSolanaExplorerUrl,
   getSettlementAuthorityPublicKey,
 } from "@/lib/solana/reward-settlement";
+import { checkStakeAffordability } from "@/lib/solana/wallet-balance";
 import {
   createSignedEd25519DemoWallet,
   generateWalletNonce,
@@ -293,6 +294,19 @@ export async function POST(request: Request, context: RouteContext) {
             "devnet"
           ),
         });
+      }
+
+      // Re-check right before depositing: the balance may have changed since joining.
+      const affordability = await checkStakeAffordability(
+        auth.user.id,
+        battle.stakeAmountLamports,
+        linked.walletAddress
+      );
+      if (!affordability.ok) {
+        return NextResponse.json(
+          { error: affordability.error },
+          { status: affordability.status }
+        );
       }
 
       const expiryTs = Math.floor(

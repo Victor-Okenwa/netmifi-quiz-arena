@@ -33,6 +33,46 @@ export const battleModeSchema = z.enum(["free", "reward"]);
 
 export const questionDifficultySchema = z.enum(["easy", "medium", "hard"]);
 
+/** Number of lamports in one SOL. */
+export const LAMPORTS_PER_SOL = 1_000_000_000;
+
+/**
+ * The only stake amounts (in SOL) a Reward Battle may use. Reward Battles are
+ * winner-takes-all: both players stake the same preset amount and the winner
+ * receives the full pot (2 × stake).
+ */
+export const REWARD_STAKE_OPTIONS_SOL = [
+  0.005, 0.1, 0.2, 0.3, 0.5, 0.7, 1,
+] as const;
+
+/** {@link REWARD_STAKE_OPTIONS_SOL} converted to integer lamports. */
+export const REWARD_STAKE_OPTIONS_LAMPORTS: readonly number[] =
+  REWARD_STAKE_OPTIONS_SOL.map((sol) => Math.round(sol * LAMPORTS_PER_SOL));
+
+/**
+ * Checks whether a lamport amount is one of the preset Reward Battle stakes.
+ *
+ * @param lamports - Candidate stake amount in lamports.
+ * @returns `true` when the amount matches a preset stake option.
+ */
+export function isAllowedRewardStakeLamports(lamports: number): boolean {
+  return REWARD_STAKE_OPTIONS_LAMPORTS.includes(lamports);
+}
+
+/**
+ * Formats a lamport amount as a SOL string with at least 2 and at most 4
+ * decimals, so small stakes like 0.005 SOL are not rounded to "0.01".
+ *
+ * @param lamports - Amount in lamports.
+ * @returns Human-readable SOL amount without the unit (e.g. "0.005", "0.10", "1.00").
+ * @example formatSol(5_000_000); // "0.005"
+ */
+export function formatSol(lamports: number): string {
+  const fixed = (lamports / LAMPORTS_PER_SOL).toFixed(4);
+  // Trim trailing zeros but always keep two decimals ("0.1000" -> "0.10").
+  return fixed.replace(/(\.\d{2}\d*?)0+$/, "$1");
+}
+
 export const createBattleSchema = z
   .object({
     courseId: z.string().uuid("Invalid course ID"),
@@ -44,9 +84,12 @@ export const createBattleSchema = z
     stakeAmountLamports: z.number().int().nonnegative().default(0),
   })
   .refine(
-    (data) => (data.mode === "reward" ? data.stakeAmountLamports > 0 : data.stakeAmountLamports === 0),
+    (data) =>
+      data.mode === "reward"
+        ? isAllowedRewardStakeLamports(data.stakeAmountLamports)
+        : data.stakeAmountLamports === 0,
     {
-      message: "Reward battles require a positive stake amount; free battles must have zero stake.",
+      message: `Reward battles must use one of the preset stakes (${REWARD_STAKE_OPTIONS_SOL.join(", ")} SOL); free battles must have zero stake.`,
       path: ["stakeAmountLamports"],
     }
   );

@@ -33,6 +33,7 @@ import {
   topics,
   universities,
 } from "@repo/db";
+import { formatSol } from "@repo/validators";
 import {
   ArrowRight,
   BookOpen,
@@ -378,9 +379,7 @@ export default async function ArenaPage() {
                                   className="gap-1 text-[10px]"
                                 >
                                   <Coins className="size-3 text-primary" />
-                                  {(
-                                    battle.stakeAmountLamports / 1_000_000_000
-                                  ).toFixed(2)}{" "}
+                                  {formatSol(battle.stakeAmountLamports)}{" "}
                                   SOL
                                 </Badge>
                               ) : null}

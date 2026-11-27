@@ -29,7 +29,8 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
   const [walletAddress, setWalletAddress] = useState<string | null>(
     profile.walletAddress ?? null
   );
-  const [balanceSol, setBalanceSol] = useState<number>(0);
+  // `null` = balance unknown (RPC lookup failed or not loaded yet).
+  const [balanceSol, setBalanceSol] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,14 +46,14 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
       const data = (await res.json()) as {
         linkedWallet?: {
           walletAddress?: string;
-          balanceSol?: number;
+          balanceSol?: number | null;
         } | null;
       };
       setWalletAddress(data.linkedWallet?.walletAddress ?? null);
       setBalanceSol(
         typeof data.linkedWallet?.balanceSol === "number"
           ? data.linkedWallet.balanceSol
-          : 0
+          : null
       );
     } catch {
       // Ignore network errors
@@ -65,13 +66,15 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
     function handleWalletUpdated(event: Event) {
       const custom = event as CustomEvent<{
         walletAddress?: string | null;
-        balanceSol?: number;
+        balanceSol?: number | null;
       }>;
       if (custom.detail && "walletAddress" in custom.detail) {
         setWalletAddress(custom.detail.walletAddress ?? null);
-        if (typeof custom.detail.balanceSol === "number") {
-          setBalanceSol(custom.detail.balanceSol);
-        }
+        setBalanceSol(
+          typeof custom.detail.balanceSol === "number"
+            ? custom.detail.balanceSol
+            : null
+        );
       } else {
         void syncLinkedWallet();
       }
@@ -231,7 +234,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
                   variant="outline"
                   className="shrink-0 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-bold text-emerald-500"
                 >
-                  {balanceSol.toFixed(2)} SOL
+                  {balanceSol === null ? "--" : balanceSol.toFixed(2)} SOL
                 </Badge>
               ) : null}
             </Link>

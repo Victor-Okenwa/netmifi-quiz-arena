@@ -1,3 +1,4 @@
+import { checkStakeAffordability } from "@/lib/solana/wallet-balance";
 import {
   ensureBaseProfileForUser,
   getCurrentAuthContext,
@@ -66,6 +67,20 @@ export async function POST(
         { error: "Source battle not found." },
         { status: 404 }
       );
+    }
+
+    // Rematches reuse the source stake, so the requester must still afford it.
+    if (sourceBattle.mode === "reward" && sourceBattle.stakeAmountLamports > 0) {
+      const affordability = await checkStakeAffordability(
+        authContext.user.id,
+        sourceBattle.stakeAmountLamports
+      );
+      if (!affordability.ok) {
+        return NextResponse.json(
+          { error: affordability.error },
+          { status: affordability.status }
+        );
+      }
     }
 
     const conditions = [

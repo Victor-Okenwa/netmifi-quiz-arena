@@ -3,6 +3,7 @@
 import { ProfileAvatar } from "@/assets/profiles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatSol } from "@repo/validators";
 import {
   ArrowRight,
   CheckCircle2,
@@ -179,7 +180,7 @@ export function ViewBattleRoomDialog({
                   {mode === "reward" ? (
                     <Badge variant="secondary" className="gap-1 text-[11px]">
                       <Coins className="size-3 text-primary" />
-                      {(stakeLamports / 1_000_000_000).toFixed(2)} SOL Stake
+                      {formatSol(stakeLamports)} SOL Stake
                     </Badge>
                   ) : null}
                 </div>

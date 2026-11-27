@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatSol } from "@repo/validators";
 import {
   CheckCircle2,
   Coins,
@@ -26,8 +27,9 @@ import { toast } from "sonner";
 interface LinkedWalletInfo {
   id: string;
   walletAddress: string;
-  balanceLamports: number;
-  balanceSol: number;
+  /** `null` when the Devnet RPC balance lookup failed (unknown, not zero). */
+  balanceLamports: number | null;
+  balanceSol: number | null;
   verifiedAt: string;
   createdAt: string;
   explorerUrl: string;
@@ -104,7 +106,7 @@ export function WalletLinkStudio() {
           new CustomEvent("netmifi:wallet-updated", {
             detail: {
               walletAddress: data.linkedWallet?.walletAddress ?? null,
-              balanceSol: data.linkedWallet?.balanceSol ?? 0,
+              balanceSol: data.linkedWallet?.balanceSol ?? null,
             },
           })
         );
@@ -351,7 +353,9 @@ export function WalletLinkStudio() {
                     Available Balance
                   </p>
                   <p className="font-game text-lg font-extrabold text-emerald-500 sm:text-xl">
-                    {linkedWallet.balanceSol.toFixed(4)} SOL
+                    {linkedWallet.balanceSol === null
+                      ? "Unavailable"
+                      : `${linkedWallet.balanceSol.toFixed(4)} SOL`}
                   </p>
                 </div>
               </div>
@@ -485,7 +489,7 @@ export function WalletLinkStudio() {
                         </span>
                       ) : null}
                       <span className="font-mono text-xs font-semibold text-primary">
-                        {(tx.amountLamports / 1_000_000_000).toFixed(2)} SOL
+                        {formatSol(tx.amountLamports)} SOL
                       </span>
                     </div>
                     <p className="truncate font-mono text-[11px] text-muted-foreground">

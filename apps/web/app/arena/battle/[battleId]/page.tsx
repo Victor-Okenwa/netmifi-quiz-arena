@@ -24,7 +24,15 @@ import {
   topics,
   universities,
 } from "@repo/db";
-import { ArrowLeft, Clock, Coins, Eye, HelpCircle } from "lucide-react";
+import { formatSol } from "@repo/validators";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Clock,
+  Coins,
+  Eye,
+  HelpCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -75,6 +83,7 @@ export default async function BattleRoomPage({
 
   // Automatically enroll authenticated opponent into Slot 2 ONLY if not spectating and room is WAITING
   let justJoinedSlotTwo = false;
+  let joinError: string | null = null;
   if (
     !forceSpectate &&
     user.id !== initialBattle.creatorUserId &&
@@ -83,6 +92,9 @@ export default async function BattleRoomPage({
     const joinResult = await joinBattleAsOpponent(initialBattle.id, user);
     if (joinResult.joined && !joinResult.alreadyParticipant) {
       justJoinedSlotTwo = true;
+    } else if (!joinResult.joined && joinResult.error) {
+      // e.g. insufficient wallet balance for a Reward Battle stake
+      joinError = joinResult.error;
     }
   }
 
@@ -155,7 +167,7 @@ export default async function BattleRoomPage({
                 {battle.mode === "reward" ? (
                   <Badge variant="outline" className="gap-1">
                     <Coins className="size-3.5 text-primary" />
-                    {(battle.stakeAmountLamports / 1_000_000_000).toFixed(2)}{" "}
+                    {formatSol(battle.stakeAmountLamports)}{" "}
                     SOL Stake
                   </Badge>
                 ) : null}
@@ -188,6 +200,16 @@ export default async function BattleRoomPage({
             </div>
           </CardHeader>
         </Card>
+
+        {joinError ? (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <p>
+              Could not join this battle: {joinError} You are viewing as a
+              spectator.
+            </p>
+          </div>
+        ) : null}
 
         {/* Interactive Ready Lobby, 3D Turning-Box Countdown, Spectator View & Live Quiz */}
         <BattleLobbyArena

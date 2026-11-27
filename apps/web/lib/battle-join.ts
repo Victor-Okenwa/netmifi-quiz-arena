@@ -7,6 +7,7 @@ import {
   eq,
 } from "@repo/db";
 import type { User } from "@supabase/supabase-js";
+import { checkStakeAffordability } from "./solana/wallet-balance";
 import { ensureBaseProfileForUser } from "./supabase/auth";
 
 export interface JoinBattleOutcome {
@@ -33,6 +34,7 @@ export async function joinBattleAsOpponent(
       id: battles.id,
       status: battles.status,
       mode: battles.mode,
+      stakeAmountLamports: battles.stakeAmountLamports,
       creatorUserId: battles.creatorUserId,
     })
     .from(battles)
@@ -88,6 +90,24 @@ export async function joinBattleAsOpponent(
       battleStatus: battle.status,
       error: "This battle room is already full (2/2 players).",
     };
+  }
+
+  // Winner-takes-all requires the opponent to match the creator's stake exactly,
+  // so refuse to seat anyone whose wallet cannot cover it.
+  if (battle.mode === "reward" && battle.stakeAmountLamports > 0) {
+    const affordability = await checkStakeAffordability(
+      user.id,
+      battle.stakeAmountLamports
+    );
+    if (!affordability.ok) {
+      return {
+        joined: false,
+        alreadyParticipant: false,
+        slotIndex: null,
+        battleStatus: battle.status,
+        error: affordability.error,
+      };
+    }
   }
 
   // Enroll user into Slot 2 and transition battle status from WAITING -> READY

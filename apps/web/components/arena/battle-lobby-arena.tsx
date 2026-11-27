@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { formatSol } from "@repo/validators";
 import {
   CheckCircle2,
   Clock,
@@ -729,13 +730,13 @@ export function BattleLobbyArena({
                   SOLANA DEVNET ESCROW VAULT
                 </Badge>
                 <Badge variant="outline" className="font-mono text-xs text-primary">
-                  POT: {((stakeAmountLamports * 2) / 1_000_000_000).toFixed(2)} SOL
+                  POT: {formatSol(stakeAmountLamports * 2)} SOL
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
                 Each challenger stakes{" "}
                 <span className="font-semibold text-foreground">
-                  {(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL
+                  {formatSol(stakeAmountLamports)} SOL
                 </span>{" "}
                 into the program-controlled Battle Escrow PDA before locking in
                 Ready.
@@ -762,7 +763,7 @@ export function BattleLobbyArena({
                   <div className="flex flex-col items-end gap-1">
                     <Badge className="gap-1.5 bg-emerald-600 px-3 py-1 font-game text-xs text-white hover:bg-emerald-600">
                       <CheckCircle2 className="size-3.5" />
-                      STAKE FUNDED ({(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL)
+                      STAKE FUNDED ({formatSol(stakeAmountLamports)} SOL)
                     </Badge>
                     {myParticipant.depositTxSignature ? (
                       <a
@@ -787,7 +788,7 @@ export function BattleLobbyArena({
                     ) : (
                       <Coins className="size-4" />
                     )}
-                    Deposit {(stakeAmountLamports / 1_000_000_000).toFixed(2)} SOL to Escrow
+                    Deposit {formatSol(stakeAmountLamports)} SOL to Escrow
                   </Button>
                 )
               ) : (

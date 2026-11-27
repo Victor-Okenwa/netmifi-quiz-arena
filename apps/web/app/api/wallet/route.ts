@@ -1,5 +1,6 @@
 import { getServerEnv } from "@/lib/env";
 import { buildSolanaExplorerUrl } from "@/lib/solana/reward-settlement";
+import { fetchWalletBalanceLamports } from "@/lib/solana/wallet-balance";
 import {
   createSignedEd25519DemoWallet,
   generateWalletNonce,
@@ -21,40 +22,6 @@ import {
 } from "@repo/db";
 import { NextResponse } from "next/server";
 
-/**
- * Queries the Solana RPC endpoint for the wallet's balance in lamports.
- */
-async function fetchWalletBalanceLamports(
-  rpcUrl: string,
-  walletAddress: string
-): Promise<number> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "getBalance",
-        params: [walletAddress, { commitment: "confirmed" }],
-      }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    clearTimeout(timer);
-
-    if (!res.ok) return 0;
-    const data = (await res.json()) as {
-      result?: { value?: number };
-    };
-    return typeof data.result?.value === "number" ? data.result.value : 0;
-  } catch {
-    return 0;
-  }
-}
-
 export async function GET() {
   try {
     const auth = await getCurrentAuthContext();
@@ -75,12 +42,13 @@ export async function GET() {
       .where(eq(walletLinks.userId, auth.user.id))
       .limit(1);
 
+    // `null` means the RPC lookup failed; never report that as a 0 balance.
     const balanceLamports = linkedWallet
       ? await fetchWalletBalanceLamports(
           env.NEXT_PUBLIC_SOLANA_RPC_URL,
           linkedWallet.walletAddress
         )
-      : 0;
+      : null;
 
     const txRows = await db
       .select({
@@ -112,7 +80,9 @@ export async function GET() {
         ? {
             ...linkedWallet,
             balanceLamports,
-            balanceSol: balanceLamports / 1_000_000_000,
+            balanceSol:
+              balanceLamports === null ? null : balanceLamports / 1_000_000_000,
+            balanceUnavailable: balanceLamports === null,
             explorerUrl: buildSolanaExplorerUrl(
               "address",
               linkedWallet.walletAddress,

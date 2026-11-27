@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertCircle,
@@ -24,7 +23,11 @@ import {
   Swords,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import {
+  REWARD_STAKE_OPTIONS_LAMPORTS,
+  formatSol,
+} from "@repo/validators";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export interface ConfiguratorCourse {
@@ -52,6 +55,20 @@ interface BattleConfiguratorProps {
 
 const QUESTION_COUNT_OPTIONS = [3, 5, 10] as const;
 const TIMER_OPTIONS = [10, 15, 20, 30] as const;
+
+interface WalletBalanceResponse {
+  linkedWallet?: {
+    walletAddress?: string;
+    balanceLamports?: number | null;
+  } | null;
+}
+
+/** Balance of the user's currently linked wallet (browser or demo). */
+type WalletBalanceState =
+  | { status: "loading" }
+  | { status: "no-wallet" }
+  | { status: "unavailable" }
+  | { status: "ok"; lamports: number; walletAddress: string };
 
 export function BattleConfigurator({
   courses,
@@ -84,10 +101,61 @@ export function BattleConfigurator({
     useState<number>(15);
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [mode, setMode] = useState<"free" | "reward">("free");
-  const [stakeSolInput, setStakeSolInput] = useState<string>("0.1");
+  const [stakeAmountLamports, setStakeAmountLamports] = useState<number>(
+    REWARD_STAKE_OPTIONS_LAMPORTS[1] ?? 100_000_000
+  );
+  const [walletBalance, setWalletBalance] = useState<WalletBalanceState>({
+    status: "loading",
+  });
+  const [balanceRequestId, setBalanceRequestId] = useState(0);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Load the balance of whichever wallet is currently linked (browser wallet
+  // or demo wallet) once Reward mode is chosen, so unaffordable stakes can be
+  // disabled up-front. The server re-checks the live balance on submit.
+  // `balanceRequestId` is a manual refetch trigger (bumped by the Retry button).
+  useEffect(() => {
+    if (mode !== "reward") return;
+    let cancelled = false;
+    setWalletBalance({ status: "loading" });
+    fetch("/api/wallet", { cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Wallet lookup failed (${res.status})`);
+        return res.json() as Promise<WalletBalanceResponse>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const linked = data.linkedWallet;
+        if (!linked?.walletAddress) {
+          setWalletBalance({ status: "no-wallet" });
+        } else if (typeof linked.balanceLamports === "number") {
+          setWalletBalance({
+            status: "ok",
+            lamports: linked.balanceLamports,
+            walletAddress: linked.walletAddress,
+          });
+        } else {
+          // RPC lookup failed server-side: unknown, not zero.
+          setWalletBalance({ status: "unavailable" });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWalletBalance({ status: "unavailable" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, balanceRequestId]);
+
+  const knownBalanceLamports =
+    walletBalance.status === "ok" ? walletBalance.lamports : null;
+  // When the balance is temporarily unknown, let the server make the call.
+  const canAffordSelectedStake =
+    walletBalance.status === "unavailable" ||
+    (knownBalanceLamports !== null &&
+      knownBalanceLamports >= stakeAmountLamports);
 
   function handleSelectCourse(newCourseId: string) {
     setCourseId(newCourseId);
@@ -100,11 +168,6 @@ export function BattleConfigurator({
     setIsLoading(true);
 
     try {
-      const stakeAmountLamports =
-        mode === "reward"
-          ? Math.max(1, Math.round(Number.parseFloat(stakeSolInput || "0") * 1_000_000_000))
-          : 0;
-
       const response = await fetch("/api/battles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,7 +178,7 @@ export function BattleConfigurator({
           questionCount,
           timePerQuestionSeconds,
           isPrivate,
-          stakeAmountLamports,
+          stakeAmountLamports: mode === "reward" ? stakeAmountLamports : 0,
         }),
       });
 
@@ -411,29 +474,101 @@ export function BattleConfigurator({
           </div>
 
           {mode === "reward" ? (
-            <div className="rounded-xl border border-primary/40 bg-primary-light/40 p-4">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary-light/40 p-4">
+              <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                 <div>
                   <p className="font-game text-xs font-bold text-foreground">
-                    REWARD STAKE AMOUNT (SOL)
+                    STAKE AMOUNT (SOL)
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Both participants contribute this stake into the battle
-                    escrow before the match starts.
+                    Winner takes all: your opponent must stake the same amount,
+                    and the winner receives the full pot.
                   </p>
                 </div>
-                <div className="w-full sm:w-40">
-                  <Input
-                    type="number"
-                    step="0.05"
-                    min="0.05"
-                    max="10"
-                    value={stakeSolInput}
-                    onChange={(e) => setStakeSolInput(e.target.value)}
-                    required
-                  />
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Badge
+                    variant="outline"
+                    className="gap-1 text-[11px]"
+                    title={
+                      walletBalance.status === "ok"
+                        ? walletBalance.walletAddress
+                        : undefined
+                    }
+                  >
+                    <Coins className="size-3 text-primary" />
+                    {walletBalance.status === "loading"
+                      ? "Checking balance..."
+                      : walletBalance.status === "no-wallet"
+                        ? "No wallet linked"
+                        : walletBalance.status === "unavailable"
+                          ? "Balance unavailable"
+                          : `Balance: ${formatSol(walletBalance.lamports)} SOL (${walletBalance.walletAddress.slice(0, 4)}...${walletBalance.walletAddress.slice(-4)})`}
+                  </Badge>
+                  {walletBalance.status === "unavailable" ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => setBalanceRequestId((id) => id + 1)}
+                    >
+                      Retry
+                    </Button>
+                  ) : null}
                 </div>
               </div>
+
+              <div className="flex flex-wrap gap-2">
+                {REWARD_STAKE_OPTIONS_LAMPORTS.map((lamports) => {
+                  const isSelected = stakeAmountLamports === lamports;
+                  const isUnaffordable =
+                    knownBalanceLamports !== null &&
+                    knownBalanceLamports < lamports;
+                  return (
+                    <button
+                      key={lamports}
+                      type="button"
+                      onClick={() => setStakeAmountLamports(lamports)}
+                      disabled={isUnaffordable}
+                      aria-pressed={isSelected}
+                      title={
+                        isUnaffordable
+                          ? "Your wallet balance is too low for this stake"
+                          : undefined
+                      }
+                      className={`rounded-full border px-3 py-1 font-game text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/30"
+                          : "border-border bg-card text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {formatSol(lamports)} SOL
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Winner receives{" "}
+                <span className="font-bold text-foreground">
+                  {formatSol(stakeAmountLamports * 2)} SOL
+                </span>{" "}
+                ({formatSol(stakeAmountLamports)} SOL from each player).
+              </p>
+
+              {walletBalance.status === "no-wallet" ? (
+                <p className="flex items-center gap-1.5 text-xs text-destructive">
+                  <AlertCircle className="size-3.5" />
+                  Link a Solana Devnet wallet in Wallet Settings to create a
+                  Reward Battle.
+                </p>
+              ) : walletBalance.status === "ok" && !canAffordSelectedStake ? (
+                <p className="flex items-center gap-1.5 text-xs text-destructive">
+                  <AlertCircle className="size-3.5" />
+                  Your balance is too low for a {formatSol(stakeAmountLamports)}{" "}
+                  SOL stake. Pick a smaller amount or top up your wallet.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -441,7 +576,14 @@ export function BattleConfigurator({
             type="submit"
             size="lg"
             className="w-full gap-2"
-            disabled={isLoading || !courseId}
+            disabled={
+              isLoading ||
+              !courseId ||
+              (mode === "reward" &&
+                (walletBalance.status === "loading" ||
+                  walletBalance.status === "no-wallet" ||
+                  !canAffordSelectedStake))
+            }
           >
             {isLoading ? (
               <>

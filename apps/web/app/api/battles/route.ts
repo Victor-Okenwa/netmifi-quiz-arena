@@ -1,3 +1,4 @@
+import { checkStakeAffordability } from "@/lib/solana/wallet-balance";
 import {
   ensureBaseProfileForUser,
   getCurrentAuthContext,
@@ -100,6 +101,21 @@ export async function POST(request: Request) {
 
     // Ensure creator profile exists in PostgreSQL
     await ensureBaseProfileForUser(authContext.user);
+
+    // Reward Battles are winner-takes-all with equal stakes: the creator must
+    // be able to cover the stake before the room is even opened.
+    if (mode === "reward") {
+      const affordability = await checkStakeAffordability(
+        authContext.user.id,
+        stakeAmountLamports
+      );
+      if (!affordability.ok) {
+        return NextResponse.json(
+          { error: affordability.error },
+          { status: affordability.status }
+        );
+      }
+    }
 
     // Verify course exists
     const [course] = await db
