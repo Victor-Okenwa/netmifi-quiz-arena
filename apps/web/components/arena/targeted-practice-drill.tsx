@@ -1,5 +1,6 @@
 "use client";
 
+import { VoiceAudioButton } from "@/components/arena/voice-audio-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -456,10 +457,19 @@ export function TargetedPracticeDrill({
                 </Badge>
               </div>
 
-              <Badge variant="outline" className="font-game text-xs">
-                Accuracy: {correctCount}/{answeredList.length} (
-                {accuracyPercent}%)
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <VoiceAudioButton
+                  mode="question"
+                  questionId={currentQuestion.id}
+                  fallbackText={currentQuestion.questionText}
+                  label="Read Aloud"
+                />
+
+                <Badge variant="outline" className="font-game text-xs">
+                  Accuracy: {correctCount}/{answeredList.length} (
+                  {accuracyPercent}%)
+                </Badge>
+              </div>
             </div>
 
             {/* Progress bar */}

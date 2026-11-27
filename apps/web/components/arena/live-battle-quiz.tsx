@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/assets/profiles";
+import { VoiceAudioButton } from "@/components/arena/voice-audio-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -656,6 +657,38 @@ export function LiveBattleQuiz({
                   </>
                 ) : null}
               </CardDescription>
+
+              <div className="mt-3 flex justify-center">
+                <VoiceAudioButton
+                  mode="winner"
+                  battleId={battleId}
+                  initialAudioUrl={
+                    completedSummary?.winnerAnnouncementAudioUrl ?? null
+                  }
+                  fallbackText={
+                    battleMeta.isDraw
+                      ? `Battle complete in ${battleMeta.courseCode}! It is a draw between ${
+                          playerOne?.displayName ?? "Player 1"
+                        } and ${
+                          playerTwo?.displayName ?? "Player 2"
+                        }, with both players finishing at ${
+                          playerOne?.score ?? 0
+                        } points!`
+                      : `Congratulations! ${
+                          participants.find(
+                            (p) => p.userId === battleMeta.winnerUserId
+                          )?.displayName ?? "The champion"
+                        } has won the ${
+                          battleMeta.courseCode
+                        } quiz battle with ${
+                          participants.find(
+                            (p) => p.userId === battleMeta.winnerUserId
+                          )?.score ?? 0
+                        } points!`
+                  }
+                  label="Play Winner Announcement"
+                />
+              </div>
             </div>
           </CardHeader>
 
@@ -1238,15 +1271,25 @@ export function LiveBattleQuiz({
                 </Badge>
               </div>
 
-              <div
-                className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 font-game text-sm font-bold ${
-                  questionSecondsLeft <= 5
-                    ? "border-destructive bg-destructive/10 text-destructive"
-                    : "border-primary/40 bg-primary-light/50 text-primary"
-                }`}
-              >
-                <Clock className="size-4" />
-                <span>{String(questionSecondsLeft).padStart(2, "0")}s</span>
+              <div className="flex shrink-0 items-center gap-2">
+                <VoiceAudioButton
+                  mode="question"
+                  questionId={currentQuestion.id}
+                  initialAudioUrl={currentQuestion.audioUrl}
+                  fallbackText={currentQuestion.questionText}
+                  label="Read Aloud"
+                />
+
+                <div
+                  className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 font-game text-sm font-bold ${
+                    questionSecondsLeft <= 5
+                      ? "border-destructive bg-destructive/10 text-destructive"
+                      : "border-primary/40 bg-primary-light/50 text-primary"
+                  }`}
+                >
+                  <Clock className="size-4" />
+                  <span>{String(questionSecondsLeft).padStart(2, "0")}s</span>
+                </div>
               </div>
             </div>
 

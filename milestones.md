@@ -17,8 +17,8 @@
 | **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ✅ **COMPLETED** |
 | **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⏳ **NEXT UP** |
-| **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⬜ **PENDING** |
+| **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
+| **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⏳ **NEXT UP** |
 | **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⬜ **PENDING** |
 | **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⬜ **PENDING** |
 | **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⬜ **PENDING** |
@@ -201,21 +201,21 @@ Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH
 ---
 
 ## Milestone 7: ElevenLabs Voice-Enabled Quiz & Winner Announcements
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so questions can be read aloud during battles and battle outcomes are announced by an AI quiz host without duplicate generation calls.
 
 ### Scope & Deliverables
-- [ ] **ElevenLabs Integration Module (`packages/integrations/elevenlabs`)**:
+- [x] **ElevenLabs Integration Module (`packages/integrations/elevenlabs`)**:
   - Server-only TTS client using `ELEVENLABS_API_KEY`.
   - Deterministic content hash computation: `sha256(normalizedText + voiceId + modelId)`.
-- [ ] **Supabase Storage Caching & Audio Pipeline**:
+- [x] **Supabase Storage Caching & Audio Pipeline (`apps/web/lib/audio/tts-cache.ts`, `POST /api/audio/question`, `POST /api/audio/winner`)**:
   - Check `audio_assets` table by content hash before calling ElevenLabs.
   - On cache miss: generate MP3 buffer via ElevenLabs → upload to Supabase Storage (`quiz-audio` bucket) → save storage reference and metadata in `audio_assets` → return signed/public URL.
-- [ ] **In-Battle Question Audio & Winner Announcement UI**:
-  - Optional "Read Aloud" speaker toggle on active battle questions (plays verbatim question text without blocking the timer).
-  - Spoken winner announcement on the Battle Diagnosis screen (e.g., *"Congratulations! Chidi has won the Data Structures battle with 850 points against 720!"*) with automatic text fallback if TTS is disabled or offline.
+- [x] **In-Battle Question Audio & Winner Announcement UI (`apps/web/components/arena/voice-audio-button.tsx`)**:
+  - Optional "Read Aloud" speaker toggle on active battle and practice questions (plays verbatim question text without blocking the timer).
+  - Spoken winner announcement on the Battle Diagnosis screen (e.g., *"Congratulations! Chidi has won the Data Structures battle with 850 points against 720!"*) with automatic Web Speech / text fallback if TTS is disabled or offline.
 
 ### Acceptance Criteria
 - Opening a question or battle result plays the ElevenLabs voice audio; subsequent plays of the same question reuse the cached Supabase Storage audio file with zero duplicate ElevenLabs API requests.
@@ -224,7 +224,7 @@ Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so que
 ---
 
 ## Milestone 8: Firecrawl Question Factory & Human Review Pipeline
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Build the **Question Factory** (`SOURCE URL → FIRECRAWL → NORMALIZATION → AI QUESTION GENERATION → HUMAN REVIEW → APPROVED QUESTION BANK`) to scale course-specific question banks safely.

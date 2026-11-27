@@ -71,6 +71,7 @@ export interface CompletedBattleSummary {
   myDiagnosis: StoredParticipantDiagnosis | null;
   allParticipantDiagnoses: Record<string, StoredParticipantDiagnosis>;
   xpAwarded: number;
+  winnerAnnouncementAudioUrl: string | null;
 }
 
 export interface SanitizedBattleArenaState {
@@ -152,6 +153,7 @@ export async function getSanitizedBattleArenaState(
       startedAt: battles.startedAt,
       winnerUserId: battles.winnerUserId,
       isDraw: battles.isDraw,
+      winnerAnnouncementAudioId: battles.winnerAnnouncementAudioId,
     })
     .from(battles)
     .innerJoin(courses, eq(battles.courseId, courses.id))
@@ -381,6 +383,16 @@ export async function getSanitizedBattleArenaState(
     const xpAwarded =
       viewerRole === "spectator" ? 0 : isDraw ? 100 : isWinner ? 150 : 60;
 
+    let winnerAnnouncementAudioUrl: string | null = null;
+    if (battleRow.winnerAnnouncementAudioId) {
+      const [audioRow] = await db
+        .select({ publicUrl: audioAssets.publicUrl })
+        .from(audioAssets)
+        .where(eq(audioAssets.id, battleRow.winnerAnnouncementAudioId))
+        .limit(1);
+      winnerAnnouncementAudioUrl = audioRow?.publicUrl ?? null;
+    }
+
     completedSummary = {
       winnerUserId: resultRow?.winnerUserId ?? battleRow.winnerUserId,
       isDraw,
@@ -395,6 +407,7 @@ export async function getSanitizedBattleArenaState(
       myDiagnosis: resultRow?.participantDiagnoses?.[userId] ?? null,
       allParticipantDiagnoses: resultRow?.participantDiagnoses ?? {},
       xpAwarded,
+      winnerAnnouncementAudioUrl,
     };
   }
 
