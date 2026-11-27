@@ -26,6 +26,9 @@ coverage
 out/
 build
 dist
+target/
+.anchor/
+test-ledger/
 
 
 # Debug

@@ -19,8 +19,8 @@
 | **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
 | **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ✅ **COMPLETED** |
-| **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⏳ **NEXT UP** |
-| **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⬜ **PENDING** |
+| **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ✅ **COMPLETED** |
+| **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ⏳ **NEXT UP** |
 | **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⬜ **PENDING** |
 
 ---
@@ -254,29 +254,29 @@ Build the **Question Factory** (`SOURCE URL → FIRECRAWL → NORMALIZATION → 
 ---
 
 ## Milestone 9: Solana Anchor Reward Escrow Program (Devnet)
-**Status:** ⬜ **PENDING**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Build, test, and verify the custom Rust + Anchor smart contract in `programs/` and its TypeScript SDK in `packages/solana` for trust-minimized Devnet reward-battle escrow and settlement.
 
 ### Scope & Deliverables
-- [ ] **Solana / Anchor Toolchain & Workspace Setup (`programs/`)**:
-  - Ensure `solana` CLI and `anchor` CLI are available in the environment and configure `Anchor.toml` targeting Solana **Devnet**.
-- [ ] **Anchor Escrow Smart Contract (`programs/quiz-arena-escrow/src/lib.rs`)**:
+- [x] **Solana / Anchor Toolchain & Workspace Setup (`programs/`)**:
+  - Configured `programs/Anchor.toml` targeting Solana **Devnet** (`Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS`) and `programs/Cargo.toml` workspace.
+- [x] **Anchor Escrow Smart Contract (`programs/quiz-arena-escrow/src/lib.rs`)**:
   - **PDA Accounts**:
-    - `BattleEscrowState` PDA seeded by `[b"battle", battle_id.as_bytes()]` storing creator, opponent, mint, stake amount, authority signer pubkey, status (`Created`, `Funded`, `Settled`, `Cancelled`, `Refunded`), winner, timestamps, and canonical bump.
-    - Program-controlled SPL Token Vault PDA for holding participant deposits.
+    - `BattleEscrowState` PDA seeded by `[b"battle", battle_seed.as_bytes()]` (using 32-byte normalized UUID seed) storing creator, opponent, stake amount, total pot, authority signer pubkey, status (`Created`, `Funded`, `Settled`, `Cancelled`, `Refunded`), winner, draw flag, timestamps, and canonical bumps.
+    - Program-controlled `BattleVault` PDA (`[b"battle_vault", battle_seed.as_bytes()]`) for holding participant deposits.
   - **Instructions**:
-    - `create_battle(battle_id, stake_amount, expiry_ts)`: Initializes PDA and transfers creator's stake into the escrow vault.
-    - `join_battle()`: Validates opponent, transfers matching stake into the escrow vault, and marks battle `Funded`.
-    - `finalize_battle(outcome, winner)`: Requires the authorized backend settlement authority `Signer`; transfers full pot to winner (or splits 50/50 on draw) and marks `Settled`.
-    - `cancel_battle()` / `refund_battle()`: Allows creator to reclaim deposit if opponent never joined before expiry, or refunds participants if an active battle timed out without settlement.
-  - **Safety Invariants**: Checked arithmetic, strict token mint/authority constraints, duplicate settlement prevention, and Anchor `emit!` events.
-- [ ] **TypeScript Client & IDL Package (`packages/solana`)**:
-  - Export Anchor IDL, program client factory, deterministic PDA derivation helpers, and transaction builders for client deposits and server-side authority settlement.
+    - `create_battle(battle_seed, stake_amount, expiry_ts)`: Initializes PDA and records creator's stake deposit into the escrow vault.
+    - `join_battle()`: Validates opponent (preventing self-play), deposits matching stake into the escrow vault, and marks battle `Funded`.
+    - `finalize_battle(outcome)`: Requires the authorized backend settlement authority `Signer`; transfers full pot to winner (or splits 50/50 on draw) and marks `Settled`.
+    - `cancel_battle()` / `refund_expired_battle()`: Allows creator to reclaim deposit if opponent never joined, or refunds both participants if a funded battle timed out after `expiry_ts` without settlement.
+  - **Safety Invariants**: Checked integer arithmetic (`checked_add`, `checked_sub`, `checked_mul`, `checked_div`), strict authority & participant destination checks, duplicate settlement prevention, and typed lifecycle events.
+- [x] **TypeScript Client & IDL Package (`packages/solana`)**:
+  - Exported `QUIZ_ARENA_ESCROW_IDL`, 8-byte SHA-256 instruction/account discriminators, deterministic PDA derivation helpers (`deriveBattleEscrowPda`, `deriveBattleVaultPda`), Borsh state serializer/decoder (`encodeBattleEscrowState`, `decodeBattleEscrowState`), client-safe transaction builders (`buildCreateBattleInstruction`, `buildJoinBattleInstruction`, `buildCancelBattleInstruction`, `buildRefundExpiredBattleInstruction`), server-only settlement builders (`buildFinalizeBattleInstruction`, `parseAuthorityKeypair`, `executeFinalizeBattleOnChain`), and custom error decoder (`decodeEscrowProgramError`).
 
 ### Acceptance Criteria
-- Anchor unit/integration tests verify the happy path (create → join → finalize payout), draw split, creator cancellation refund, and rejection of unauthorized signers or double-settlement attempts.
+- Verified via `cargo test` in `programs/` (6/6 passed) and `bun test` in `packages/solana` (6/6 passed, 40 assertions) covering the happy path (create → join → finalize payout), 50/50 draw split, creator cancellation refund, expired battle refund, and rejection of self-play, unauthorized signers, or double-settlement attempts.
 
 ---
 

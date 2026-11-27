@@ -1,0 +1,19 @@
+[package]
+name = "quiz-arena-escrow"
+version = "0.1.0"
+description = "Netmifi Quiz Arena — Solana Devnet Reward Battle Escrow & Settlement Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "quiz_arena_escrow"
+
+[features]
+default = []
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+anchor-sbf = []
+
+[dependencies]

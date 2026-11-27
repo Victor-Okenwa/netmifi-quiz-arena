@@ -17,7 +17,7 @@ const publicEnvSchema = z.object({
   NEXT_PUBLIC_SOLANA_PROGRAM_ID: z
     .string()
     .min(32)
-    .default("11111111111111111111111111111111"),
+    .default("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
 });
 
 /**
@@ -35,7 +35,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   SOLANA_PROGRAM_ID: z
     .string()
     .min(32)
-    .default("11111111111111111111111111111111"),
+    .default("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"),
   SOLANA_AUTHORITY_SECRET_KEY: z.string().optional(),
   FIRECRAWL_API_KEY: z.string().min(1).optional(),
   ELEVENLABS_API_KEY: z.string().min(1).optional(),
