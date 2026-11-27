@@ -15,6 +15,7 @@ export interface AuthenticatedStudentProfile {
   displayName: string;
   username: string;
   avatarUrl: string | null;
+  avatarNumber: number;
   role: "student" | "admin" | "reviewer";
   universityId: string | null;
   universityName: string | null;
@@ -45,9 +46,16 @@ export function generateFallbackUsername(email: string, userId: string): string 
   return `${prefix || "student"}_${suffix}`;
 }
 
+export function clampAvatarNumber(num: unknown): number {
+  if (typeof num === "number" && num >= 1 && num <= 5) {
+    return Math.floor(num);
+  }
+  return 1;
+}
+
 /**
  * Builds a profile object from Supabase Auth `user.user_metadata` when PostgreSQL is not yet connected
- * on a remote deployment (e.g. Vercel without production `DATABASE_URL`).
+ * on a remote deployment.
  */
 export function buildProfileFromUserMetadata(
   user: User,
@@ -75,12 +83,18 @@ export function buildProfileFromUserMetadata(
       ? meta.username.trim()
       : generateFallbackUsername(email, user.id);
 
-  const avatarUrl =
-    typeof meta.avatar_url === "string"
+  // If the student explicitly chose a numbered character avatar, use the character avatar fallback (avatarUrl = null)
+  const usePresetAvatar = meta.use_preset_avatar === true;
+
+  const avatarUrl = usePresetAvatar
+    ? null
+    : typeof meta.avatar_url === "string"
       ? meta.avatar_url
       : typeof meta.picture === "string"
         ? meta.picture
         : null;
+
+  const avatarNumber = clampAvatarNumber(meta.avatar_number);
 
   return {
     id: user.id,
@@ -88,6 +102,7 @@ export function buildProfileFromUserMetadata(
     displayName,
     username,
     avatarUrl,
+    avatarNumber,
     role: "student",
     universityId:
       typeof meta.university_id === "string" ? meta.university_id : null,
@@ -125,6 +140,7 @@ export async function getStudentProfileById(
         displayName: profiles.displayName,
         username: profiles.username,
         avatarUrl: profiles.avatarUrl,
+        avatarNumber: profiles.avatarNumber,
         role: profiles.role,
         universityId: profiles.universityId,
         universityName: universities.name,
@@ -175,6 +191,7 @@ export async function ensureBaseProfileForUser(
         displayName: fallbackProfile.displayName,
         username: fallbackProfile.username,
         avatarUrl: fallbackProfile.avatarUrl,
+        avatarNumber: fallbackProfile.avatarNumber,
         role: "student",
       })
       .onConflictDoNothing();

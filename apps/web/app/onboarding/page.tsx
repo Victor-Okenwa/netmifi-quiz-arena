@@ -73,6 +73,8 @@ export default async function OnboardingPage() {
     <OnboardingForm
       initialDisplayName={profile.displayName}
       initialUsername={profile.username}
+      initialAvatarUrl={profile.avatarUrl}
+      initialAvatarNumber={profile.avatarNumber ?? 1}
       initialUniversityId={profile.universityId}
       initialDepartmentId={profile.departmentId}
       initialAcademicLevel={profile.academicLevel ?? "200L"}

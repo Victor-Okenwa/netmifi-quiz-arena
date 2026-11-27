@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "avatar_number" integer DEFAULT 1 NOT NULL;

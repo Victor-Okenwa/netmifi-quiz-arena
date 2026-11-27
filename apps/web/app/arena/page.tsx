@@ -1,4 +1,5 @@
 import { LogoIcon } from "@/assets/netmifi";
+import { ProfileAvatar } from "@/assets/profiles";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,19 +86,27 @@ export default async function ArenaPage() {
         {/* Student Identity Banner */}
         <Card className="border-primary/30 bg-card shadow-sm">
           <CardHeader className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-muted-foreground">
-                  @{profile.username}
-                </span>
+            <div className="flex items-center gap-4">
+              <ProfileAvatar
+                avatarUrl={profile.avatarUrl}
+                avatarNumber={profile.avatarNumber}
+                displayName={profile.displayName}
+                className="size-16 ring-2 ring-primary/30"
+              />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">
+                    @{profile.username}
+                  </span>
+                </div>
+                <CardTitle className="font-game text-2xl font-bold">
+                  Welcome back, {profile.displayName}
+                </CardTitle>
+                <CardDescription>
+                  {profile.universityName} • {profile.departmentName} (
+                  {profile.academicLevel})
+                </CardDescription>
               </div>
-              <CardTitle className="font-game text-2xl font-bold">
-                Welcome back, {profile.displayName}
-              </CardTitle>
-              <CardDescription>
-                {profile.universityName} • {profile.departmentName} (
-                {profile.academicLevel})
-              </CardDescription>
             </div>
 
             <div className="grid grid-cols-3 gap-4 rounded-xl border border-border bg-muted/40 px-5 py-3 text-center">

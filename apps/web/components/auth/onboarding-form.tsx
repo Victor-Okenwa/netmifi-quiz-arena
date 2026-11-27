@@ -1,6 +1,12 @@
 "use client";
 
 import { LogoIcon } from "@/assets/netmifi";
+import {
+  type AvatarNumber,
+  PROFILE_AVATAR_PRESETS,
+  ProfileAvatar,
+  normalizeAvatarNumber,
+} from "@/assets/profiles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +52,8 @@ export interface CoursePreviewOption {
 interface OnboardingFormProps {
   initialDisplayName: string;
   initialUsername: string;
+  initialAvatarUrl: string | null;
+  initialAvatarNumber: number;
   initialUniversityId: string | null;
   initialDepartmentId: string | null;
   initialAcademicLevel: string;
@@ -59,6 +67,8 @@ const ACADEMIC_LEVELS = ["100L", "200L", "300L", "400L", "500L"] as const;
 export function OnboardingForm({
   initialDisplayName,
   initialUsername,
+  initialAvatarUrl,
+  initialAvatarNumber,
   initialUniversityId,
   initialDepartmentId,
   initialAcademicLevel,
@@ -71,6 +81,9 @@ export function OnboardingForm({
 
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [username, setUsername] = useState(initialUsername);
+  const [avatarNumber, setAvatarNumber] = useState<AvatarNumber>(
+    normalizeAvatarNumber(initialAvatarNumber)
+  );
   const [universityId, setUniversityId] = useState(defaultUniId);
   const [academicLevel, setAcademicLevel] = useState(
     initialAcademicLevel || "200L"
@@ -111,6 +124,7 @@ export function OnboardingForm({
           universityId,
           departmentId,
           academicLevel,
+          avatarNumber,
         }),
       });
 
@@ -137,6 +151,10 @@ export function OnboardingForm({
     }
   }
 
+  const activePreset =
+    PROFILE_AVATAR_PRESETS.find((p) => p.number === avatarNumber) ??
+    PROFILE_AVATAR_PRESETS[0]!;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 px-4 py-12">
       <div className="mb-8 flex items-center gap-3">
@@ -152,8 +170,8 @@ export function OnboardingForm({
             COMPLETE YOUR PROFILE
           </CardTitle>
           <CardDescription>
-            Choose your university, department, and level to unlock your course
-            battles.
+            Choose your character avatar, university, department, and level to
+            unlock your course battles.
           </CardDescription>
         </CardHeader>
 
@@ -166,6 +184,88 @@ export function OnboardingForm({
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Vertical Scrollable Profile Avatar Selector */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Label>Select Your Arena Avatar</Label>
+                <span className="text-xs text-muted-foreground">
+                  Scroll vertically to browse all 5 characters
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-muted/30 p-4 sm:grid-cols-12">
+                {/* Active Avatar Preview Card */}
+                <div className="flex flex-col items-center justify-center gap-2.5 rounded-lg border border-border bg-card p-4 text-center sm:col-span-5">
+                  <ProfileAvatar
+                    avatarNumber={avatarNumber}
+                    displayName={displayName}
+                    className="size-20 ring-4 ring-primary/25"
+                  />
+                  <div>
+                    <Badge variant="default" className="font-game text-[10px]">
+                      Avatar #{activePreset.number}
+                    </Badge>
+                    <p className="mt-1 font-game text-sm font-bold text-foreground">
+                      {activePreset.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {activePreset.tagline}
+                    </p>
+                  </div>
+                  {initialAvatarUrl ? (
+                    <p className="text-[10px] text-muted-foreground">
+                      Used automatically whenever no photo URL is set
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Vertical Scrollable List of 5 Avatars */}
+                <div className="max-h-52 space-y-2 overflow-y-auto pr-1 sm:col-span-7">
+                  {PROFILE_AVATAR_PRESETS.map((preset) => {
+                    const isSelected = preset.number === avatarNumber;
+                    const AvatarComponent = preset.Component;
+
+                    return (
+                      <button
+                        key={preset.number}
+                        type="button"
+                        onClick={() => setAvatarNumber(preset.number)}
+                        className={`flex w-full items-center justify-between rounded-lg border p-2.5 text-left transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary-light/60 ring-2 ring-primary/30"
+                            : "border-border bg-card hover:bg-muted/70"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <AvatarComponent className="size-11 shrink-0 rounded-full ring-2 ring-border" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-game text-xs font-bold text-foreground">
+                                {preset.name}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="px-1.5 py-0 text-[10px]"
+                              >
+                                #{preset.number}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {preset.tagline}
+                            </p>
+                          </div>
+                        </div>
+
+                        {isSelected ? (
+                          <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="displayName">Display Name</Label>

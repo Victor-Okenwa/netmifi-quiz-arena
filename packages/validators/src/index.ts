@@ -131,6 +131,7 @@ export const academicOnboardingSchema = z.object({
   universityId: z.string().uuid("Please select your university"),
   departmentId: z.string().uuid("Please select your department"),
   academicLevel: academicLevelSchema.default("200L"),
+  avatarNumber: z.number().int().min(1).max(5).default(1),
 });
 
 export type CreateBattleInput = z.infer<typeof createBattleSchema>;

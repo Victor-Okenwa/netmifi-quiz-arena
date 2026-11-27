@@ -96,6 +96,7 @@ export const profiles = pgTable(
     displayName: text("display_name").notNull(),
     username: text("username").notNull(),
     avatarUrl: text("avatar_url"),
+    avatarNumber: integer("avatar_number").notNull().default(1),
     role: userRoleEnum("role").notNull().default("student"),
     universityId: uuid("university_id").references(() => universities.id, {
       onDelete: "set null",

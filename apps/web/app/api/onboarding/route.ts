@@ -38,8 +38,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const { displayName, username, universityId, departmentId, academicLevel } =
-      parsed.data;
+    const {
+      displayName,
+      username,
+      universityId,
+      departmentId,
+      academicLevel,
+      avatarNumber,
+    } = parsed.data;
 
     let selectedUni = FALLBACK_UNIVERSITIES.find((u) => u.id === universityId);
     let selectedDept = FALLBACK_DEPARTMENTS.find(
@@ -117,6 +123,7 @@ export async function POST(request: Request) {
             email,
             displayName,
             username,
+            avatarNumber,
             role: "student",
             universityId,
             departmentId,
@@ -128,6 +135,7 @@ export async function POST(request: Request) {
             set: {
               displayName,
               username,
+              avatarNumber,
               universityId,
               departmentId,
               academicLevel,
@@ -146,13 +154,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Also sync academic profile into Supabase Auth user_metadata so it persists across deployments
+    // Sync academic profile & chosen avatarNumber into Supabase Auth user_metadata
     try {
       const supabase = await createServerSupabaseClient();
       await supabase.auth.updateUser({
         data: {
           display_name: displayName,
           username,
+          avatar_number: avatarNumber,
           university_id: selectedUni.id,
           university_name: selectedUni.name,
           university_short_code: selectedUni.shortCode,
