@@ -24,9 +24,9 @@ import {
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <LogoIcon className="h-8 w-8" />
@@ -69,9 +69,11 @@ export default function Home() {
           </div>
         </div>
       </header>
+      <div className="h-16 w-full shrink-0" aria-hidden="true" />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
             <div className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left">
@@ -262,6 +264,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border py-8 text-center text-xs text-muted-foreground">

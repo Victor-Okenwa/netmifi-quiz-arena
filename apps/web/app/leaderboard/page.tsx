@@ -112,10 +112,10 @@ export default async function LeaderboardPage() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} activeTab="leaderboard" />
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
         <div>
           <h1 className="font-game text-3xl font-extrabold tracking-tight">
             ARENA <span className="text-primary">LEADERBOARD</span>

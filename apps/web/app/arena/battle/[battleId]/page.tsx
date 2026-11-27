@@ -113,7 +113,7 @@ export default async function BattleRoomPage({
   const isSpectator = !isParticipant;
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} />
 
       <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">

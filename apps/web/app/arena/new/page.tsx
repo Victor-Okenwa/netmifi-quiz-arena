@@ -65,10 +65,10 @@ export default async function NewBattlePage({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} activeTab="new" />
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-4xl min-w-0 flex-1 flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
         <div>
           <Link
             href="/arena"

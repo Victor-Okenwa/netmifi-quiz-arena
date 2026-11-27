@@ -177,7 +177,7 @@ export default async function PracticePage({
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background text-foreground">
+    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} activeTab="practice" />
 
       <main className="mx-auto flex w-full max-w-4xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">

@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${lexend.variable} ${orbitron.variable} dark h-full antialiased`}
+      className={`${lexend.variable} ${orbitron.variable} dark antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-screen flex flex-col font-sans">
         {children}
         <Toaster position="top-right" richColors closeButton />
       </body>

@@ -12,108 +12,112 @@ interface ArenaNavbarProps {
 
 export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-          <Link href="/arena" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-            <LogoIcon className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
-            <span className="truncate font-game text-sm font-bold tracking-tight sm:text-xl">
-              NETMIFI <span className="text-primary">QUIZ ARENA</span>
-            </span>
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+            <Link href="/arena" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <LogoIcon className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
+              <span className="truncate font-game text-sm font-bold tracking-tight sm:text-xl">
+                NETMIFI <span className="text-primary">QUIZ ARENA</span>
+              </span>
+            </Link>
+
+            <nav className="hidden items-center gap-1 md:flex">
+              <Link href="/arena">
+                <Button
+                  variant={activeTab === "lobby" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <Swords className="size-4 text-primary" />
+                  Arena Lobby
+                </Button>
+              </Link>
+              <Link href="/arena/new">
+                <Button
+                  variant={activeTab === "new" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <PlusCircle className="size-4 text-primary" />
+                  New Battle
+                </Button>
+              </Link>
+              <Link href="/arena/practice">
+                <Button
+                  variant={activeTab === "practice" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <Brain className="size-4 text-primary" />
+                  Practice Drill
+                </Button>
+              </Link>
+              <Link href="/leaderboard">
+                <Button
+                  variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <Trophy className="size-4 text-primary" />
+                  Leaderboard
+                </Button>
+              </Link>
+            </nav>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3">
+            <ProfileMenuPopover profile={profile} />
+          </div>
+        </div>
+
+        {/* Mobile Navigation Bar */}
+        <nav className="flex items-center justify-around border-t border-border/50 px-2 py-1.5 md:hidden">
+          <Link href="/arena" className="flex-1">
+            <Button
+              variant={activeTab === "lobby" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full gap-1 px-1.5 text-xs"
+            >
+              <Swords className="size-3.5 text-primary" />
+              Lobby
+            </Button>
           </Link>
-
-          <nav className="hidden items-center gap-1 md:flex">
-            <Link href="/arena">
-              <Button
-                variant={activeTab === "lobby" ? "secondary" : "ghost"}
-                size="sm"
-                className="gap-1.5"
-              >
-                <Swords className="size-4 text-primary" />
-                Arena Lobby
-              </Button>
-            </Link>
-            <Link href="/arena/new">
-              <Button
-                variant={activeTab === "new" ? "secondary" : "ghost"}
-                size="sm"
-                className="gap-1.5"
-              >
-                <PlusCircle className="size-4 text-primary" />
-                New Battle
-              </Button>
-            </Link>
-            <Link href="/arena/practice">
-              <Button
-                variant={activeTab === "practice" ? "secondary" : "ghost"}
-                size="sm"
-                className="gap-1.5"
-              >
-                <Brain className="size-4 text-primary" />
-                Practice Drill
-              </Button>
-            </Link>
-            <Link href="/leaderboard">
-              <Button
-                variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
-                size="sm"
-                className="gap-1.5"
-              >
-                <Trophy className="size-4 text-primary" />
-                Leaderboard
-              </Button>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-3">
-          <ProfileMenuPopover profile={profile} />
-        </div>
-      </div>
-
-      {/* Mobile Navigation Bar */}
-      <nav className="flex items-center justify-around border-t border-border/50 px-2 py-1.5 md:hidden">
-        <Link href="/arena" className="flex-1">
-          <Button
-            variant={activeTab === "lobby" ? "secondary" : "ghost"}
-            size="sm"
-            className="w-full gap-1 px-1.5 text-xs"
-          >
-            <Swords className="size-3.5 text-primary" />
-            Lobby
-          </Button>
-        </Link>
-        <Link href="/arena/new" className="flex-1">
-          <Button
-            variant={activeTab === "new" ? "secondary" : "ghost"}
-            size="sm"
-            className="w-full gap-1 px-1.5 text-xs"
-          >
-            <PlusCircle className="size-3.5 text-primary" />
-            Battle
-          </Button>
-        </Link>
-        <Link href="/arena/practice" className="flex-1">
-          <Button
-            variant={activeTab === "practice" ? "secondary" : "ghost"}
-            size="sm"
-            className="w-full gap-1 px-1.5 text-xs"
-          >
-            <Brain className="size-3.5 text-primary" />
-            Practice
-          </Button>
-        </Link>
-        <Link href="/leaderboard" className="flex-1">
-          <Button
-            variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
-            size="sm"
-            className="w-full gap-1 px-1.5 text-xs"
-          >
-            <Trophy className="size-3.5 text-primary" />
-            Ranks
-          </Button>
-        </Link>
-      </nav>
-    </header>
+          <Link href="/arena/new" className="flex-1">
+            <Button
+              variant={activeTab === "new" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full gap-1 px-1.5 text-xs"
+            >
+              <PlusCircle className="size-3.5 text-primary" />
+              Battle
+            </Button>
+          </Link>
+          <Link href="/arena/practice" className="flex-1">
+            <Button
+              variant={activeTab === "practice" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full gap-1 px-1.5 text-xs"
+            >
+              <Brain className="size-3.5 text-primary" />
+              Practice
+            </Button>
+          </Link>
+          <Link href="/leaderboard" className="flex-1">
+            <Button
+              variant={activeTab === "leaderboard" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full gap-1 px-1.5 text-xs"
+            >
+              <Trophy className="size-3.5 text-primary" />
+              Ranks
+            </Button>
+          </Link>
+        </nav>
+      </header>
+      {/* Structural layout spacer matching fixed navbar height */}
+      <div className="h-[109px] w-full shrink-0 md:h-16" aria-hidden="true" />
+    </>
   );
 }
