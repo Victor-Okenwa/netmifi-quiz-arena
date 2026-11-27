@@ -1,12 +1,12 @@
-import { ProfileAvatar } from "@/assets/profiles";
 import { ArenaNavbar } from "@/components/arena/arena-navbar";
-import { BattleRoomLiveWatcher } from "@/components/arena/battle-room-live-watcher";
+import {
+  BattleLobbyArena,
+  type LobbyParticipant,
+} from "@/components/arena/battle-lobby-arena";
 import { CopyInviteButton } from "@/components/arena/copy-invite-button";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -24,14 +24,7 @@ import {
   topics,
   universities,
 } from "@repo/db";
-import {
-  ArrowLeft,
-  Clock,
-  Coins,
-  HelpCircle,
-  Swords,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeft, Clock, Coins, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -56,6 +49,7 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
       timePerQuestionSeconds: battles.timePerQuestionSeconds,
       stakeAmountLamports: battles.stakeAmountLamports,
       creatorUserId: battles.creatorUserId,
+      startedAt: battles.startedAt,
       courseCode: courses.code,
       courseTitle: courses.title,
       topicName: topics.name,
@@ -70,8 +64,7 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     notFound();
   }
 
-  // If the current authenticated student is not the creator and visits the room while Slot 2 is open,
-  // automatically enroll them into Slot 2 (`battle_participants`)
+  // Automatically enroll authenticated opponent into Slot 2 if they visit while room is WAITING
   let justJoinedSlotTwo = false;
   if (
     user.id !== initialBattle.creatorUserId &&
@@ -87,7 +80,7 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     ? { ...initialBattle, status: "READY" as const }
     : initialBattle;
 
-  const participants = await db
+  const participants: LobbyParticipant[] = await db
     .select({
       id: battleParticipants.id,
       userId: battleParticipants.userId,
@@ -107,19 +100,9 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     .where(eq(battleParticipants.battleId, battle.id))
     .orderBy(asc(battleParticipants.slotIndex));
 
-  const playerOne = participants.find((p) => p.slotIndex === 1) ?? null;
-  const playerTwo = participants.find((p) => p.slotIndex === 2) ?? null;
-
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} />
-      <BattleRoomLiveWatcher
-        battleId={battle.id}
-        initialParticipantCount={participants.length}
-        initialBattleStatus={battle.status}
-        justJoinedSlotTwo={justJoinedSlotTwo}
-        inviteCode={battle.inviteCode}
-      />
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -183,123 +166,19 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
           </CardHeader>
         </Card>
 
-        {/* Player 1 vs Player 2 Matchup Slots */}
-        <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-11">
-          {/* Player 1 Slot */}
-          <Card className="border-border bg-card shadow-sm md:col-span-5">
-            <CardHeader className="items-center text-center">
-              <Badge variant="secondary" className="mb-2 text-[10px]">
-                Challenger • Slot 1
-              </Badge>
-              {playerOne ? (
-                <>
-                  <ProfileAvatar
-                    avatarUrl={playerOne.avatarUrl}
-                    avatarNumber={playerOne.avatarNumber}
-                    displayName={playerOne.displayName}
-                    className="size-20 ring-4 ring-primary/25"
-                  />
-                  <CardTitle className="mt-3 font-game text-lg font-bold">
-                    {playerOne.displayName}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    @{playerOne.username} •{" "}
-                    {playerOne.universityShortCode ?? "Student"} (
-                    {playerOne.academicLevel ?? "200L"})
-                  </CardDescription>
-                </>
-              ) : null}
-            </CardHeader>
-            <CardContent className="text-center">
-              <Badge variant="default" className="font-game text-xs">
-                In Room
-              </Badge>
-            </CardContent>
-          </Card>
-
-          {/* VS Divider */}
-          <div className="flex flex-col items-center justify-center md:col-span-1">
-            <div className="flex size-12 items-center justify-center rounded-full border-2 border-primary bg-primary-light font-game text-sm font-extrabold text-primary shadow-sm">
-              VS
-            </div>
-          </div>
-
-          {/* Player 2 Slot */}
-          <Card className="border-border bg-card shadow-sm md:col-span-5">
-            <CardHeader className="items-center text-center">
-              <Badge variant="secondary" className="mb-2 text-[10px]">
-                Opponent • Slot 2
-              </Badge>
-              {playerTwo ? (
-                <>
-                  <ProfileAvatar
-                    avatarUrl={playerTwo.avatarUrl}
-                    avatarNumber={playerTwo.avatarNumber}
-                    displayName={playerTwo.displayName}
-                    className="size-20 ring-4 ring-primary/25"
-                  />
-                  <CardTitle className="mt-3 font-game text-lg font-bold">
-                    {playerTwo.displayName}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    @{playerTwo.username} •{" "}
-                    {playerTwo.universityShortCode ?? "Student"} (
-                    {playerTwo.academicLevel ?? "200L"})
-                  </CardDescription>
-                </>
-              ) : (
-                <>
-                  <div className="flex size-20 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted/40">
-                    <UserPlus className="size-8 text-muted-foreground" />
-                  </div>
-                  <CardTitle className="mt-3 font-game text-lg font-bold text-muted-foreground">
-                    Waiting for Opponent...
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Share invite code{" "}
-                    <span className="font-mono font-bold text-foreground">
-                      {battle.inviteCode}
-                    </span>{" "}
-                    with a classmate to join.
-                  </CardDescription>
-                </>
-              )}
-            </CardHeader>
-            <CardContent className="text-center">
-              {playerTwo ? (
-                <Badge variant="default" className="font-game text-xs">
-                  In Room
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-xs">
-                  Open Slot
-                </Badge>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-border bg-muted/20">
-          <CardContent className="flex flex-col items-center justify-between gap-4 py-6 sm:flex-row">
-            <div className="flex items-center gap-3">
-              <Swords className="size-5 text-primary" />
-              <div>
-                <p className="font-game text-sm font-bold">
-                  BATTLE LOBBY READY
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Once both students are in the room, the timed quiz battle
-                  begins automatically.
-                </p>
-              </div>
-            </div>
-            <Link href="/arena">
-              <Button variant="outline" size="sm">
-                Return to Lobby
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* Interactive Ready Lobby, 3D Turning-Box Countdown & Opponent Leave Controls */}
+        <BattleLobbyArena
+          battleId={battle.id}
+          inviteCode={battle.inviteCode}
+          currentUserId={user.id}
+          initialStatus={battle.status}
+          initialCountdownEndsAt={
+            battle.startedAt ? battle.startedAt.toISOString() : null
+          }
+          initialServerNow={new Date().toISOString()}
+          initialParticipants={participants}
+          justJoinedSlotTwo={justJoinedSlotTwo}
+        />
       </main>
     </div>
   );
