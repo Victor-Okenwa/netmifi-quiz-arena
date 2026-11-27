@@ -15,8 +15,8 @@
 | **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ✅ **COMPLETED** |
 | **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ✅ **COMPLETED** |
 | **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ✅ **COMPLETED** |
-| **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
-| **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⬜ **PENDING** |
+| **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ✅ **COMPLETED** |
+| **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ⏳ **NEXT UP** |
 | **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ⬜ **PENDING** |
 | **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ⬜ **PENDING** |
 | **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ⬜ **PENDING** |
@@ -153,33 +153,33 @@ Build the primary student-facing Arena Dashboard, Course/Topic Explorer, and Bat
 ---
 
 ## Milestone 5: Core Battle Engine & Real-Time Multiplayer Synchronization
-**Status:** ⏳ **NEXT UP**
+**Status:** ✅ **COMPLETED**
 
 ### Goal
 Implement the server-authoritative quiz battle engine and real-time multiplayer synchronization using **Drizzle transactions** (source of truth) and **Supabase Realtime** (event broadcast & presence).
 
 ### Scope & Deliverables
-- [ ] **Server-Authoritative Battle Service (`apps/web/lib/battle-engine/`)**:
+- [x] **Server-Authoritative Battle Service (`apps/web/lib/battle-engine/engine.ts` & `apps/web/lib/battle-join.ts`)**:
   - Strict state machine transitions: `WAITING → READY → ACTIVE → COMPLETED` (plus `CANCELLED` and `EXPIRED`).
-  - `createBattle`: Validates course/topic availability, selects balanced approved questions of comparable difficulty, creates battle record.
-  - `joinBattle` & `setPlayerReady`: Enforces participant limits (1v1), records join in a database transaction, and transitions battle to `READY` / `ACTIVE` when both players are ready.
-  - `getSanitizedBattleState`: Returns current question text, options, timer metadata, and participant progress—**strictly stripping `correctAnswer` and `explanation`**.
-  - `submitAnswer`: Server validates participant membership, active battle status, question deadline (with grace window), and duplicate submission constraint `(battle_id, user_id, question_id)`. Computes correctness and speed-adjusted score server-side.
-  - `finalizeBattle`: Triggered when both participants complete all questions or timer expires; atomically computes winner/draw, updates XP, and records `battle_results`.
-- [ ] **Supabase Realtime Multiplayer Sync**:
-  - Room channel (`battle:<battleId>`) broadcasting `player_joined`, `player_ready`, `battle_started`, `opponent_answered` (progress indicator only, never the chosen option), and `battle_completed`.
-  - Automatic authoritative state re-fetch on reconnect or page reload.
-- [ ] **Live Battle Arena Room UI (`/arena/battle/[battleId]`)**:
-  - Pre-battle Waiting/Ready Lobby with opponent presence indicator and shareable invite code.
-  - Active Question Arena with synchronized countdown bar, interactive option cards, opponent progress badge, and instant transition to the final result screen upon completion.
+  - `createBattle` (`POST /api/battles`): Validates course/topic availability, selects balanced approved questions, creates battle record.
+  - `joinBattleAsOpponent` & `toggle_ready` (`POST /api/battles/[battleId]`): Enforces participant limits (1v1), records join in a database transaction, manages the green Ready toggle, starts a synchronized 20-second 3D turning-box countdown when both players are ready, locks ready/leave controls at `<= 10s`, and transitions battle to `ACTIVE` at `00s`.
+  - `getSanitizedBattleArenaState` (`GET /api/battles/[battleId]/arena`): Returns ordered questions, options A–D, timer metadata, and participant progress—**strictly stripping `correctOptionKey` and `explanation`**.
+  - `submitParticipantAnswer` (`POST /api/battles/[battleId]/answer`): Server validates participant membership, active battle status, and duplicate submission constraint `(battle_id, user_id, question_id)`. Computes correctness and speed-adjusted score (`100`/`120`/`150` base + up to `+50` speed bonus) server-side.
+  - Atomic finalization: Triggered when both participants complete all questions; atomically computes winner/draw (with response-time tie-breaker), awards student XP (`+150` win, `+100` draw, `+60` challenger), and records per-topic performance breakdowns in `battle_results`.
+- [x] **Supabase Realtime Multiplayer Sync**:
+  - Room channels (`battle-lobby:<battleId>` and `battle-arena:<battleId>`) broadcasting ready toggles, join/leave events, and live question progress (`answeredCount / totalQuestions`), paired with authoritative server polling.
+- [x] **Live Battle Arena Room UI (`apps/web/components/arena/live-battle-quiz.tsx`)**:
+  - Head-to-head live scoreboard with `<ProfileAvatar />`, points, and answered progress bars.
+  - Per-question countdown bar with automatic timeout submission (`0 pts`) so neither player ever stalls.
+  - Interactive `A / B / C / D` option cards, waiting-for-opponent completion screen, and final Victory/Draw/Diagnosis summary banner.
 
 ### Acceptance Criteria
-- Two students in separate browser sessions can create/join a battle, ready up, answer timed questions simultaneously with real-time progress updates, and reach a server-verified winner announcement without any answer key exposure in network payloads.
+- Two students in separate browser sessions can create/join a battle, ready up through the 20s 3D countdown, answer timed questions simultaneously with real-time progress updates, and reach a server-verified winner announcement without any answer key exposure in network payloads.
 
 ---
 
 ## Milestone 6: Post-Battle Diagnosis, Targeted Practice & Rematch Loop
-**Status:** ⬜ **PENDING**
+**Status:** ⏳ **NEXT UP**
 
 ### Goal
 Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH`**) so every battle turns competition into measurable academic improvement.

@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/assets/profiles";
+import { LiveBattleQuiz } from "@/components/arena/live-battle-quiz";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,10 +54,29 @@ interface BattleLobbyArenaProps {
 
 const LOCK_THRESHOLD_SECONDS = 10;
 
+function areParticipantsEqual(
+  a: LobbyParticipant[],
+  b: LobbyParticipant[]
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const pA = a[i];
+    const pB = b[i];
+    if (!pA || !pB) return false;
+    if (
+      pA.userId !== pB.userId ||
+      pA.slotIndex !== pB.slotIndex ||
+      pA.isReady !== pB.isReady ||
+      pA.displayName !== pB.displayName
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Single 3D Turning Box Digit (`0`–`9`).
- * Re-mounts the inner turning cube face with `key={digit}` so every second change
- * plays the 3D perspective box-turn animation (`animate-box-turn`).
  */
 function TurningDigitBox({
   digit,
@@ -78,7 +98,6 @@ function TurningDigitBox({
             : "border-emerald-500/60 bg-card text-emerald-500 shadow-emerald-500/10"
         }`}
       >
-        {/* Subtle horizontal split line for 3D mechanical flip-box look */}
         <div
           className={`pointer-events-none absolute inset-x-0 top-1/2 h-px ${
             isLocked ? "bg-primary-foreground/20" : "bg-border/80"
@@ -108,20 +127,24 @@ export function BattleLobbyArena({
   const [countdownEndsAt, setCountdownEndsAt] = useState<string | null>(
     initialCountdownEndsAt
   );
-  const [clockOffsetMs, setClockOffsetMs] = useState<number>(() => {
-    const parsedServer = Date.parse(initialServerNow);
-    return Number.isNaN(parsedServer) ? 0 : parsedServer - Date.now();
-  });
+
+  // Permanent latch: once the match enters ACTIVE or COMPLETED, never unmount LiveBattleQuiz
+  const [matchStartedLatch, setMatchStartedLatch] = useState<boolean>(
+    initialStatus === "ACTIVE" || initialStatus === "COMPLETED"
+  );
+
+  const clockOffsetMsRef = useRef<number>(
+    Number.isNaN(Date.parse(initialServerNow))
+      ? 0
+      : Date.parse(initialServerNow) - Date.now()
+  );
 
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(
     () => {
       if (!initialCountdownEndsAt) return null;
       const diff = Math.ceil(
         (Date.parse(initialCountdownEndsAt) -
-          (Date.now() +
-            (Number.isNaN(Date.parse(initialServerNow))
-              ? 0
-              : Date.parse(initialServerNow) - Date.now()))) /
+          (Date.now() + clockOffsetMsRef.current)) /
           1000
       );
       return Math.max(0, diff);
@@ -145,7 +168,6 @@ export function BattleLobbyArena({
     participants.find((p) => p.userId === currentUserId) ?? null;
   const bothReady = Boolean(playerOne?.isReady && playerTwo?.isReady);
 
-  // Toast when Player 2 first arrives in the room
   useEffect(() => {
     if (justJoinedSlotTwo && !announcedSelfJoinRef.current) {
       announcedSelfJoinRef.current = true;
@@ -164,50 +186,57 @@ export function BattleLobbyArena({
       if (data.serverNow) {
         const parsedServer = Date.parse(data.serverNow);
         if (!Number.isNaN(parsedServer)) {
-          setClockOffsetMs(parsedServer - Date.now());
+          clockOffsetMsRef.current = parsedServer - Date.now();
         }
       }
 
       if (data.battle) {
-        setBattleStatus(data.battle.status);
-        setCountdownEndsAt(data.battle.countdownEndsAt);
+        const nextStatus = data.battle.status;
+        if (nextStatus === "ACTIVE" || nextStatus === "COMPLETED") {
+          setMatchStartedLatch(true);
+        }
+        setBattleStatus((prev) => (prev !== nextStatus ? nextStatus : prev));
+        setCountdownEndsAt((prev) =>
+          prev !== data.battle!.countdownEndsAt
+            ? data.battle!.countdownEndsAt
+            : prev
+        );
       }
 
       if (data.participants) {
         const prev = prevParticipantsRef.current;
         const next = data.participants;
 
-        // Detect opponent join
-        if (prev.length < 2 && next.length === 2) {
-          const opp = next.find((p) => p.userId !== currentUserId);
-          if (opp) {
-            toast.success(`${opp.displayName} joined the room!`);
-          }
-        }
-
-        // Detect opponent leave
-        if (prev.length === 2 && next.length < 2) {
-          const leftPlayer = prev.find((p) => p.slotIndex === 2);
-          if (leftPlayer && leftPlayer.userId !== currentUserId) {
-            toast.info(`${leftPlayer.displayName} left the battle room.`);
-          }
-        }
-
-        // Detect opponent ready state toggle
-        for (const nextP of next) {
-          if (nextP.userId === currentUserId) continue;
-          const prevP = prev.find((p) => p.userId === nextP.userId);
-          if (prevP && prevP.isReady !== nextP.isReady) {
-            if (nextP.isReady) {
-              toast.success(`${nextP.displayName} is READY!`);
-            } else {
-              toast.warning(`${nextP.displayName} is no longer ready.`);
+        if (!areParticipantsEqual(prev, next)) {
+          if (prev.length < 2 && next.length === 2) {
+            const opp = next.find((p) => p.userId !== currentUserId);
+            if (opp) {
+              toast.success(`${opp.displayName} joined the room!`);
             }
           }
-        }
 
-        prevParticipantsRef.current = next;
-        setParticipants(next);
+          if (prev.length === 2 && next.length < 2) {
+            const leftPlayer = prev.find((p) => p.slotIndex === 2);
+            if (leftPlayer && leftPlayer.userId !== currentUserId) {
+              toast.info(`${leftPlayer.displayName} left the battle room.`);
+            }
+          }
+
+          for (const nextP of next) {
+            if (nextP.userId === currentUserId) continue;
+            const prevP = prev.find((p) => p.userId === nextP.userId);
+            if (prevP && prevP.isReady !== nextP.isReady) {
+              if (nextP.isReady) {
+                toast.success(`${nextP.displayName} is READY!`);
+              } else {
+                toast.warning(`${nextP.displayName} is no longer ready.`);
+              }
+            }
+          }
+
+          prevParticipantsRef.current = next;
+          setParticipants(next);
+        }
       }
     },
     [currentUserId]
@@ -230,8 +259,12 @@ export function BattleLobbyArena({
     }
   }, [battleId, applyLobbySnapshot]);
 
-  // Subscribe to Supabase Realtime broadcast channel + authoritative 1.5s polling
+  // Only poll the pre-battle lobby while the match has NOT started yet
   useEffect(() => {
+    if (matchStartedLatch) {
+      return;
+    }
+
     let isMounted = true;
 
     try {
@@ -247,14 +280,14 @@ export function BattleLobbyArena({
 
       channelRef.current = channel;
     } catch {
-      // Fallback to polling if Realtime connection is unavailable
+      // Fallback to polling
     }
 
     const pollInterval = setInterval(() => {
       if (isMounted) {
         void fetchLatestSnapshot();
       }
-    }, 1500);
+    }, 2000);
 
     return () => {
       isMounted = false;
@@ -266,11 +299,11 @@ export function BattleLobbyArena({
         } catch {
           // Ignore cleanup errors
         }
+        channelRef.current = null;
       }
     };
-  }, [battleId, fetchLatestSnapshot]);
+  }, [battleId, fetchLatestSnapshot, matchStartedLatch]);
 
-  // Broadcast helper to notify peer immediately
   function broadcastLobbyUpdate() {
     if (channelRef.current) {
       void channelRef.current.send({
@@ -281,8 +314,12 @@ export function BattleLobbyArena({
     }
   }
 
-  // Tick the 20-second countdown timer every 200ms
+  // Tick the 20-second countdown timer without resetting on clockOffsetMs jitter
   useEffect(() => {
+    if (matchStartedLatch) {
+      return;
+    }
+
     if (!bothReady || !countdownEndsAt) {
       setRemainingSeconds(null);
       announcedLockRef.current = false;
@@ -296,9 +333,9 @@ export function BattleLobbyArena({
     }
 
     const updateTimer = () => {
-      const syncedNow = Date.now() + clockOffsetMs;
+      const syncedNow = Date.now() + clockOffsetMsRef.current;
       const secs = Math.max(0, Math.ceil((targetMs - syncedNow) / 1000));
-      setRemainingSeconds(secs);
+      setRemainingSeconds((prev) => (prev !== secs ? secs : prev));
 
       if (
         secs <= LOCK_THRESHOLD_SECONDS &&
@@ -315,27 +352,33 @@ export function BattleLobbyArena({
       if (secs === 0 && !announcedStartRef.current) {
         announcedStartRef.current = true;
         setBattleStatus("ACTIVE");
+        setMatchStartedLatch(true);
         toast.success("Battle starting now!");
-        void fetchLatestSnapshot();
       }
     };
 
     updateTimer();
     const timer = setInterval(updateTimer, 200);
     return () => clearInterval(timer);
-  }, [bothReady, countdownEndsAt, clockOffsetMs, fetchLatestSnapshot]);
+  }, [bothReady, countdownEndsAt, matchStartedLatch]);
+
+  if (
+    matchStartedLatch ||
+    battleStatus === "ACTIVE" ||
+    battleStatus === "COMPLETED"
+  ) {
+    return (
+      <LiveBattleQuiz battleId={battleId} currentUserId={currentUserId} />
+    );
+  }
 
   const isCountdownLocked =
     bothReady &&
     remainingSeconds !== null &&
     remainingSeconds <= LOCK_THRESHOLD_SECONDS;
 
-  const isMatchActive =
-    battleStatus === "ACTIVE" ||
-    (bothReady && remainingSeconds !== null && remainingSeconds === 0);
-
   async function handleToggleReady() {
-    if (!myParticipant || isCountdownLocked || isMatchActive) return;
+    if (!myParticipant || isCountdownLocked) return;
 
     setIsTogglingReady(true);
     try {
@@ -382,12 +425,7 @@ export function BattleLobbyArena({
   }
 
   async function handleLeaveRoom() {
-    if (
-      !myParticipant ||
-      myParticipant.slotIndex !== 2 ||
-      isCountdownLocked ||
-      isMatchActive
-    ) {
+    if (!myParticipant || myParticipant.slotIndex !== 2 || isCountdownLocked) {
       return;
     }
 
@@ -415,7 +453,6 @@ export function BattleLobbyArena({
       broadcastLobbyUpdate();
       toast.success("You left the battle room.");
       router.push(data.redirectTo ?? "/arena");
-      router.refresh();
     } catch {
       toast.error("Network error while leaving room.");
       setIsLeavingRoom(false);
@@ -431,7 +468,7 @@ export function BattleLobbyArena({
 
   return (
     <div className="space-y-6">
-      {/* 20-Second 3D Turning-Box Countdown Banner (Appears when both players are Ready) */}
+      {/* 20-Second 3D Turning-Box Countdown Banner */}
       {bothReady && remainingSeconds !== null ? (
         <Card
           className={`overflow-hidden border-2 transition-all ${
@@ -457,11 +494,9 @@ export function BattleLobbyArena({
               </div>
 
               <h3 className="font-game text-xl font-extrabold tracking-tight sm:text-2xl">
-                {isMatchActive
-                  ? "BATTLE IS LIVE!"
-                  : isCountdownLocked
-                    ? "PREPARE FOR BATTLE — CONTROLS LOCKED"
-                    : "MATCH STARTING IN..."}
+                {isCountdownLocked
+                  ? "PREPARE FOR BATTLE — CONTROLS LOCKED"
+                  : "MATCH STARTING IN..."}
               </h3>
 
               <p className="text-xs text-muted-foreground">
@@ -476,7 +511,7 @@ export function BattleLobbyArena({
               <TurningDigitBox digit={tensDigit} isLocked={isCountdownLocked} />
               <TurningDigitBox digit={onesDigit} isLocked={isCountdownLocked} />
               <div className="ml-1 flex flex-col text-left">
-                <span className="font-game text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="font-game text-xs font-bold tracking-wider text-muted-foreground uppercase">
                   SEC
                 </span>
                 <span className="text-[11px] text-muted-foreground">
@@ -559,9 +594,7 @@ export function BattleLobbyArena({
               <Button
                 type="button"
                 onClick={handleToggleReady}
-                disabled={
-                  isTogglingReady || isCountdownLocked || isMatchActive
-                }
+                disabled={isTogglingReady || isCountdownLocked}
                 className={`mt-2 w-full gap-2 font-game text-xs font-bold text-white shadow-sm ${
                   playerOne.isReady
                     ? "bg-emerald-700 hover:bg-emerald-800"
@@ -684,10 +717,7 @@ export function BattleLobbyArena({
                       type="button"
                       onClick={handleToggleReady}
                       disabled={
-                        isTogglingReady ||
-                        isLeavingRoom ||
-                        isCountdownLocked ||
-                        isMatchActive
+                        isTogglingReady || isLeavingRoom || isCountdownLocked
                       }
                       className={`flex-1 gap-2 font-game text-xs font-bold text-white shadow-sm ${
                         playerTwo.isReady
@@ -714,10 +744,7 @@ export function BattleLobbyArena({
                       variant="outline"
                       onClick={handleLeaveRoom}
                       disabled={
-                        isLeavingRoom ||
-                        isTogglingReady ||
-                        isCountdownLocked ||
-                        isMatchActive
+                        isLeavingRoom || isTogglingReady || isCountdownLocked
                       }
                       className="gap-1.5 border-destructive/40 text-xs text-destructive hover:bg-destructive/10"
                     >
@@ -753,13 +780,11 @@ export function BattleLobbyArena({
             )}
             <div>
               <p className="font-game text-sm font-bold">
-                {isMatchActive
-                  ? "MATCH IN PROGRESS"
-                  : bothReady
-                    ? "COUNTDOWN ACTIVE — GET READY!"
-                    : playerTwo
-                      ? "WAITING FOR BOTH PLAYERS TO SIGNAL READY"
-                      : "WAITING FOR OPPONENT TO JOIN ROOM"}
+                {bothReady
+                  ? "COUNTDOWN ACTIVE — GET READY!"
+                  : playerTwo
+                    ? "WAITING FOR BOTH PLAYERS TO SIGNAL READY"
+                    : "WAITING FOR OPPONENT TO JOIN ROOM"}
               </p>
               <p className="text-xs text-muted-foreground">
                 {bothReady
