@@ -11,8 +11,8 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push --force",
-    "db:migrate": "drizzle-kit migrate",
+    "db:push": "bun run src/migrate.ts",
+    "db:migrate": "bun run src/migrate.ts",
     "db:seed": "bun run src/seed.ts",
     "db:studio": "drizzle-kit studio"
   },
