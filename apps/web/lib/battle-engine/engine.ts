@@ -1,6 +1,11 @@
 import {
   getOrCreateCachedAudioAsset,
 } from "@/lib/audio/tts-cache";
+import {
+  getActiveSpectatorCount,
+  recordSpectatorHeartbeat,
+  removeSpectatorHeartbeat,
+} from "@/lib/battle-engine/spectator-presence";
 import { settleCompletedRewardBattle } from "@/lib/solana/reward-settlement";
 import {
   and,
@@ -97,6 +102,7 @@ export interface SanitizedBattleArenaState {
     topicName: string | null;
     questionCount: number;
     timePerQuestionSeconds: number;
+    spectatorCount: number;
     winnerUserId: string | null;
     isDraw: boolean;
   };
@@ -203,6 +209,11 @@ export async function getSanitizedBattleArenaState(
   const viewerRole: "participant" | "spectator" = isParticipant
     ? "participant"
     : "spectator";
+
+  const spectatorCount =
+    viewerRole === "spectator"
+      ? recordSpectatorHeartbeat(battleId, userId)
+      : removeSpectatorHeartbeat(battleId, userId);
 
   let currentStatus = battleRow.status;
 
@@ -452,6 +463,7 @@ export async function getSanitizedBattleArenaState(
       topicName: battleRow.topicName,
       questionCount: totalQuestions,
       timePerQuestionSeconds: battleRow.timePerQuestionSeconds,
+      spectatorCount,
       winnerUserId:
         completedSummary?.winnerUserId ?? battleRow.winnerUserId ?? null,
       isDraw: completedSummary?.isDraw ?? battleRow.isDraw,

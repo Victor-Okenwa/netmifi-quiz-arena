@@ -512,8 +512,47 @@ export function LiveBattleQuiz({
 
   return (
     <div className="w-full min-w-0 space-y-6">
-      {/* Top Head-to-Head Live Scoreboard & Progress Bar */}
+      {/* Top Head-to-Head Live Scoreboard, Match Details & Spectator Counter */}
       <Card className="w-full min-w-0 overflow-hidden border-primary/30 bg-card shadow-sm">
+        {/* Live Match Details & Spectator Count Strip */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-4 py-2.5 text-xs">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Badge variant="default" className="font-game text-[10px]">
+              {battleMeta.courseCode}
+            </Badge>
+            <span className="truncate font-semibold text-foreground">
+              {battleMeta.topicName ?? battleMeta.courseTitle}
+            </span>
+            <span className="hidden text-muted-foreground sm:inline">•</span>
+            <span className="hidden text-muted-foreground sm:inline">
+              {totalQuestions} Qs • {battleMeta.timePerQuestionSeconds}s/Q
+            </span>
+            {battleMeta.mode === "reward" &&
+            battleMeta.stakeAmountLamports > 0 ? (
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <Coins className="size-3 text-primary" />
+                {(battleMeta.stakeAmountLamports / 1_000_000_000).toFixed(2)}{" "}
+                SOL Stake
+              </Badge>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge
+              variant="secondary"
+              className="gap-1.5 px-2.5 py-0.5 font-game text-[11px]"
+              title="Live spectators currently watching this battle"
+            >
+              <Eye className="size-3.5 text-primary" />
+              {battleMeta.spectatorCount ?? 0}{" "}
+              {(battleMeta.spectatorCount ?? 0) === 1
+                ? "Spectator"
+                : "Spectators"}{" "}
+              Watching
+            </Badge>
+          </div>
+        </div>
+
         <CardContent className="grid grid-cols-1 items-center gap-4 py-4 sm:grid-cols-11">
           {/* Player 1 Score & Progress */}
           <div className="flex min-w-0 items-center justify-between gap-3 sm:col-span-5">

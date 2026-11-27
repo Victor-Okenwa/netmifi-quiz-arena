@@ -17,12 +17,14 @@ import {
   Clock,
   Coins,
   ExternalLink,
+  Eye,
   Loader2,
   Lock,
   LogOut,
   ShieldAlert,
   ShieldCheck,
   Swords,
+  Trash2,
   UserPlus,
   Wallet,
 } from "lucide-react";
@@ -166,7 +168,9 @@ export function BattleLobbyArena({
 
   const [isTogglingReady, setIsTogglingReady] = useState(false);
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
+  const [isDeletingRoom, setIsDeletingRoom] = useState(false);
   const [isDepositingEscrow, setIsDepositingEscrow] = useState(false);
+  const [spectatorCount, setSpectatorCount] = useState<number>(0);
   const [escrowPdaAddress, setEscrowPdaAddress] = useState<string | null>(
     onChainBattlePda
   );
@@ -263,8 +267,13 @@ export function BattleLobbyArena({
     (data: {
       battle?: { status: string; countdownEndsAt: string | null };
       serverNow?: string;
+      spectatorCount?: number;
       participants?: LobbyParticipant[];
     }) => {
+      if (typeof data.spectatorCount === "number") {
+        setSpectatorCount(data.spectatorCount);
+      }
+
       if (data.serverNow) {
         const parsedServer = Date.parse(data.serverNow);
         if (!Number.isNaN(parsedServer)) {
@@ -326,13 +335,17 @@ export function BattleLobbyArena({
 
   const fetchLatestSnapshot = useCallback(async () => {
     try {
-      const res = await fetch(`/api/battles/${battleId}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/battles/${battleId}?trackSpectator=true`,
+        {
+          cache: "no-store",
+        }
+      );
       if (!res.ok) return;
       const data = (await res.json()) as {
         battle?: { status: string; countdownEndsAt: string | null };
         serverNow?: string;
+        spectatorCount?: number;
         participants?: LobbyParticipant[];
       };
       applyLobbySnapshot(data);
@@ -598,6 +611,49 @@ export function BattleLobbyArena({
     }
   }
 
+  async function handleDeleteRoom() {
+    if (
+      !myParticipant ||
+      myParticipant.slotIndex !== 1 ||
+      Boolean(playerTwo) ||
+      battleStatus === "ACTIVE" ||
+      battleStatus === "COMPLETED"
+    ) {
+      return;
+    }
+
+    setIsDeletingRoom(true);
+    try {
+      const res = await fetch(`/api/battles/${battleId}`, {
+        method: "DELETE",
+      });
+
+      const data = (await res.json()) as {
+        error?: string;
+        deleted?: boolean;
+        redirectTo?: string;
+      };
+
+      if (!res.ok || !data.deleted) {
+        toast.error("Cannot delete room", {
+          description:
+            data.error ??
+            "Room cannot be deleted once an opponent joins or battle starts.",
+        });
+        setIsDeletingRoom(false);
+        return;
+      }
+
+      broadcastLobbyUpdate();
+      toast.success("Battle room deleted and removed.");
+      router.push(data.redirectTo ?? "/arena");
+      router.refresh();
+    } catch {
+      toast.error("Network error while deleting room.");
+      setIsDeletingRoom(false);
+    }
+  }
+
   const formattedSeconds =
     remainingSeconds !== null
       ? String(Math.max(0, Math.min(20, remainingSeconds))).padStart(2, "0")
@@ -815,29 +871,52 @@ export function BattleLobbyArena({
             )}
 
             {playerOne?.userId === currentUserId ? (
-              <Button
-                type="button"
-                onClick={handleToggleReady}
-                disabled={isTogglingReady || isCountdownLocked}
-                className={`mt-2 w-full gap-2 font-game text-xs font-bold text-white shadow-sm ${
-                  playerOne.isReady
-                    ? "bg-emerald-700 hover:bg-emerald-800"
-                    : "bg-emerald-600 hover:bg-emerald-700"
-                }`}
-              >
-                {isTogglingReady ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : isCountdownLocked ? (
-                  <Lock className="size-4" />
-                ) : (
-                  <CheckCircle2 className="size-4" />
-                )}
-                {isCountdownLocked
-                  ? "Ready Locked (Under 10s)"
-                  : playerOne.isReady
-                    ? "Ready ✓ (Click to Unready)"
-                    : "Signal Ready"}
-              </Button>
+              <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  onClick={handleToggleReady}
+                  disabled={
+                    isTogglingReady || isDeletingRoom || isCountdownLocked
+                  }
+                  className={`flex-1 gap-2 font-game text-xs font-bold text-white shadow-sm ${
+                    playerOne.isReady
+                      ? "bg-emerald-700 hover:bg-emerald-800"
+                      : "bg-emerald-600 hover:bg-emerald-700"
+                  }`}
+                >
+                  {isTogglingReady ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : isCountdownLocked ? (
+                    <Lock className="size-4" />
+                  ) : (
+                    <CheckCircle2 className="size-4" />
+                  )}
+                  {isCountdownLocked
+                    ? "Ready Locked (Under 10s)"
+                    : playerOne.isReady
+                      ? "Ready ✓ (Click to Unready)"
+                      : "Signal Ready"}
+                </Button>
+
+                {!playerTwo &&
+                battleStatus !== "ACTIVE" &&
+                battleStatus !== "COMPLETED" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDeleteRoom}
+                    disabled={isDeletingRoom || isTogglingReady}
+                    className="gap-1.5 border-destructive/40 text-xs text-destructive hover:bg-destructive/10"
+                  >
+                    {isDeletingRoom ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-3.5" />
+                    )}
+                    Delete Room
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
           </CardContent>
         </Card>
@@ -1018,11 +1097,22 @@ export function BattleLobbyArena({
             </div>
           </div>
 
-          <Link href="/arena">
-            <Button variant="outline" size="sm">
-              Back to Lobby
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Badge
+              variant="secondary"
+              className="gap-1.5 px-3 py-1 font-game text-xs"
+            >
+              <Eye className="size-3.5 text-primary" />
+              {spectatorCount}{" "}
+              {spectatorCount === 1 ? "Spectator" : "Spectators"} Watching
+            </Badge>
+
+            <Link href="/arena">
+              <Button variant="outline" size="sm">
+                Back to Lobby
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

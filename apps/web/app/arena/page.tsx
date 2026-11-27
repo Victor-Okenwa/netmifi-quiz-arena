@@ -1,6 +1,8 @@
 import { ProfileAvatar } from "@/assets/profiles";
 import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { DeleteBattleButton } from "@/components/arena/delete-battle-button";
 import { QuickJoinCard } from "@/components/arena/quick-join-card";
+import { ViewBattleRoomDialog } from "@/components/arena/view-battle-room-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +17,7 @@ import {
   FALLBACK_COURSES,
   FALLBACK_TOPICS,
 } from "@/lib/academic-fallback";
+import { getActiveSpectatorCount } from "@/lib/battle-engine/spectator-presence";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import {
   and,
@@ -54,6 +57,7 @@ interface OpenBattleRow {
   courseCode: string;
   courseTitle: string;
   topicName: string | null;
+  creatorUserId: string;
   creatorDisplayName: string;
   creatorUsername: string;
   creatorAvatarUrl: string | null;
@@ -70,6 +74,7 @@ interface RecentBattleRow {
   courseCode: string;
   courseTitle: string;
   topicName: string | null;
+  creatorUserId: string;
 }
 
 export default async function ArenaPage() {
@@ -114,6 +119,7 @@ export default async function ArenaPage() {
             courseCode: courses.code,
             courseTitle: courses.title,
             topicName: topics.name,
+            creatorUserId: battles.creatorUserId,
             creatorDisplayName: profiles.displayName,
             creatorUsername: profiles.username,
             creatorAvatarUrl: profiles.avatarUrl,
@@ -143,6 +149,7 @@ export default async function ArenaPage() {
             courseCode: courses.code,
             courseTitle: courses.title,
             topicName: topics.name,
+            creatorUserId: battles.creatorUserId,
           })
           .from(battleParticipants)
           .innerJoin(battles, eq(battleParticipants.battleId, battles.id))
@@ -267,12 +274,14 @@ export default async function ArenaPage() {
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   {recentBattles.map((rb) => (
-                    <Link
+                    <div
                       key={rb.id}
-                      href={`/arena/battle/${rb.id}`}
-                      className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/70"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/70"
                     >
-                      <div className="min-w-0 pr-2">
+                      <Link
+                        href={`/arena/battle/${rb.id}`}
+                        className="min-w-0 flex-1 pr-2"
+                      >
                         <div className="flex items-center gap-2">
                           <span className="font-game text-xs font-bold text-primary">
                             {rb.courseCode}
@@ -284,9 +293,17 @@ export default async function ArenaPage() {
                         <p className="mt-0.5 truncate text-xs font-medium text-foreground">
                           {rb.topicName ?? rb.courseTitle}
                         </p>
+                      </Link>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {rb.creatorUserId === profile.id &&
+                        rb.status === "WAITING" ? (
+                          <DeleteBattleButton battleId={rb.id} />
+                        ) : null}
+                        <Link href={`/arena/battle/${rb.id}`}>
+                          <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+                        </Link>
                       </div>
-                      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
-                    </Link>
+                    </div>
                   ))}
                 </CardContent>
               </Card>
@@ -337,14 +354,15 @@ export default async function ArenaPage() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {openBattles.map((battle) => {
                     const isWaiting = battle.status === "WAITING";
+                    const spectatorCount = getActiveSpectatorCount(battle.id);
                     return (
                       <div
                         key={battle.id}
                         className="flex flex-col justify-between rounded-xl border border-border bg-muted/20 p-4 transition-all hover:border-primary/40 hover:bg-muted/40"
                       >
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <Badge variant="default" className="font-game">
                                 {battle.courseCode}
                               </Badge>
@@ -367,11 +385,20 @@ export default async function ArenaPage() {
                                 </Badge>
                               ) : null}
                             </div>
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="size-3" />
-                              {battle.questionCount} Qs •{" "}
-                              {battle.timePerQuestionSeconds}s
-                            </span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Clock className="size-3" />
+                                {battle.questionCount} Qs •{" "}
+                                {battle.timePerQuestionSeconds}s
+                              </span>
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-medium text-foreground"
+                                title="Spectators Watching"
+                              >
+                                <Eye className="size-3 text-primary" />
+                                {spectatorCount}
+                              </span>
+                            </div>
                           </div>
 
                           <div>
@@ -384,8 +411,8 @@ export default async function ArenaPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-                          <div className="flex items-center gap-2 min-w-0">
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+                          <div className="flex min-w-0 items-center gap-2">
                             <ProfileAvatar
                               avatarUrl={battle.creatorAvatarUrl}
                               avatarNumber={battle.creatorAvatarNumber}
@@ -402,24 +429,47 @@ export default async function ArenaPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
-                            <Link
-                              href={`/arena/battle/${battle.id}?spectate=true`}
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="gap-1 px-2.5 text-xs"
-                                title="Watch as Spectator"
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <ViewBattleRoomDialog
+                              battleId={battle.id}
+                              currentUserId={profile.id}
+                              initialCourseCode={battle.courseCode}
+                              initialCourseTitle={battle.courseTitle}
+                              initialTopicName={battle.topicName}
+                              initialStatus={battle.status}
+                              initialMode={battle.mode}
+                              initialStakeLamports={battle.stakeAmountLamports}
+                              initialQuestionCount={battle.questionCount}
+                              initialTimePerQuestionSeconds={
+                                battle.timePerQuestionSeconds
+                              }
+                              initialSpectatorCount={spectatorCount}
+                            />
+
+                            {isWaiting &&
+                            battle.creatorUserId === profile.id ? (
+                              <DeleteBattleButton battleId={battle.id} />
+                            ) : (
+                              <Link
+                                href={`/arena/battle/${battle.id}?spectate=true`}
                               >
-                                <Eye className="size-3.5 text-primary" />
-                                {isWaiting ? "Watch" : "Watch Live"}
-                              </Button>
-                            </Link>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 px-2.5 text-xs"
+                                  title="Watch as Spectator"
+                                >
+                                  <Eye className="size-3.5 text-primary" />
+                                  {isWaiting ? "Watch" : "Watch Live"}
+                                </Button>
+                              </Link>
+                            )}
                             {isWaiting ? (
                               <Link href={`/arena/battle/${battle.id}`}>
                                 <Button size="sm" className="gap-1 px-2.5">
-                                  Accept
+                                  {battle.creatorUserId === profile.id
+                                    ? "Enter"
+                                    : "Accept"}
                                   <ArrowRight className="size-3.5" />
                                 </Button>
                               </Link>

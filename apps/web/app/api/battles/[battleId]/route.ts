@@ -1,3 +1,8 @@
+import {
+  getActiveSpectatorCount,
+  recordSpectatorHeartbeat,
+  removeSpectatorHeartbeat,
+} from "@/lib/battle-engine/spectator-presence";
 import { joinBattleAsOpponent } from "@/lib/battle-join";
 import { getCurrentAuthContext } from "@/lib/supabase/auth";
 import {
@@ -5,9 +10,11 @@ import {
   asc,
   battleParticipants,
   battles,
+  courses,
   db,
   eq,
   profiles,
+  topics,
   universities,
 } from "@repo/db";
 import { NextResponse } from "next/server";
@@ -23,8 +30,74 @@ interface RouteContext {
 }
 
 const lobbyActionSchema = z.object({
-  action: z.enum(["join", "toggle_ready", "leave_room"]).default("join"),
+  action: z
+    .enum(["join", "toggle_ready", "leave_room", "delete_room"])
+    .default("join"),
 });
+
+async function deleteCreatorBattleRoom(battleId: string, callerUserId: string) {
+  const [battle] = await db
+    .select({
+      id: battles.id,
+      status: battles.status,
+      creatorUserId: battles.creatorUserId,
+    })
+    .from(battles)
+    .where(eq(battles.id, battleId))
+    .limit(1);
+
+  if (!battle) {
+    return {
+      ok: false as const,
+      status: 404,
+      error: "Battle room not found.",
+    };
+  }
+
+  if (battle.creatorUserId !== callerUserId) {
+    return {
+      ok: false as const,
+      status: 403,
+      error: "Only the creator of this room can delete it.",
+    };
+  }
+
+  if (battle.status === "ACTIVE" || battle.status === "COMPLETED") {
+    return {
+      ok: false as const,
+      status: 409,
+      error: "Cannot delete a room while a battle is ongoing or completed.",
+    };
+  }
+
+  const participants = await db
+    .select({
+      id: battleParticipants.id,
+      userId: battleParticipants.userId,
+      slotIndex: battleParticipants.slotIndex,
+    })
+    .from(battleParticipants)
+    .where(eq(battleParticipants.battleId, battleId));
+
+  const opponentJoined = participants.some(
+    (p) => p.slotIndex === 2 || p.userId !== callerUserId
+  );
+
+  if (opponentJoined) {
+    return {
+      ok: false as const,
+      status: 409,
+      error: "Cannot delete this room because an opponent has already joined.",
+    };
+  }
+
+  await db.delete(battles).where(eq(battles.id, battleId));
+
+  return {
+    ok: true as const,
+    status: 200,
+  };
+}
 
 async function getBattleLobbySnapshot(battleId: string) {
   const [battle] = await db
@@ -32,13 +105,20 @@ async function getBattleLobbySnapshot(battleId: string) {
       id: battles.id,
       status: battles.status,
       mode: battles.mode,
+      questionCount: battles.questionCount,
+      timePerQuestionSeconds: battles.timePerQuestionSeconds,
       stakeAmountLamports: battles.stakeAmountLamports,
       onChainBattlePda: battles.onChainBattlePda,
       inviteCode: battles.inviteCode,
       creatorUserId: battles.creatorUserId,
       startedAt: battles.startedAt,
+      courseCode: courses.code,
+      courseTitle: courses.title,
+      topicName: topics.name,
     })
     .from(battles)
+    .innerJoin(courses, eq(battles.courseId, courses.id))
+    .leftJoin(topics, eq(battles.topicId, topics.id))
     .where(eq(battles.id, battleId))
     .limit(1);
 
@@ -96,21 +176,30 @@ async function getBattleLobbySnapshot(battleId: string) {
       id: battle.id,
       status: currentStatus,
       mode: battle.mode,
+      questionCount: battle.questionCount,
+      timePerQuestionSeconds: battle.timePerQuestionSeconds,
       stakeAmountLamports: battle.stakeAmountLamports,
       onChainBattlePda: battle.onChainBattlePda,
       inviteCode: battle.inviteCode,
       creatorUserId: battle.creatorUserId,
       countdownEndsAt: countdownTargetIso,
+      courseCode: battle.courseCode,
+      courseTitle: battle.courseTitle,
+      topicName: battle.topicName,
     },
     serverNow: new Date(nowMs).toISOString(),
     participantCount: participants.length,
+    spectatorCount: getActiveSpectatorCount(battleId),
     participants,
   };
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const { battleId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const trackSpectator = searchParams.get("trackSpectator") === "true";
+
     const snapshot = await getBattleLobbySnapshot(battleId);
 
     if (!snapshot) {
@@ -118,6 +207,26 @@ export async function GET(_request: Request, context: RouteContext) {
         { error: "Battle room not found." },
         { status: 404 }
       );
+    }
+
+    if (trackSpectator) {
+      const auth = await getCurrentAuthContext();
+      if (auth) {
+        const isParticipant = snapshot.participants.some(
+          (p) => p.userId === auth.user.id
+        );
+        if (!isParticipant) {
+          snapshot.spectatorCount = recordSpectatorHeartbeat(
+            battleId,
+            auth.user.id
+          );
+        } else {
+          snapshot.spectatorCount = removeSpectatorHeartbeat(
+            battleId,
+            auth.user.id
+          );
+        }
+      }
     }
 
     return NextResponse.json(snapshot);
@@ -143,6 +252,23 @@ export async function POST(request: Request, context: RouteContext) {
     const rawBody: unknown = await request.json().catch(() => ({}));
     const parsed = lobbyActionSchema.safeParse(rawBody);
     const action = parsed.success ? parsed.data.action : "join";
+
+    if (action === "delete_room") {
+      const outcome = await deleteCreatorBattleRoom(
+        battleId,
+        authContext.user.id
+      );
+      if (!outcome.ok) {
+        return NextResponse.json(
+          { error: outcome.error },
+          { status: outcome.status }
+        );
+      }
+      return NextResponse.json({
+        deleted: true,
+        redirectTo: "/arena",
+      });
+    }
 
     if (action === "join") {
       const outcome = await joinBattleAsOpponent(battleId, authContext.user);
@@ -331,6 +457,40 @@ export async function POST(request: Request, context: RouteContext) {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to update battle room.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const authContext = await getCurrentAuthContext();
+    if (!authContext) {
+      return NextResponse.json(
+        { error: "Please sign in to delete this battle room." },
+        { status: 401 }
+      );
+    }
+
+    const { battleId } = await context.params;
+    const outcome = await deleteCreatorBattleRoom(
+      battleId,
+      authContext.user.id
+    );
+
+    if (!outcome.ok) {
+      return NextResponse.json(
+        { error: outcome.error },
+        { status: outcome.status }
+      );
+    }
+
+    return NextResponse.json({
+      deleted: true,
+      redirectTo: "/arena",
+    });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to delete battle room.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
