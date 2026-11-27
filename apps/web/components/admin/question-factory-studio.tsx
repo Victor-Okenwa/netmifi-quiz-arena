@@ -20,11 +20,12 @@ import {
   Clock,
   ExternalLink,
   Eye,
-  FileText,
   Filter,
   Globe,
   Loader2,
+  Lock,
   RefreshCw,
+  ShieldCheck,
   Sparkles,
   XCircle,
 } from "lucide-react";
@@ -85,17 +86,20 @@ interface QuestionFactoryStudioProps {
 
 export function QuestionFactoryStudio({
   courses,
-  topics,
 }: QuestionFactoryStudioProps) {
   const [activeTab, setActiveTab] = useState<"ingest" | "review" | "bank" | "jobs">("ingest");
 
-  // Ingestion form state
-  const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id ?? "");
-  const [selectedTopicId, setSelectedTopicId] = useState<string>("");
-  const [sourceUrl, setSourceUrl] = useState<string>("");
-  const [sourceTitle, setSourceTitle] = useState<string>("");
+  // Ingestion form state: Custom Course Generator
+  const [courseCode, setCourseCode] = useState<string>("SOL 101");
+  const [courseTitle, setCourseTitle] = useState<string>("Solana Blockchain & Smart Contracts");
+  const [topicName, setTopicName] = useState<string>("Anchor Escrow & Account Architecture");
+  const [academicLevel, setAcademicLevel] = useState<"100L" | "200L" | "300L" | "400L" | "500L">("300L");
+  const [sourceUrl, setSourceUrl] = useState<string>("https://solana.com/docs/intro/overview");
+  const [sourceTitle, setSourceTitle] = useState<string>("Solana Core Developer Documentation");
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [urlWarning, setUrlWarning] = useState<string | null>(null);
+  const [codeWarning, setCodeWarning] = useState<string | null>(null);
 
   // Jobs state
   const [jobs, setJobs] = useState<IngestionJobItem[]>([]);
@@ -110,15 +114,26 @@ export function QuestionFactoryStudio({
   // Editable drafts in Review Studio
   const [editedQuestions, setEditedQuestions] = useState<Record<string, Partial<QuestionDraftItem>>>({});
 
-  // Synchronize initial topic when course changes
+  // Real-time Course Code Protection Check
   useEffect(() => {
-    const matchingTopics = topics.filter((t) => t.courseId === selectedCourseId);
-    if (matchingTopics.length > 0) {
-      setSelectedTopicId(matchingTopics[0]?.id ?? "");
-    } else {
-      setSelectedTopicId("");
+    const cleanInput = courseCode.trim().replace(/\s+/g, "").toUpperCase();
+    if (!cleanInput) {
+      setCodeWarning(null);
+      return;
     }
-  }, [selectedCourseId, topics]);
+
+    const isMatch = courses.some(
+      (c) => c.code.replace(/\s+/g, "").toUpperCase() === cleanInput
+    );
+
+    if (isMatch) {
+      setCodeWarning(
+        `Course code "${courseCode.trim().toUpperCase()}" already exists in the official university catalog. Official courses are locked to protect accredited curricula. Please use a new custom course code (e.g., SOL 101, WEB 301, AI 201).`
+      );
+    } else {
+      setCodeWarning(null);
+    }
+  }, [courseCode, courses]);
 
   // Real-time URL safety validation
   useEffect(() => {
@@ -190,11 +205,22 @@ export function QuestionFactoryStudio({
     return () => clearInterval(interval);
   }, [jobs, statusFilter]);
 
-  // Handle URL Ingestion submission
+  // Handle Ingestion submission
   async function handleIngestSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!sourceUrl.trim() || !sourceTitle.trim() || !selectedCourseId || !selectedTopicId) {
-      toast.error("Please fill in all required ingestion parameters.");
+    if (
+      !courseCode.trim() ||
+      !courseTitle.trim() ||
+      !topicName.trim() ||
+      !sourceUrl.trim() ||
+      !sourceTitle.trim()
+    ) {
+      toast.error("Please fill in all course and source parameters.");
+      return;
+    }
+
+    if (codeWarning) {
+      toast.error("Course protection: You cannot overwrite existing university courses.");
       return;
     }
 
@@ -209,8 +235,10 @@ export function QuestionFactoryStudio({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          courseId: selectedCourseId,
-          topicId: selectedTopicId,
+          courseCode: courseCode.trim().toUpperCase(),
+          courseTitle: courseTitle.trim(),
+          topicName: topicName.trim(),
+          academicLevel,
           sourceTitle: sourceTitle.trim(),
           sourceUrl: sourceUrl.trim(),
           maxPages: 1,
@@ -222,9 +250,9 @@ export function QuestionFactoryStudio({
         throw new Error(data.error || "Failed to trigger ingestion job.");
       }
 
-      toast.success("Ingestion job started! Firecrawl is extracting content and generating draft questions.");
-      setSourceUrl("");
-      setSourceTitle("");
+      toast.success(
+        `Custom course ${courseCode.trim().toUpperCase()} registered! Firecrawl is extracting content and generating draft questions.`
+      );
       fetchJobs();
       setActiveTab("jobs");
     } catch (err) {
@@ -266,7 +294,6 @@ export function QuestionFactoryStudio({
           : "Question rejected and removed from review."
       );
 
-      // Remove or update in local state
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === questionId
@@ -285,7 +312,6 @@ export function QuestionFactoryStudio({
     }
   }
 
-  const courseTopics = topics.filter((t) => t.courseId === selectedCourseId);
   const draftCount = questions.filter((q) => q.approvalStatus === "draft").length;
 
   return (
@@ -298,11 +324,11 @@ export function QuestionFactoryStudio({
               QUESTION <span className="text-primary">FACTORY</span>
             </h1>
             <Badge variant="outline" className="font-mono text-xs text-primary">
-              ADMIN REVIEW
+              INTERACTIVE DEMO
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Ingest academic syllabus resources via Firecrawl, synthesize grounded questions, and review before publishing to live battles.
+            Generate and verify new academic course question banks from live web resources using Firecrawl and AI.
           </p>
         </div>
 
@@ -323,6 +349,26 @@ export function QuestionFactoryStudio({
         </div>
       </div>
 
+      {/* Course Protection Banner */}
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-xs">
+        <div className="flex items-center gap-2 font-bold text-foreground sm:text-sm">
+          <ShieldCheck className="size-4 text-primary shrink-0" />
+          Judge & Community Playground — Course Protection Enabled
+        </div>
+        <p className="mt-1 text-muted-foreground leading-relaxed">
+          You can synthesize brand-new course question banks from any educational web resource.
+          To preserve accredited tertiary curricula, existing official course codes (
+          <span className="font-mono text-foreground font-semibold">
+            {courses.slice(0, 8).map((c) => c.code).join(", ")}
+          </span>
+          ) cannot be overwritten. Enter a new custom course code (e.g.,{" "}
+          <span className="font-mono text-primary font-bold">SOL 101</span>,{" "}
+          <span className="font-mono text-primary font-bold">WEB 301</span>,{" "}
+          <span className="font-mono text-primary font-bold">AI 201</span>,{" "}
+          <span className="font-mono text-primary font-bold">CYB 401</span>).
+        </p>
+      </div>
+
       {/* Tabs */}
       <Tabs
         value={activeTab}
@@ -332,7 +378,7 @@ export function QuestionFactoryStudio({
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="ingest" className="gap-1.5 text-xs sm:text-sm">
             <Globe className="size-3.5 text-primary" />
-            Ingest URL
+            Generate Course
           </TabsTrigger>
           <TabsTrigger value="jobs" className="gap-1.5 text-xs sm:text-sm">
             <Clock className="size-3.5 text-primary" />
@@ -361,53 +407,95 @@ export function QuestionFactoryStudio({
           <Card className="border-border bg-card">
             <CardHeader>
               <CardTitle className="font-game text-lg">
-                SOURCE URL INGESTION
+                CUSTOM COURSE QUESTION FACTORY
               </CardTitle>
               <CardDescription>
-                Provide an academic lecture, syllabus guide, or textbook chapter URL to extract and generate grounded questions.
+                Define a new university course, specify an academic reference URL, and Firecrawl will extract syllabus content and generate 4-choice questions.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleIngestSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="courseSelect">Target University Course</Label>
-                    <select
-                      id="courseSelect"
-                      value={selectedCourseId}
-                      onChange={(e) => setSelectedCourseId(e.target.value)}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.code} — {c.title}
-                        </option>
-                      ))}
-                    </select>
+                    <Label htmlFor="courseCode">
+                      New Course Code <span className="text-primary">*</span>
+                    </Label>
+                    <Input
+                      id="courseCode"
+                      placeholder="e.g. SOL 101, WEB 301, AI 201"
+                      value={courseCode}
+                      onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
+                      className="font-mono uppercase"
+                      required
+                    />
+                    {codeWarning ? (
+                      <p className="flex items-start gap-1.5 text-xs text-destructive">
+                        <Lock className="size-3.5 shrink-0 mt-0.5" />
+                        {codeWarning}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Must be a unique course code not already in the official catalog.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="courseTitle">
+                      Course Title <span className="text-primary">*</span>
+                    </Label>
+                    <Input
+                      id="courseTitle"
+                      placeholder="e.g. Solana Blockchain & Smart Contract Engineering"
+                      value={courseTitle}
+                      onChange={(e) => setCourseTitle(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="topicName">
+                      Syllabus Topic <span className="text-primary">*</span>
+                    </Label>
+                    <Input
+                      id="topicName"
+                      placeholder="e.g. Anchor Escrow & Account PDA Model"
+                      value={topicName}
+                      onChange={(e) => setTopicName(e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="topicSelect">Syllabus Topic</Label>
+                    <Label htmlFor="academicLevel">Academic Level</Label>
                     <select
-                      id="topicSelect"
-                      value={selectedTopicId}
-                      onChange={(e) => setSelectedTopicId(e.target.value)}
+                      id="academicLevel"
+                      value={academicLevel}
+                      onChange={(e) =>
+                        setAcademicLevel(
+                          e.target.value as "100L" | "200L" | "300L" | "400L" | "500L"
+                        )
+                      }
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
-                      {courseTopics.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
+                      <option value="100L">100L (Freshman)</option>
+                      <option value="200L">200L (Sophomore)</option>
+                      <option value="300L">300L (Junior)</option>
+                      <option value="400L">400L (Senior)</option>
+                      <option value="500L">500L (Professional)</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sourceTitle">Source Reference Title</Label>
+                  <Label htmlFor="sourceTitle">
+                    Source Reference Title <span className="text-primary">*</span>
+                  </Label>
                   <Input
                     id="sourceTitle"
-                    placeholder="e.g. University Lecture Notes: Binary Search Trees & AVL Operations"
+                    placeholder="e.g. Solana Core Developer Documentation"
                     value={sourceTitle}
                     onChange={(e) => setSourceTitle(e.target.value)}
                     required
@@ -415,11 +503,13 @@ export function QuestionFactoryStudio({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sourceUrl">Academic Content URL (HTTPS Only)</Label>
+                  <Label htmlFor="sourceUrl">
+                    Academic Content URL (HTTPS Only) <span className="text-primary">*</span>
+                  </Label>
                   <Input
                     id="sourceUrl"
                     type="url"
-                    placeholder="https://en.wikipedia.org/wiki/Binary_search_tree"
+                    placeholder="https://solana.com/docs/intro/overview"
                     value={sourceUrl}
                     onChange={(e) => setSourceUrl(e.target.value)}
                     required
@@ -439,7 +529,7 @@ export function QuestionFactoryStudio({
                 <div className="pt-2">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || Boolean(urlWarning)}
+                    disabled={isSubmitting || Boolean(urlWarning) || Boolean(codeWarning)}
                     className="gap-2"
                   >
                     {isSubmitting ? (
@@ -447,7 +537,7 @@ export function QuestionFactoryStudio({
                     ) : (
                       <Sparkles className="size-4" />
                     )}
-                    Extract & Generate Questions
+                    Register Course & Generate Questions
                   </Button>
                 </div>
               </form>
@@ -473,7 +563,7 @@ export function QuestionFactoryStudio({
                 </div>
               ) : jobs.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  No ingestion jobs have been run yet. Use the "Ingest URL" tab to start one.
+                  No ingestion jobs have been run yet. Use the "Generate Course" tab to start one.
                 </p>
               ) : (
                 <div className="divide-y divide-border/60">

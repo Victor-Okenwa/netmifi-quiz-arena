@@ -2,12 +2,12 @@ import { LogoIcon } from "@/assets/netmifi";
 import { ProfileMenuPopover } from "@/components/arena/profile-menu-popover";
 import { Button } from "@/components/ui/button";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
-import { Brain, PlusCircle, Swords, Trophy } from "lucide-react";
+import { Brain, PlusCircle, Sparkles, Swords, Trophy } from "lucide-react";
 import Link from "next/link";
 
 interface ArenaNavbarProps {
   profile: AuthenticatedStudentProfile;
-  activeTab?: "lobby" | "new" | "practice" | "leaderboard";
+  activeTab?: "lobby" | "new" | "practice" | "leaderboard" | "factory";
 }
 
 export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
@@ -64,6 +64,16 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
                   Leaderboard
                 </Button>
               </Link>
+              <Link href="/arena/factory">
+                <Button
+                  variant={activeTab === "factory" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <Sparkles className="size-4 text-primary" />
+                  Question Factory
+                </Button>
+              </Link>
             </nav>
           </div>
 
@@ -112,6 +122,16 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
             >
               <Trophy className="size-3.5 text-primary" />
               Ranks
+            </Button>
+          </Link>
+          <Link href="/arena/factory" className="flex-1">
+            <Button
+              variant={activeTab === "factory" ? "secondary" : "ghost"}
+              size="sm"
+              className="w-full gap-1 px-1.5 text-xs"
+            >
+              <Sparkles className="size-3.5 text-primary" />
+              Factory
             </Button>
           </Link>
         </nav>

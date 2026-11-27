@@ -12,14 +12,17 @@ import {
   ingestionJobs,
   questionOptions,
   questions,
+  sql,
   topics,
 } from "@repo/db";
 import { extractAcademicContent } from "@repo/firecrawl";
 import { generateGroundedQuestions } from "./generator";
 
 export interface CreateIngestionJobParams {
-  courseId: string;
-  topicId: string;
+  courseCode: string;
+  courseTitle: string;
+  topicName: string;
+  academicLevel?: "100L" | "200L" | "300L" | "400L" | "500L";
   sourceUrl: string;
   sourceTitle: string;
   submittedByUserId?: string;
@@ -43,37 +46,72 @@ export interface IngestionJobRecord {
 
 /**
  * Creates an ingestion source and job, then begins asynchronous processing.
+ * Enforces course protection: existing course codes CANNOT be overwritten.
  */
 export async function createAndRunIngestionJob(
   params: CreateIngestionJobParams
-): Promise<{ jobId: string; sourceId: string }> {
-  // 1. Verify course and topic existence
-  const [course] = await db
-    .select({ id: courses.id, code: courses.code, title: courses.title })
+): Promise<{ jobId: string; sourceId: string; courseId: string; topicId: string }> {
+  const normalizedCode = params.courseCode.trim().replace(/\s+/g, " ").toUpperCase();
+  const codeWithoutSpaces = normalizedCode.replace(/\s+/g, "");
+
+  // 1. Course Protection Guardrail: Verify course code does NOT already exist
+  const existing = await db
+    .select({ id: courses.id, code: courses.code })
     .from(courses)
-    .where(eq(courses.id, params.courseId))
+    .where(
+      sql`UPPER(REPLACE(${courses.code}, ' ', '')) = ${codeWithoutSpaces}`
+    )
     .limit(1);
 
-  if (!course) {
-    throw new Error(`Course with ID ${params.courseId} not found.`);
+  if (existing.length > 0) {
+    throw new Error(
+      `Course code "${normalizedCode}" already exists in the catalog. To protect accredited university curricula, you cannot overwrite existing courses. Please choose a new unique custom course code (e.g. SOL 101, WEB 301, AI 401).`
+    );
   }
 
-  const [topic] = await db
-    .select({ id: topics.id, name: topics.name })
-    .from(topics)
-    .where(eq(topics.id, params.topicId))
-    .limit(1);
+  // 2. Create the new custom course
+  const [newCourse] = await db
+    .insert(courses)
+    .values({
+      code: normalizedCode,
+      title: params.courseTitle.trim(),
+      description: `Custom Course: ${params.courseTitle.trim()}`,
+      academicLevel: params.academicLevel ?? "200L",
+    })
+    .returning({ id: courses.id, code: courses.code, title: courses.title });
 
-  if (!topic) {
-    throw new Error(`Topic with ID ${params.topicId} not found.`);
+  if (!newCourse) {
+    throw new Error("Failed to register new course in database.");
   }
 
-  // 2. Insert content source record
+  // 3. Create the topic under the newly created course
+  const baseSlug = params.topicName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const slug = baseSlug.length > 0 ? baseSlug : "core-concepts";
+
+  const [newTopic] = await db
+    .insert(topics)
+    .values({
+      courseId: newCourse.id,
+      name: params.topicName.trim(),
+      slug,
+      description: `Core syllabus topics for ${params.courseTitle.trim()}`,
+      orderIndex: 1,
+    })
+    .returning({ id: topics.id, name: topics.name });
+
+  if (!newTopic) {
+    throw new Error("Failed to create topic record in database.");
+  }
+
+  // 4. Insert content source record
   const [sourceRecord] = await db
     .insert(contentSources)
     .values({
-      courseId: params.courseId,
-      topicId: params.topicId,
+      courseId: newCourse.id,
+      topicId: newTopic.id,
       title: params.sourceTitle.trim(),
       sourceUrl: params.sourceUrl.trim(),
       submittedByUserId: params.submittedByUserId ?? null,
@@ -84,7 +122,7 @@ export async function createAndRunIngestionJob(
     throw new Error("Failed to create content source record in database.");
   }
 
-  // 3. Insert initial ingestion job
+  // 5. Insert initial ingestion job
   const [jobRecord] = await db
     .insert(ingestionJobs)
     .values({
@@ -98,8 +136,8 @@ export async function createAndRunIngestionJob(
     throw new Error("Failed to create ingestion job record in database.");
   }
 
-  // 4. Trigger asynchronous processing without blocking the initial HTTP response
-  runIngestionPipeline(jobRecord.id, sourceRecord.id, course, topic, params.sourceUrl).catch(
+  // 6. Trigger asynchronous processing without blocking the initial HTTP response
+  runIngestionPipeline(jobRecord.id, sourceRecord.id, newCourse, newTopic, params.sourceUrl).catch(
     (err) => {
       console.error(`[QuestionFactory] Background job ${jobRecord.id} failed unhandled:`, err);
     }
@@ -108,6 +146,8 @@ export async function createAndRunIngestionJob(
   return {
     jobId: jobRecord.id,
     sourceId: sourceRecord.id,
+    courseId: newCourse.id,
+    topicId: newTopic.id,
   };
 }
 

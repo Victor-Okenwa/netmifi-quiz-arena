@@ -65,8 +65,20 @@ export const submitAnswerSchema = z.object({
 });
 
 export const ingestSourceUrlSchema = z.object({
-  courseId: z.string().uuid("Invalid course ID"),
-  topicId: z.string().uuid("Invalid topic ID"),
+  courseCode: z
+    .string()
+    .trim()
+    .min(3, "Course code must be at least 3 characters (e.g. SOL 101)")
+    .max(12, "Course code cannot exceed 12 characters")
+    .regex(
+      /^[A-Za-z]{2,5}\s*\d{2,4}[A-Za-z]?$/,
+      "Format must be like SOL 101, WEB 301, or AI 401"
+    ),
+  courseTitle: z.string().trim().min(3).max(120),
+  topicName: z.string().trim().min(2).max(100),
+  academicLevel: z
+    .enum(["100L", "200L", "300L", "400L", "500L"])
+    .default("200L"),
   sourceTitle: z.string().trim().min(3).max(200),
   sourceUrl: z
     .string()

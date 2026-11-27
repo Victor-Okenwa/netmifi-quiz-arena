@@ -22,8 +22,10 @@ export async function POST(request: Request) {
     }
 
     const result = await createAndRunIngestionJob({
-      courseId: parsed.data.courseId,
-      topicId: parsed.data.topicId,
+      courseCode: parsed.data.courseCode,
+      courseTitle: parsed.data.courseTitle,
+      topicName: parsed.data.topicName,
+      academicLevel: parsed.data.academicLevel,
       sourceUrl: parsed.data.sourceUrl,
       sourceTitle: parsed.data.sourceTitle,
       submittedByUserId: auth.user.id,
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
         success: true,
         jobId: result.jobId,
         sourceId: result.sourceId,
+        courseId: result.courseId,
+        topicId: result.topicId,
         message: "Ingestion job successfully queued and started.",
       },
       { status: 201 }

@@ -106,7 +106,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
           {/* Menu actions */}
           <div className="mt-2.5 flex flex-col gap-1.5">
             <Link
-              href="/admin/question-factory"
+              href="/arena/factory"
               onClick={() => setIsOpen(false)}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
