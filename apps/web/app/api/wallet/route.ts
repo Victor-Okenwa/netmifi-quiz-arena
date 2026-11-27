@@ -1,8 +1,5 @@
 import { getServerEnv } from "@/lib/env";
-import {
-  buildSolanaExplorerUrl,
-  getSettlementAuthorityPublicKey,
-} from "@/lib/solana/reward-settlement";
+import { buildSolanaExplorerUrl } from "@/lib/solana/reward-settlement";
 import {
   createSignedEd25519DemoWallet,
   generateWalletNonce,
@@ -22,8 +19,41 @@ import {
   walletLinks,
   walletNonces,
 } from "@repo/db";
-import { QUIZ_ARENA_ESCROW_PROGRAM_ID } from "@repo/solana";
 import { NextResponse } from "next/server";
+
+/**
+ * Queries the Solana RPC endpoint for the wallet's balance in lamports.
+ */
+async function fetchWalletBalanceLamports(
+  rpcUrl: string,
+  walletAddress: string
+): Promise<number> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getBalance",
+        params: [walletAddress, { commitment: "confirmed" }],
+      }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    clearTimeout(timer);
+
+    if (!res.ok) return 0;
+    const data = (await res.json()) as {
+      result?: { value?: number };
+    };
+    return typeof data.result?.value === "number" ? data.result.value : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export async function GET() {
   try {
@@ -33,8 +63,6 @@ export async function GET() {
     }
 
     const env = getServerEnv();
-    const programId = env.SOLANA_PROGRAM_ID || QUIZ_ARENA_ESCROW_PROGRAM_ID;
-    const authorityPublicKey = getSettlementAuthorityPublicKey();
 
     const [linkedWallet] = await db
       .select({
@@ -46,6 +74,13 @@ export async function GET() {
       .from(walletLinks)
       .where(eq(walletLinks.userId, auth.user.id))
       .limit(1);
+
+    const balanceLamports = linkedWallet
+      ? await fetchWalletBalanceLamports(
+          env.NEXT_PUBLIC_SOLANA_RPC_URL,
+          linkedWallet.walletAddress
+        )
+      : 0;
 
     const txRows = await db
       .select({
@@ -76,6 +111,8 @@ export async function GET() {
       linkedWallet: linkedWallet
         ? {
             ...linkedWallet,
+            balanceLamports,
+            balanceSol: balanceLamports / 1_000_000_000,
             explorerUrl: buildSolanaExplorerUrl(
               "address",
               linkedWallet.walletAddress,
@@ -83,12 +120,6 @@ export async function GET() {
             ),
           }
         : null,
-      solanaConfig: {
-        network: env.NEXT_PUBLIC_SOLANA_NETWORK,
-        rpcUrl: env.NEXT_PUBLIC_SOLANA_RPC_URL,
-        programId,
-        authorityPublicKey,
-      },
       transactions,
     });
   } catch (err) {
@@ -100,7 +131,7 @@ export async function GET() {
 
 /**
  * POST /api/wallet
- * Performs a 1-Click Cryptographic Ed25519 Devnet Demo Wallet Link for judges and students
+ * Performs a 1-Click Devnet Demo Wallet Link for judges and students
  * who do not have a browser wallet extension installed.
  */
 export async function POST() {
@@ -121,7 +152,6 @@ export async function POST() {
       nonce,
     });
 
-    // Verify with the exact same Ed25519 cryptographic verifier used for external wallets
     const isVerified = verifyEd25519WalletSignature({
       walletAddress: demoSigned.walletAddress,
       message: demoSigned.message,
@@ -130,7 +160,7 @@ export async function POST() {
 
     if (!isVerified) {
       return NextResponse.json(
-        { error: "Ed25519 signature verification failed." },
+        { error: "Signature verification failed." },
         { status: 400 }
       );
     }
@@ -161,6 +191,8 @@ export async function POST() {
     return NextResponse.json({
       linked: true,
       walletAddress: demoSigned.walletAddress,
+      balanceLamports: 0,
+      balanceSol: 0,
       verifiedAt: now.toISOString(),
       explorerUrl: buildSolanaExplorerUrl(
         "address",

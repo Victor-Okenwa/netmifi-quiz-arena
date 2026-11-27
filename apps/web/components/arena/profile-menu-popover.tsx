@@ -29,6 +29,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
   const [walletAddress, setWalletAddress] = useState<string | null>(
     profile.walletAddress ?? null
   );
+  const [balanceSol, setBalanceSol] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,9 +43,17 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
       const res = await fetch("/api/wallet", { cache: "no-store" });
       if (!res.ok) return;
       const data = (await res.json()) as {
-        linkedWallet?: { walletAddress?: string } | null;
+        linkedWallet?: {
+          walletAddress?: string;
+          balanceSol?: number;
+        } | null;
       };
       setWalletAddress(data.linkedWallet?.walletAddress ?? null);
+      setBalanceSol(
+        typeof data.linkedWallet?.balanceSol === "number"
+          ? data.linkedWallet.balanceSol
+          : 0
+      );
     } catch {
       // Ignore network errors
     }
@@ -54,9 +63,15 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
     void syncLinkedWallet();
 
     function handleWalletUpdated(event: Event) {
-      const custom = event as CustomEvent<{ walletAddress?: string | null }>;
+      const custom = event as CustomEvent<{
+        walletAddress?: string | null;
+        balanceSol?: number;
+      }>;
       if (custom.detail && "walletAddress" in custom.detail) {
         setWalletAddress(custom.detail.walletAddress ?? null);
+        if (typeof custom.detail.balanceSol === "number") {
+          setBalanceSol(custom.detail.balanceSol);
+        }
       } else {
         void syncLinkedWallet();
       }
@@ -145,7 +160,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
         <div
           role="dialog"
           aria-label="Profile menu"
-          className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-xl"
+          className="absolute right-0 z-50 mt-2 w-68 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-xl"
         >
           {/* Profile header */}
           <div className="flex items-center gap-3 border-b border-border pb-3">
@@ -190,24 +205,35 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
             <Link
               href="/settings/wallet"
               onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
-              <Wallet
-                className={`size-4 shrink-0 ${
-                  isWalletConnected ? "text-emerald-500" : "text-primary"
-                }`}
-              />
-              <span
-                className={`truncate ${
-                  isWalletConnected
-                    ? "font-mono font-semibold text-emerald-500"
-                    : ""
-                }`}
-              >
-                {walletAddress
-                  ? formatTruncatedWallet(walletAddress)
-                  : "Solana Wallet (Devnet)"}
-              </span>
+              <div className="flex min-w-0 items-center gap-2">
+                <Wallet
+                  className={`size-4 shrink-0 ${
+                    isWalletConnected ? "text-emerald-500" : "text-primary"
+                  }`}
+                />
+                <span
+                  className={`truncate ${
+                    isWalletConnected
+                      ? "font-mono font-semibold text-emerald-500"
+                      : ""
+                  }`}
+                >
+                  {walletAddress
+                    ? formatTruncatedWallet(walletAddress)
+                    : "Solana Wallet (Devnet)"}
+                </span>
+              </div>
+
+              {isWalletConnected ? (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-bold text-emerald-500"
+                >
+                  {balanceSol.toFixed(2)} SOL
+                </Badge>
+              ) : null}
             </Link>
 
             <Link
