@@ -42,16 +42,39 @@ export interface ArenaParticipantState {
   isFinished: boolean;
 }
 
+/**
+ * Represents a single question that a specific participant has ALREADY answered.
+ * - During an ACTIVE battle, spectators can only see questions present in a participant's answered feed.
+ * - `correctOptionKey` and `explanation` are ONLY populated once `battle.status === "COMPLETED"`.
+ */
+export interface SpectatorAnsweredQuestionItem {
+  questionId: string;
+  questionIndex: number;
+  topicName: string;
+  difficulty: QuestionDifficulty;
+  questionText: string;
+  options: { id: string; key: OptionKey; text: string }[];
+  selectedOptionKey: OptionKey;
+  isCorrect: boolean;
+  pointsAwarded: number;
+  responseTimeMs: number;
+  submittedAt: string;
+  correctOptionKey?: OptionKey;
+  explanation?: string;
+}
+
 export interface CompletedBattleSummary {
   winnerUserId: string | null;
   isDraw: boolean;
   creatorScore: number;
   opponentScore: number;
   myDiagnosis: StoredParticipantDiagnosis | null;
+  allParticipantDiagnoses: Record<string, StoredParticipantDiagnosis>;
   xpAwarded: number;
 }
 
 export interface SanitizedBattleArenaState {
+  viewerRole: "participant" | "spectator";
   battle: {
     id: string;
     inviteCode: string;
@@ -69,13 +92,12 @@ export interface SanitizedBattleArenaState {
   questions: PublicBattleQuestion[];
   myAnsweredQuestionIds: string[];
   participants: ArenaParticipantState[];
+  spectatorFeeds: Record<string, SpectatorAnsweredQuestionItem[]>;
   completedSummary: CompletedBattleSummary | null;
 }
 
 /**
  * Computes speed-adjusted points on the server for a submitted answer.
- * - Base points by difficulty: easy = 100, medium = 120, hard = 150
- * - Speed bonus: up to +50 points proportional to remaining time on the question timer
  */
 export function calculateQuestionPoints(params: {
   isCorrect: boolean;
@@ -106,8 +128,10 @@ export function calculateQuestionPoints(params: {
 }
 
 /**
- * Loads the sanitized battle arena state for an authenticated participant.
- * Strictly strips `correctOptionKey` and `explanation` from all questions while active.
+ * Loads the sanitized battle arena state for an authenticated participant OR spectator.
+ * - For participants: returns `questions` with `correctOptionKey` and `explanation` stripped while active.
+ * - For spectators: returns `questions: []` while active and populates `spectatorFeeds[participantUserId]`
+ *   with ONLY the questions that specific participant has already answered (anti-cheat).
  */
 export async function getSanitizedBattleArenaState(
   battleId: string,
@@ -161,9 +185,9 @@ export async function getSanitizedBattleArenaState(
     .orderBy(asc(battleParticipants.slotIndex));
 
   const isParticipant = participantRows.some((p) => p.userId === userId);
-  if (!isParticipant) {
-    return null;
-  }
+  const viewerRole: "participant" | "spectator" = isParticipant
+    ? "participant"
+    : "spectator";
 
   let currentStatus = battleRow.status;
 
@@ -182,7 +206,7 @@ export async function getSanitizedBattleArenaState(
     currentStatus = "ACTIVE";
   }
 
-  // Load ordered battle questions WITHOUT correctOptionKey or explanation
+  // Load ordered battle questions
   const rawQuestions = await db
     .select({
       questionId: questions.id,
@@ -193,6 +217,8 @@ export async function getSanitizedBattleArenaState(
       topicName: topics.name,
       questionText: questions.questionText,
       difficulty: questions.difficulty,
+      correctOptionKey: questions.correctOptionKey,
+      explanation: questions.explanation,
       audioUrl: audioAssets.publicUrl,
     })
     .from(battleQuestions)
@@ -249,14 +275,20 @@ export async function getSanitizedBattleArenaState(
     timeLimitSeconds: q.timeLimitSeconds,
   }));
 
-  // Load submissions to compute answered progress for both participants
+  // Load submissions to compute answered progress & per-participant answered feeds
   const submissions = await db
     .select({
       userId: answerSubmissions.userId,
       questionId: answerSubmissions.questionId,
+      selectedOptionKey: answerSubmissions.selectedOptionKey,
+      isCorrect: answerSubmissions.isCorrect,
+      pointsAwarded: answerSubmissions.pointsAwarded,
+      responseTimeMs: answerSubmissions.responseTimeMs,
+      submittedAt: answerSubmissions.submittedAt,
     })
     .from(answerSubmissions)
-    .where(eq(answerSubmissions.battleId, battleId));
+    .where(eq(answerSubmissions.battleId, battleId))
+    .orderBy(asc(answerSubmissions.submittedAt));
 
   const myAnsweredQuestionIds = submissions
     .filter((s) => s.userId === userId)
@@ -286,9 +318,50 @@ export async function getSanitizedBattleArenaState(
     };
   });
 
+  // Build per-participant answered question feeds (strictly only questions that participant has submitted)
+  const questionById = new Map(rawQuestions.map((q) => [q.questionId, q]));
+  const isCompleted = currentStatus === "COMPLETED";
+
+  const spectatorFeeds: Record<string, SpectatorAnsweredQuestionItem[]> = {};
+  for (const p of participantRows) {
+    spectatorFeeds[p.userId] = [];
+  }
+
+  for (const sub of submissions) {
+    const qMeta = questionById.get(sub.questionId);
+    if (!qMeta) continue;
+
+    const feedList = spectatorFeeds[sub.userId] ?? [];
+    feedList.push({
+      questionId: qMeta.questionId,
+      questionIndex: qMeta.orderIndex,
+      topicName: qMeta.topicName,
+      difficulty: qMeta.difficulty,
+      questionText: qMeta.questionText,
+      options: optionsByQuestionId.get(qMeta.questionId) ?? [],
+      selectedOptionKey: sub.selectedOptionKey,
+      isCorrect: sub.isCorrect,
+      pointsAwarded: sub.pointsAwarded,
+      responseTimeMs: sub.responseTimeMs,
+      submittedAt: sub.submittedAt.toISOString(),
+      ...(isCompleted
+        ? {
+            correctOptionKey: qMeta.correctOptionKey,
+            explanation: qMeta.explanation,
+          }
+        : {}),
+    });
+    spectatorFeeds[sub.userId] = feedList;
+  }
+
+  // Sort each participant's answered feed by question orderIndex
+  for (const pUserId of Object.keys(spectatorFeeds)) {
+    spectatorFeeds[pUserId]?.sort((a, b) => a.questionIndex - b.questionIndex);
+  }
+
   let completedSummary: CompletedBattleSummary | null = null;
 
-  if (currentStatus === "COMPLETED") {
+  if (isCompleted) {
     const [resultRow] = await db
       .select({
         winnerUserId: battleResults.winnerUserId,
@@ -305,7 +378,8 @@ export async function getSanitizedBattleArenaState(
       ? resultRow.winnerUserId === userId
       : battleRow.winnerUserId === userId;
     const isDraw = resultRow ? resultRow.isDraw : battleRow.isDraw;
-    const xpAwarded = isDraw ? 100 : isWinner ? 150 : 60;
+    const xpAwarded =
+      viewerRole === "spectator" ? 0 : isDraw ? 100 : isWinner ? 150 : 60;
 
     completedSummary = {
       winnerUserId: resultRow?.winnerUserId ?? battleRow.winnerUserId,
@@ -319,11 +393,13 @@ export async function getSanitizedBattleArenaState(
         participants.find((p) => p.slotIndex === 2)?.score ??
         0,
       myDiagnosis: resultRow?.participantDiagnoses?.[userId] ?? null,
+      allParticipantDiagnoses: resultRow?.participantDiagnoses ?? {},
       xpAwarded,
     };
   }
 
   return {
+    viewerRole,
     battle: {
       id: battleRow.id,
       inviteCode: battleRow.inviteCode,
@@ -339,9 +415,12 @@ export async function getSanitizedBattleArenaState(
         completedSummary?.winnerUserId ?? battleRow.winnerUserId ?? null,
       isDraw: completedSummary?.isDraw ?? battleRow.isDraw,
     },
-    questions: sanitizedQuestions,
+    // Anti-cheat: spectators never receive unanswered questions while the match is active
+    questions:
+      viewerRole === "spectator" && !isCompleted ? [] : sanitizedQuestions,
     myAnsweredQuestionIds,
     participants,
+    spectatorFeeds,
     completedSummary,
   };
 }
@@ -400,7 +479,6 @@ export async function submitParticipantAnswer(params: {
       throw new Error("This battle is no longer active.");
     }
 
-    // Ensure battle status is marked ACTIVE if it was transitioning from READY
     if (battle.status === "READY") {
       await tx
         .update(battles)
@@ -408,7 +486,6 @@ export async function submitParticipantAnswer(params: {
         .where(eq(battles.id, battle.id));
     }
 
-    // Verify participant membership
     const [participant] = await tx
       .select({
         id: battleParticipants.id,
@@ -425,10 +502,9 @@ export async function submitParticipantAnswer(params: {
       .limit(1);
 
     if (!participant) {
-      throw new Error("You are not a participant in this battle.");
+      throw new Error("Spectators cannot submit answers in a battle.");
     }
 
-    // Verify question belongs to this battle and fetch server-only correctOptionKey
     const [battleQuestion] = await tx
       .select({
         questionId: questions.id,
@@ -450,7 +526,6 @@ export async function submitParticipantAnswer(params: {
       throw new Error("Question does not belong to this battle.");
     }
 
-    // Idempotent check against duplicate answer submissions
     const [existingSub] = await tx
       .select({
         id: answerSubmissions.id,
@@ -487,7 +562,6 @@ export async function submitParticipantAnswer(params: {
         timeLimitSeconds: battleQuestion.timeLimitSeconds,
       });
 
-      // Fallback option key stored for timed-out questions while keeping `isCorrect = false`
       const storedOptionKey: OptionKey =
         params.selectedOptionKey ??
         (battleQuestion.correctOptionKey === "A" ? "B" : "A");
@@ -516,7 +590,6 @@ export async function submitParticipantAnswer(params: {
         .where(eq(battleParticipants.id, participant.id));
     }
 
-    // Count total questions and participant submissions
     const allBattleQuestions = await tx
       .select({
         questionId: battleQuestions.questionId,
@@ -554,7 +627,6 @@ export async function submitParticipantAnswer(params: {
         .where(eq(battleParticipants.id, participant.id));
     }
 
-    // Check if BOTH participants have now completed all questions
     const allParticipants = await tx
       .select({
         id: battleParticipants.id,
@@ -590,15 +662,20 @@ export async function submitParticipantAnswer(params: {
         winnerUserId = p1.userId;
       } else if (p2.score > p1.score) {
         winnerUserId = p2.userId;
-      } else if (p1.score > 0 && p1.totalResponseTimeMs < p2.totalResponseTimeMs) {
+      } else if (
+        p1.score > 0 &&
+        p1.totalResponseTimeMs < p2.totalResponseTimeMs
+      ) {
         winnerUserId = p1.userId;
-      } else if (p2.score > 0 && p2.totalResponseTimeMs < p1.totalResponseTimeMs) {
+      } else if (
+        p2.score > 0 &&
+        p2.totalResponseTimeMs < p1.totalResponseTimeMs
+      ) {
         winnerUserId = p2.userId;
       } else {
         isDraw = true;
       }
 
-      // Compute per-participant Topic Performance Breakdowns for Diagnosis
       const questionTopicMap = new Map(
         allBattleQuestions.map((q) => [
           q.questionId,
@@ -708,7 +785,6 @@ export async function submitParticipantAnswer(params: {
         })
         .where(eq(battles.id, params.battleId));
 
-      // Award XP and update student battle counters in `profiles`
       for (const p of allParticipants) {
         const won = !isDraw && winnerUserId === p.userId;
         const xpDelta = isDraw ? 100 : won ? 150 : 60;

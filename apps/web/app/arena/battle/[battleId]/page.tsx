@@ -24,7 +24,7 @@ import {
   topics,
   universities,
 } from "@repo/db";
-import { ArrowLeft, Clock, Coins, HelpCircle } from "lucide-react";
+import { ArrowLeft, Clock, Coins, Eye, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -32,11 +32,19 @@ interface BattleRoomPageProps {
   params: Promise<{
     battleId: string;
   }>;
+  searchParams: Promise<{
+    spectate?: string;
+  }>;
 }
 
-export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
+export default async function BattleRoomPage({
+  params,
+  searchParams,
+}: BattleRoomPageProps) {
   const { user, profile } = await requireOnboardedStudent();
   const { battleId } = await params;
+  const resolvedSearchParams = await searchParams;
+  const forceSpectate = resolvedSearchParams.spectate === "true";
 
   const [initialBattle] = await db
     .select({
@@ -64,9 +72,10 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     notFound();
   }
 
-  // Automatically enroll authenticated opponent into Slot 2 if they visit while room is WAITING
+  // Automatically enroll authenticated opponent into Slot 2 ONLY if not spectating and room is WAITING
   let justJoinedSlotTwo = false;
   if (
+    !forceSpectate &&
     user.id !== initialBattle.creatorUserId &&
     initialBattle.status === "WAITING"
   ) {
@@ -100,6 +109,9 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
     .where(eq(battleParticipants.battleId, battle.id))
     .orderBy(asc(battleParticipants.slotIndex));
 
+  const isParticipant = participants.some((p) => p.userId === user.id);
+  const isSpectator = !isParticipant;
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <ArenaNavbar profile={profile} />
@@ -114,10 +126,18 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
             Back to Arena Lobby
           </Link>
 
-          <CopyInviteButton
-            inviteCode={battle.inviteCode}
-            battleId={battle.id}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {isSpectator ? (
+              <Badge variant="default" className="gap-1.5 font-game">
+                <Eye className="size-3.5" />
+                SPECTATOR MODE
+              </Badge>
+            ) : null}
+            <CopyInviteButton
+              inviteCode={battle.inviteCode}
+              battleId={battle.id}
+            />
+          </div>
         </div>
 
         {/* Battle Room Header Card */}
@@ -166,7 +186,7 @@ export default async function BattleRoomPage({ params }: BattleRoomPageProps) {
           </CardHeader>
         </Card>
 
-        {/* Interactive Ready Lobby, 3D Turning-Box Countdown & Opponent Leave Controls */}
+        {/* Interactive Ready Lobby, 3D Turning-Box Countdown, Spectator View & Live Quiz */}
         <BattleLobbyArena
           battleId={battle.id}
           inviteCode={battle.inviteCode}

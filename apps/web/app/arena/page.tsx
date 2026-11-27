@@ -25,6 +25,7 @@ import {
   db,
   desc,
   eq,
+  inArray,
   profiles,
   topics,
   universities,
@@ -34,6 +35,7 @@ import {
   BookOpen,
   Clock,
   Coins,
+  Eye,
   PlusCircle,
   Swords,
   Trophy,
@@ -44,6 +46,7 @@ import Link from "next/link";
 interface OpenBattleRow {
   id: string;
   inviteCode: string;
+  status: string;
   mode: "free" | "reward";
   questionCount: number;
   timePerQuestionSeconds: number;
@@ -103,6 +106,7 @@ export default async function ArenaPage() {
           .select({
             id: battles.id,
             inviteCode: battles.inviteCode,
+            status: battles.status,
             mode: battles.mode,
             questionCount: battles.questionCount,
             timePerQuestionSeconds: battles.timePerQuestionSeconds,
@@ -122,10 +126,13 @@ export default async function ArenaPage() {
           .innerJoin(profiles, eq(battles.creatorUserId, profiles.id))
           .leftJoin(universities, eq(profiles.universityId, universities.id))
           .where(
-            and(eq(battles.status, "WAITING"), eq(battles.isPrivate, false))
+            and(
+              inArray(battles.status, ["WAITING", "READY", "ACTIVE"]),
+              eq(battles.isPrivate, false)
+            )
           )
           .orderBy(desc(battles.createdAt))
-          .limit(8),
+          .limit(10),
         db
           .select({
             id: battles.id,
@@ -243,7 +250,7 @@ export default async function ArenaPage() {
           </CardHeader>
         </Card>
 
-        {/* Matchmaking Row: Invite Code + Open Challenges */}
+        {/* Matchmaking Row: Invite Code + Open & Live Challenges */}
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="flex flex-col gap-6 lg:col-span-4">
             <QuickJoinCard />
@@ -286,19 +293,18 @@ export default async function ArenaPage() {
             ) : null}
           </div>
 
-          {/* Open Challenges Lobby Feed */}
+          {/* Open & Live Challenges Feed */}
           <Card className="border-border bg-card shadow-sm lg:col-span-8">
             <CardHeader className="flex flex-row items-center justify-between pb-4">
               <div>
                 <div className="flex items-center gap-2">
                   <Users className="size-4 text-primary" />
                   <CardTitle className="font-game text-lg font-bold">
-                    OPEN CHALLENGES LOBBY
+                    OPEN & LIVE ARENA ROOMS
                   </CardTitle>
                 </div>
                 <CardDescription className="text-xs">
-                  Accept an open course challenge from a peer or launch your own
-                  battle room.
+                  Accept an open challenge or spectate a live match in progress.
                 </CardDescription>
               </div>
               <Link href="/arena/new">
@@ -314,7 +320,7 @@ export default async function ArenaPage() {
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
                   <Swords className="mb-3 size-8 text-muted-foreground" />
                   <p className="font-game text-sm font-bold text-foreground">
-                    NO OPEN CHALLENGES WAITING RIGHT NOW
+                    NO OPEN OR LIVE ROOMS RIGHT NOW
                   </p>
                   <p className="mt-1 max-w-md text-xs text-muted-foreground">
                     Be the first to open a battle room for your course or invite
@@ -329,74 +335,100 @@ export default async function ArenaPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {openBattles.map((battle) => (
-                    <div
-                      key={battle.id}
-                      className="flex flex-col justify-between rounded-xl border border-border bg-muted/20 p-4 transition-all hover:border-primary/40 hover:bg-muted/40"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant="default" className="font-game">
-                              {battle.courseCode}
-                            </Badge>
-                            {battle.mode === "reward" ? (
-                              <Badge
-                                variant="secondary"
-                                className="gap-1 text-[10px]"
-                              >
-                                <Coins className="size-3 text-primary" />
-                                {(
-                                  battle.stakeAmountLamports / 1_000_000_000
-                                ).toFixed(2)}{" "}
-                                SOL
+                  {openBattles.map((battle) => {
+                    const isWaiting = battle.status === "WAITING";
+                    return (
+                      <div
+                        key={battle.id}
+                        className="flex flex-col justify-between rounded-xl border border-border bg-muted/20 p-4 transition-all hover:border-primary/40 hover:bg-muted/40"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="default" className="font-game">
+                                {battle.courseCode}
                               </Badge>
+                              <Badge
+                                variant={isWaiting ? "outline" : "secondary"}
+                                className="text-[10px]"
+                              >
+                                {isWaiting ? "OPEN" : battle.status}
+                              </Badge>
+                              {battle.mode === "reward" ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="gap-1 text-[10px]"
+                                >
+                                  <Coins className="size-3 text-primary" />
+                                  {(
+                                    battle.stakeAmountLamports / 1_000_000_000
+                                  ).toFixed(2)}{" "}
+                                  SOL
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="size-3" />
+                              {battle.questionCount} Qs •{" "}
+                              {battle.timePerQuestionSeconds}s
+                            </span>
+                          </div>
+
+                          <div>
+                            <p className="font-game text-sm font-bold text-foreground">
+                              {battle.topicName ?? "All Course Topics"}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {battle.courseTitle}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ProfileAvatar
+                              avatarUrl={battle.creatorAvatarUrl}
+                              avatarNumber={battle.creatorAvatarNumber}
+                              displayName={battle.creatorDisplayName}
+                              className="size-7"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-semibold text-foreground">
+                                {battle.creatorDisplayName}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {battle.creatorUniversityShortCode ?? "Student"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <Link
+                              href={`/arena/battle/${battle.id}?spectate=true`}
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 px-2.5 text-xs"
+                                title="Watch as Spectator"
+                              >
+                                <Eye className="size-3.5 text-primary" />
+                                {isWaiting ? "Watch" : "Watch Live"}
+                              </Button>
+                            </Link>
+                            {isWaiting ? (
+                              <Link href={`/arena/battle/${battle.id}`}>
+                                <Button size="sm" className="gap-1 px-2.5">
+                                  Accept
+                                  <ArrowRight className="size-3.5" />
+                                </Button>
+                              </Link>
                             ) : null}
                           </div>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="size-3" />
-                            {battle.questionCount} Qs •{" "}
-                            {battle.timePerQuestionSeconds}s
-                          </span>
-                        </div>
-
-                        <div>
-                          <p className="font-game text-sm font-bold text-foreground">
-                            {battle.topicName ?? "All Course Topics"}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {battle.courseTitle}
-                          </p>
                         </div>
                       </div>
-
-                      <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <ProfileAvatar
-                            avatarUrl={battle.creatorAvatarUrl}
-                            avatarNumber={battle.creatorAvatarNumber}
-                            displayName={battle.creatorDisplayName}
-                            className="size-7"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold text-foreground">
-                              {battle.creatorDisplayName}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {battle.creatorUniversityShortCode ?? "Student"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <Link href={`/arena/battle/${battle.id}`}>
-                          <Button size="sm" className="gap-1">
-                            Accept
-                            <ArrowRight className="size-3.5" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

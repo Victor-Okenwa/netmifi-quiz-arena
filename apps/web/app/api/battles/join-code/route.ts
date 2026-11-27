@@ -13,31 +13,25 @@ const lookupInviteInputSchema = z.object({
     .trim()
     .min(4, "Please enter a valid invite code or room link")
     .max(300, "Input is too long"),
+  asSpectator: z.boolean().optional().default(false),
 });
 
-/**
- * Extracts either a Battle UUID (if a room link or UUID was pasted)
- * or a normalized 8-char uppercase invite code.
- */
 function parseInviteInput(raw: string): {
   battleId?: string;
   inviteCode?: string;
 } {
   const trimmed = raw.trim();
 
-  // 1. Check if the input contains a battle UUID (e.g. full room URL or raw UUID)
   const uuidMatch = trimmed.match(UUID_REGEX);
   if (uuidMatch?.[0]) {
     return { battleId: uuidMatch[0].toLowerCase() };
   }
 
-  // 2. If user pasted "Copy Code (HRR824K3)", extract the code inside parentheses
   const parenMatch = trimmed.match(/\(([A-Za-z0-9]{4,12})\)/);
   if (parenMatch?.[1]) {
     return { inviteCode: parenMatch[1].toUpperCase() };
   }
 
-  // 3. Standard alphanumeric invite code
   const cleanedCode = trimmed.toUpperCase().replace(/[^A-Z0-9]/g, "");
   return { inviteCode: cleanedCode };
 }
@@ -47,7 +41,7 @@ export async function POST(request: Request) {
     const authContext = await getCurrentAuthContext();
     if (!authContext) {
       return NextResponse.json(
-        { error: "Please sign in to join a battle." },
+        { error: "Please sign in to join or spectate a battle." },
         { status: 401 }
       );
     }
@@ -61,8 +55,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
+    const { inviteCode: rawInvite, asSpectator } = parsed.data;
     const { battleId: parsedBattleId, inviteCode: parsedCode } =
-      parseInviteInput(parsed.data.inviteCode);
+      parseInviteInput(rawInvite);
 
     const [battle] = parsedBattleId
       ? await db
@@ -100,11 +95,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Enroll the student as Player 2 if they are not the creator
+    // If explicitly joining as spectator, go directly to spectator mode without occupying Slot 2
+    if (asSpectator) {
+      return NextResponse.json({
+        battleId: battle.id,
+        inviteCode: battle.inviteCode,
+        isSpectator: true,
+        redirectTo: `/arena/battle/${battle.id}?spectate=true`,
+      });
+    }
+
+    // Attempt to enroll as Player 2; if room already has 2 players or is already underway,
+    // enter automatically as a Spectator!
     const joinOutcome = await joinBattleAsOpponent(battle.id, authContext.user);
 
-    if (!joinOutcome.joined && joinOutcome.error) {
-      return NextResponse.json({ error: joinOutcome.error }, { status: 409 });
+    if (!joinOutcome.joined) {
+      return NextResponse.json({
+        battleId: battle.id,
+        inviteCode: battle.inviteCode,
+        isSpectator: true,
+        redirectTo: `/arena/battle/${battle.id}?spectate=true`,
+      });
     }
 
     return NextResponse.json({
@@ -112,6 +123,7 @@ export async function POST(request: Request) {
       inviteCode: battle.inviteCode,
       slotIndex: joinOutcome.slotIndex,
       alreadyParticipant: joinOutcome.alreadyParticipant,
+      isSpectator: false,
       redirectTo: `/arena/battle/${battle.id}`,
     });
   } catch (err) {

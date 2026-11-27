@@ -353,7 +353,6 @@ export function BattleLobbyArena({
         announcedStartRef.current = true;
         setBattleStatus("ACTIVE");
         setMatchStartedLatch(true);
-        toast.success("Battle starting now!");
       }
     };
 

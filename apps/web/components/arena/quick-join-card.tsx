@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, ArrowRight, KeyRound, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, Eye, KeyRound, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -18,27 +18,32 @@ export function QuickJoinCard() {
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpectateLoading, setIsSpectateLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  async function handleJoinByCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitLookup(asSpectator: boolean) {
     const cleaned = inviteCode.trim();
     if (!cleaned) return;
 
     setErrorMessage(null);
-    setIsLoading(true);
+    if (asSpectator) {
+      setIsSpectateLoading(true);
+    } else {
+      setIsLoading(true);
+    }
 
     try {
       const response = await fetch("/api/battles/join-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode: cleaned }),
+        body: JSON.stringify({ inviteCode: cleaned, asSpectator }),
       });
 
       const data = (await response.json()) as {
         error?: string;
         inviteCode?: string;
         alreadyParticipant?: boolean;
+        isSpectator?: boolean;
         redirectTo?: string;
       };
 
@@ -46,23 +51,30 @@ export function QuickJoinCard() {
         const msg =
           data.error ?? "No active battle room found with that invite code.";
         setErrorMessage(msg);
-        toast.error("Could not join battle", {
+        toast.error("Could not find battle room", {
           description: msg,
         });
-        setIsLoading(false);
         return;
       }
 
-      toast.success(
-        data.alreadyParticipant
-          ? "Re-entering battle room"
-          : "Joined battle room!",
-        {
+      if (data.isSpectator) {
+        toast.info("Entering as Spectator", {
           description: data.inviteCode
-            ? `Room code: ${data.inviteCode}`
+            ? `Watching room ${data.inviteCode} live.`
             : undefined,
-        }
-      );
+        });
+      } else {
+        toast.success(
+          data.alreadyParticipant
+            ? "Re-entering battle room"
+            : "Joined battle room!",
+          {
+            description: data.inviteCode
+              ? `Room code: ${data.inviteCode}`
+              : undefined,
+          }
+        );
+      }
 
       router.push(data.redirectTo ?? "/arena");
       router.refresh();
@@ -71,8 +83,15 @@ export function QuickJoinCard() {
         err instanceof Error ? err.message : "Failed to look up invite code.";
       setErrorMessage(msg);
       toast.error("Connection error", { description: msg });
+    } finally {
       setIsLoading(false);
+      setIsSpectateLoading(false);
     }
+  }
+
+  function handleJoinByCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void submitLookup(false);
   }
 
   return (
@@ -84,7 +103,7 @@ export function QuickJoinCard() {
           </div>
           <div>
             <CardTitle className="font-game text-base font-bold">
-              JOIN WITH INVITE CODE
+              JOIN OR SPECTATE ROOM
             </CardTitle>
             <CardDescription className="text-xs">
               Paste an 8-character invite code or a shared battle room link.
@@ -95,27 +114,49 @@ export function QuickJoinCard() {
 
       <CardContent>
         <form onSubmit={handleJoinByCode} className="flex flex-col gap-2.5">
-          <div className="flex gap-2">
-            <Input
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              placeholder="e.g. HRR824K3 or room link"
-              className="font-mono text-xs"
-              required
-              minLength={4}
-              disabled={isLoading}
-            />
+          <Input
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            placeholder="e.g. HRR824K3 or room link"
+            className="font-mono text-xs"
+            required
+            minLength={4}
+            disabled={isLoading || isSpectateLoading}
+          />
+
+          <div className="grid grid-cols-2 gap-2">
             <Button
               type="submit"
-              disabled={isLoading || inviteCode.trim().length < 4}
-              className="shrink-0 gap-1.5"
+              disabled={
+                isLoading || isSpectateLoading || inviteCode.trim().length < 4
+              }
+              className="gap-1.5"
             >
               {isLoading ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <>
-                  Join
+                  Join Match
                   <ArrowRight className="size-4" />
+                </>
+              )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                isLoading || isSpectateLoading || inviteCode.trim().length < 4
+              }
+              onClick={() => void submitLookup(true)}
+              className="gap-1.5"
+            >
+              {isSpectateLoading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <>
+                  <Eye className="size-4 text-primary" />
+                  Spectate
                 </>
               )}
             </Button>

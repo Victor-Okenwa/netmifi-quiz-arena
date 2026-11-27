@@ -11,10 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   ArenaParticipantState,
   CompletedBattleSummary,
   SanitizedBattleArenaState,
+  SpectatorAnsweredQuestionItem,
 } from "@/lib/battle-engine/engine";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { OptionKey, PublicBattleQuestion } from "@repo/types";
@@ -23,11 +25,14 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
+  Eye,
   Loader2,
+  Lock,
   PlusCircle,
   Swords,
   Target,
   Trophy,
+  XCircle,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -69,11 +74,36 @@ function areStringArraysEqual(a: string[], b: string[]): boolean {
   return true;
 }
 
+function areSpectatorFeedsEqual(
+  a: Record<string, SpectatorAnsweredQuestionItem[]>,
+  b: Record<string, SpectatorAnsweredQuestionItem[]>
+): boolean {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    const listA = a[key] ?? [];
+    const listB = b[key] ?? [];
+    if (listA.length !== listB.length) return false;
+    for (let i = 0; i < listA.length; i++) {
+      if (
+        listA[i]?.questionId !== listB[i]?.questionId ||
+        listA[i]?.correctOptionKey !== listB[i]?.correctOptionKey
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 export function LiveBattleQuiz({
   battleId,
   currentUserId,
 }: LiveBattleQuizProps) {
-  // Static questions list (loaded once so question cards never flicker or reload during polling)
+  const [viewerRole, setViewerRole] = useState<"participant" | "spectator">(
+    "participant"
+  );
   const [questions, setQuestions] = useState<PublicBattleQuestion[]>([]);
   const [battleMeta, setBattleMeta] = useState<
     SanitizedBattleArenaState["battle"] | null
@@ -82,6 +112,9 @@ export function LiveBattleQuiz({
     []
   );
   const [participants, setParticipants] = useState<ArenaParticipantState[]>([]);
+  const [spectatorFeeds, setSpectatorFeeds] = useState<
+    Record<string, SpectatorAnsweredQuestionItem[]>
+  >({});
   const [completedSummary, setCompletedSummary] =
     useState<CompletedBattleSummary | null>(null);
 
@@ -108,8 +141,11 @@ export function LiveBattleQuiz({
       if (!res.ok) return;
       const data = (await res.json()) as SanitizedBattleArenaState;
 
-      // Only set static questions array once so question DOM & selected option never reset
-      setQuestions((prev) => (prev.length === 0 ? data.questions : prev));
+      setViewerRole(data.viewerRole);
+
+      if (data.questions.length > 0) {
+        setQuestions((prev) => (prev.length === 0 ? data.questions : prev));
+      }
 
       setBattleMeta((prev) => {
         if (
@@ -135,6 +171,14 @@ export function LiveBattleQuiz({
           : data.participants
       );
 
+      if (data.spectatorFeeds) {
+        setSpectatorFeeds((prev) =>
+          areSpectatorFeedsEqual(prev, data.spectatorFeeds)
+            ? prev
+            : data.spectatorFeeds
+        );
+      }
+
       if (data.completedSummary) {
         setCompletedSummary((prev) => prev ?? data.completedSummary);
       }
@@ -144,13 +188,15 @@ export function LiveBattleQuiz({
         !announcedCompletionRef.current
       ) {
         announcedCompletionRef.current = true;
-        const isWin = data.battle.winnerUserId === currentUserId;
-        const isDraw = data.battle.isDraw;
-        if (isDraw) {
+        if (data.viewerRole === "spectator") {
+          toast.success("Match finished!", {
+            description: "Full participant summaries are now unlocked.",
+          });
+        } else if (data.battle.isDraw) {
           toast.info("Battle ended in a draw!", {
             description: "Both players matched scores.",
           });
-        } else if (isWin) {
+        } else if (data.battle.winnerUserId === currentUserId) {
           toast.success("Victory! You won the battle!", {
             description: `+${data.completedSummary?.xpAwarded ?? 150} XP earned.`,
           });
@@ -169,7 +215,6 @@ export function LiveBattleQuiz({
 
   const isBattleCompleted = battleMeta?.status === "COMPLETED";
 
-  // Subscribe to Supabase Realtime broadcast channel + lightweight background progress check
   useEffect(() => {
     void fetchArenaState();
 
@@ -226,12 +271,11 @@ export function LiveBattleQuiz({
     }
   }
 
-  // Determine the next unanswered question for the current student
   const currentQuestion = useMemo(() => {
-    if (questions.length === 0) return null;
+    if (viewerRole === "spectator" || questions.length === 0) return null;
     const answeredSet = new Set(myAnsweredQuestionIds);
     return questions.find((q) => !answeredSet.has(q.id)) ?? null;
-  }, [questions, myAnsweredQuestionIds]);
+  }, [viewerRole, questions, myAnsweredQuestionIds]);
 
   const currentQuestionId = currentQuestion?.id ?? null;
   const currentQuestionTimeLimit = currentQuestion?.timeLimitSeconds ?? 15;
@@ -242,7 +286,7 @@ export function LiveBattleQuiz({
       optionKey: OptionKey | null;
       timedOut: boolean;
     }) => {
-      if (isSubmittingRef.current) return;
+      if (isSubmittingRef.current || viewerRole === "spectator") return;
       isSubmittingRef.current = true;
       setIsSubmitting(true);
 
@@ -277,9 +321,10 @@ export function LiveBattleQuiz({
           return;
         }
 
-        // Optimistically advance to the next question immediately without waiting for poll
         setMyAnsweredQuestionIds((prev) =>
-          prev.includes(params.questionId) ? prev : [...prev, params.questionId]
+          prev.includes(params.questionId)
+            ? prev
+            : [...prev, params.questionId]
         );
         setSelectedKey(null);
 
@@ -302,7 +347,7 @@ export function LiveBattleQuiz({
         setIsSubmitting(false);
       }
     },
-    [battleId, fetchArenaState]
+    [battleId, fetchArenaState, viewerRole]
   );
 
   const submitAnswerRef = useRef(submitAnswer);
@@ -310,9 +355,12 @@ export function LiveBattleQuiz({
     submitAnswerRef.current = submitAnswer;
   }, [submitAnswer]);
 
-  // Per-question timer effect keyed strictly on primitive `currentQuestionId`
   useEffect(() => {
-    if (!currentQuestionId || isBattleCompleted) {
+    if (
+      !currentQuestionId ||
+      isBattleCompleted ||
+      viewerRole === "spectator"
+    ) {
       return;
     }
 
@@ -328,7 +376,9 @@ export function LiveBattleQuiz({
         (Date.now() - questionStartedAtRef.current) / 1000
       );
       const remaining = Math.max(0, currentQuestionTimeLimit - elapsedSeconds);
-      setQuestionSecondsLeft((prev) => (prev !== remaining ? remaining : prev));
+      setQuestionSecondsLeft((prev) =>
+        prev !== remaining ? remaining : prev
+      );
 
       if (
         remaining === 0 &&
@@ -345,7 +395,12 @@ export function LiveBattleQuiz({
     }, 250);
 
     return () => clearInterval(timer);
-  }, [currentQuestionId, currentQuestionTimeLimit, isBattleCompleted]);
+  }, [
+    currentQuestionId,
+    currentQuestionTimeLimit,
+    isBattleCompleted,
+    viewerRole,
+  ]);
 
   if (isLoading || !battleMeta) {
     return (
@@ -353,7 +408,7 @@ export function LiveBattleQuiz({
         <CardContent className="flex flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
           <p className="font-game text-sm font-bold">
-            LOADING BATTLE QUESTIONS...
+            LOADING BATTLE ARENA...
           </p>
         </CardContent>
       </Card>
@@ -368,6 +423,7 @@ export function LiveBattleQuiz({
     participants.find((p) => p.userId !== currentUserId) ?? null;
 
   const totalQuestions = battleMeta.questionCount || questions.length || 1;
+  const defaultTabValue = playerOne ? "slot-1" : "slot-2";
 
   return (
     <div className="space-y-6">
@@ -479,7 +535,7 @@ export function LiveBattleQuiz({
         </CardContent>
       </Card>
 
-      {/* CASE 1: Battle Completed -> Final Results & Topic Breakdown */}
+      {/* CASE 1: Battle Completed -> Full Match Summary with shadcn Tabs for Both Participants */}
       {isBattleCompleted ? (
         <Card className="border-2 border-primary/40 bg-card shadow-lg">
           <CardHeader className="space-y-3 text-center">
@@ -494,101 +550,279 @@ export function LiveBattleQuiz({
               <CardTitle className="font-game text-3xl font-extrabold">
                 {battleMeta.isDraw
                   ? "IT'S A DRAW!"
-                  : battleMeta.winnerUserId === currentUserId
-                    ? "VICTORY — YOU WON!"
-                    : `${
-                        opponentParticipant?.displayName ?? "OPPONENT"
-                      } WON THE BATTLE`}
+                  : viewerRole === "spectator"
+                    ? `${
+                        participants.find(
+                          (p) => p.userId === battleMeta.winnerUserId
+                        )?.displayName ?? "WINNER"
+                      } WON THE BATTLE!`
+                    : battleMeta.winnerUserId === currentUserId
+                      ? "VICTORY — YOU WON!"
+                      : `${
+                          opponentParticipant?.displayName ?? "OPPONENT"
+                        } WON THE BATTLE`}
               </CardTitle>
               <CardDescription className="mt-1">
-                Final Score: {myParticipant?.score ?? 0} PTS vs{" "}
-                {opponentParticipant?.score ?? 0} PTS • You earned{" "}
-                <span className="font-semibold text-primary">
-                  +{completedSummary?.xpAwarded ?? 60} XP
-                </span>
+                Final Score: {playerOne?.displayName ?? "Player 1"} (
+                {playerOne?.score ?? 0} PTS) vs{" "}
+                {playerTwo?.displayName ?? "Player 2"} ({playerTwo?.score ?? 0}{" "}
+                PTS)
+                {viewerRole === "participant" ? (
+                  <>
+                    {" "}
+                    • You earned{" "}
+                    <span className="font-semibold text-primary">
+                      +{completedSummary?.xpAwarded ?? 60} XP
+                    </span>
+                  </>
+                ) : null}
               </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                <p className="font-game text-2xl font-bold text-primary">
-                  {myParticipant?.score ?? 0} PTS
-                </p>
-                <p className="text-xs text-muted-foreground">Your Final Score</p>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                <p className="font-game text-2xl font-bold text-foreground">
-                  {completedSummary?.myDiagnosis?.accuracyPercent ??
-                    Math.round(
-                      ((myParticipant?.correctAnswersCount ?? 0) /
-                        totalQuestions) *
-                        100
-                    )}
-                  %
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Overall Accuracy ({myParticipant?.correctAnswersCount ?? 0}/
-                  {totalQuestions})
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
-                <p className="font-game text-2xl font-bold text-foreground">
-                  {(
-                    (completedSummary?.myDiagnosis?.averageResponseTimeMs ??
-                      0) / 1000
-                  ).toFixed(1)}
-                  s
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Avg. Response Time
-                </p>
-              </div>
-            </div>
+            {/* shadcn Tabs to switch between Player 1 and Player 2 Match Summaries */}
+            <Tabs defaultValue={defaultTabValue} className="w-full">
+              <TabsList>
+                {playerOne ? (
+                  <TabsTrigger value="slot-1">
+                    <ProfileAvatar
+                      avatarUrl={playerOne.avatarUrl}
+                      avatarNumber={playerOne.avatarNumber}
+                      displayName={playerOne.displayName}
+                      className="size-5"
+                    />
+                    <span className="truncate font-game text-xs font-bold">
+                      {playerOne.displayName}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {playerOne.score} PTS
+                    </Badge>
+                  </TabsTrigger>
+                ) : null}
 
-            {completedSummary?.myDiagnosis?.topicBreakdowns &&
-            completedSummary.myDiagnosis.topicBreakdowns.length > 0 ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Target className="size-4 text-primary" />
-                  <h3 className="font-game text-sm font-bold">
-                    YOUR TOPIC PERFORMANCE DIAGNOSIS
-                  </h3>
-                </div>
+                {playerTwo ? (
+                  <TabsTrigger value="slot-2">
+                    <ProfileAvatar
+                      avatarUrl={playerTwo.avatarUrl}
+                      avatarNumber={playerTwo.avatarNumber}
+                      displayName={playerTwo.displayName}
+                      className="size-5"
+                    />
+                    <span className="truncate font-game text-xs font-bold">
+                      {playerTwo.displayName}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {playerTwo.score} PTS
+                    </Badge>
+                  </TabsTrigger>
+                ) : null}
+              </TabsList>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {completedSummary.myDiagnosis.topicBreakdowns.map((tb) => (
-                    <div
-                      key={tb.topicId}
-                      className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3.5"
-                    >
-                      <div className="min-w-0 pr-3">
-                        <p className="truncate font-game text-xs font-bold text-foreground">
-                          {tb.topicName}
+              {[playerOne, playerTwo].map((participant) => {
+                if (!participant) return null;
+                const tabKey =
+                  participant.slotIndex === 1 ? "slot-1" : "slot-2";
+                const diag =
+                  completedSummary?.allParticipantDiagnoses?.[
+                    participant.userId
+                  ] ?? null;
+                const answeredFeed =
+                  spectatorFeeds[participant.userId] ?? [];
+
+                return (
+                  <TabsContent
+                    key={participant.userId}
+                    value={tabKey}
+                    className="space-y-6 pt-2"
+                  >
+                    {/* Participant Performance Metrics */}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-2xl font-bold text-primary">
+                          {participant.score} PTS
                         </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {tb.correctCount} / {tb.totalQuestions} Correct •{" "}
-                          {(tb.averageResponseTimeMs / 1000).toFixed(1)}s avg
+                        <p className="text-xs text-muted-foreground">
+                          Final Score
                         </p>
                       </div>
-
-                      <Badge
-                        variant={tb.needsPractice ? "secondary" : "default"}
-                        className={
-                          tb.needsPractice
-                            ? "text-xs"
-                            : "bg-emerald-600 text-xs text-white hover:bg-emerald-600"
-                        }
-                      >
-                        {tb.accuracyPercent}%{" "}
-                        {tb.needsPractice ? "• Review" : "• Strong"}
-                      </Badge>
+                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-2xl font-bold text-foreground">
+                          {diag?.accuracyPercent ??
+                            Math.round(
+                              (participant.correctAnswersCount /
+                                totalQuestions) *
+                                100
+                            )}
+                          %
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Accuracy ({participant.correctAnswersCount}/
+                          {totalQuestions})
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border bg-muted/30 p-4 text-center">
+                        <p className="font-game text-2xl font-bold text-foreground">
+                          {(
+                            (diag?.averageResponseTimeMs ??
+                              Math.round(
+                                participant.totalResponseTimeMs /
+                                  totalQuestions
+                              )) / 1000
+                          ).toFixed(1)}
+                          s
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Avg. Response Time
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+
+                    {/* Topic Breakdown */}
+                    {diag?.topicBreakdowns &&
+                    diag.topicBreakdowns.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Target className="size-4 text-primary" />
+                          <h3 className="font-game text-sm font-bold">
+                            {participant.displayName.toUpperCase()}&apos;S TOPIC
+                            BREAKDOWN
+                          </h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {diag.topicBreakdowns.map((tb) => (
+                            <div
+                              key={tb.topicId}
+                              className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3.5"
+                            >
+                              <div className="min-w-0 pr-3">
+                                <p className="truncate font-game text-xs font-bold text-foreground">
+                                  {tb.topicName}
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {tb.correctCount} / {tb.totalQuestions}{" "}
+                                  Correct •{" "}
+                                  {(tb.averageResponseTimeMs / 1000).toFixed(1)}
+                                  s avg
+                                </p>
+                              </div>
+
+                              <Badge
+                                variant={
+                                  tb.needsPractice ? "secondary" : "default"
+                                }
+                                className={
+                                  tb.needsPractice
+                                    ? "text-xs"
+                                    : "bg-emerald-600 text-xs text-white hover:bg-emerald-600"
+                                }
+                              >
+                                {tb.accuracyPercent}%{" "}
+                                {tb.needsPractice ? "• Review" : "• Strong"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Question-by-Question Summary for this Participant */}
+                    {answeredFeed.length > 0 ? (
+                      <div className="space-y-3">
+                        <h3 className="font-game text-sm font-bold">
+                          ANSWERED QUESTIONS REVIEW ({answeredFeed.length})
+                        </h3>
+                        <div className="space-y-3">
+                          {answeredFeed.map((item) => (
+                            <div
+                              key={item.questionId}
+                              className="rounded-xl border border-border bg-muted/15 p-4 space-y-2.5"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="font-game">
+                                    Q{item.questionIndex}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {item.topicName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">
+                                    {(item.responseTimeMs / 1000).toFixed(1)}s
+                                  </span>
+                                  {item.isCorrect ? (
+                                    <Badge className="gap-1 bg-emerald-600 text-xs text-white hover:bg-emerald-600">
+                                      <CheckCircle2 className="size-3" />+
+                                      {item.pointsAwarded} PTS
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="destructive"
+                                      className="gap-1 text-xs"
+                                    >
+                                      <XCircle className="size-3" />0 PTS
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              <p className="text-sm font-semibold text-foreground">
+                                {item.questionText}
+                              </p>
+
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                {item.options.map((opt) => {
+                                  const isChosen =
+                                    opt.key === item.selectedOptionKey;
+                                  const isCorrectKey =
+                                    opt.key === item.correctOptionKey;
+                                  return (
+                                    <div
+                                      key={opt.id}
+                                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${
+                                        isCorrectKey
+                                          ? "border-emerald-500/60 bg-emerald-500/10 font-semibold text-foreground"
+                                          : isChosen
+                                            ? "border-destructive/60 bg-destructive/10 text-destructive"
+                                            : "border-border/60 bg-card text-muted-foreground"
+                                      }`}
+                                    >
+                                      <span className="font-game font-bold">
+                                        {opt.key}.
+                                      </span>
+                                      <span className="flex-1">{opt.text}</span>
+                                      {isChosen ? (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-[9px]"
+                                        >
+                                          Picked
+                                        </Badge>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {item.explanation ? (
+                                <p className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+                                  <span className="font-semibold text-foreground">
+                                    Explanation:{" "}
+                                  </span>
+                                  {item.explanation}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
           </CardContent>
 
           <CardFooter className="flex flex-wrap items-center justify-center gap-3 border-t border-border pt-6">
@@ -609,8 +843,195 @@ export function LiveBattleQuiz({
             </Link>
           </CardFooter>
         </Card>
+      ) : viewerRole === "spectator" ? (
+        /* CASE 2: Live Spectator View with shadcn Tabs (Only Already-Answered Questions Shown) */
+        <Card className="border-border bg-card shadow-md">
+          <CardHeader className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Badge variant="default" className="gap-1.5 font-game">
+                <Eye className="size-3.5" />
+                LIVE SPECTATOR FEED
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Questions appear live as each participant locks in their answer
+              </span>
+            </div>
+            <CardTitle className="font-game text-xl font-bold">
+              WATCH PARTICIPANT PROGRESS
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Switch tabs below to inspect what each student has answered so
+              far. Unanswered questions remain hidden to prevent cheating.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <Tabs defaultValue={defaultTabValue} className="w-full">
+              <TabsList>
+                {playerOne ? (
+                  <TabsTrigger value="slot-1">
+                    <ProfileAvatar
+                      avatarUrl={playerOne.avatarUrl}
+                      avatarNumber={playerOne.avatarNumber}
+                      displayName={playerOne.displayName}
+                      className="size-5"
+                    />
+                    <span className="truncate font-game text-xs font-bold">
+                      {playerOne.displayName}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {playerOne.answeredCount}/{totalQuestions}
+                    </Badge>
+                  </TabsTrigger>
+                ) : null}
+
+                {playerTwo ? (
+                  <TabsTrigger value="slot-2">
+                    <ProfileAvatar
+                      avatarUrl={playerTwo.avatarUrl}
+                      avatarNumber={playerTwo.avatarNumber}
+                      displayName={playerTwo.displayName}
+                      className="size-5"
+                    />
+                    <span className="truncate font-game text-xs font-bold">
+                      {playerTwo.displayName}
+                    </span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                      {playerTwo.answeredCount}/{totalQuestions}
+                    </Badge>
+                  </TabsTrigger>
+                ) : null}
+              </TabsList>
+
+              {[playerOne, playerTwo].map((participant) => {
+                if (!participant) return null;
+                const tabKey =
+                  participant.slotIndex === 1 ? "slot-1" : "slot-2";
+                const answeredFeed =
+                  spectatorFeeds[participant.userId] ?? [];
+                const remainingCount = Math.max(
+                  0,
+                  totalQuestions - answeredFeed.length
+                );
+
+                return (
+                  <TabsContent
+                    key={participant.userId}
+                    value={tabKey}
+                    className="space-y-4 pt-3"
+                  >
+                    {answeredFeed.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center">
+                        <Loader2 className="mb-2 size-6 animate-spin text-primary" />
+                        <p className="font-game text-sm font-bold">
+                          {participant.displayName.toUpperCase()} IS ON
+                          QUESTION 1
+                        </p>
+                        <p className="mt-1 max-w-md text-xs text-muted-foreground">
+                          Question 1 will appear here immediately as soon as{" "}
+                          {participant.displayName} submits their answer.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {answeredFeed.map((item) => (
+                          <div
+                            key={item.questionId}
+                            className="rounded-xl border border-border bg-muted/15 p-4 space-y-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="default" className="font-game">
+                                  Question {item.questionIndex} of{" "}
+                                  {totalQuestions}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.topicName}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  Answered in{" "}
+                                  {(item.responseTimeMs / 1000).toFixed(1)}s
+                                </span>
+                                {item.isCorrect ? (
+                                  <Badge className="bg-emerald-600 text-xs text-white hover:bg-emerald-600">
+                                    +{item.pointsAwarded} PTS
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">
+                                    0 PTS
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="text-sm font-semibold text-foreground">
+                              {item.questionText}
+                            </p>
+
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              {item.options.map((opt) => {
+                                const isChosen =
+                                  opt.key === item.selectedOptionKey;
+                                return (
+                                  <div
+                                    key={opt.id}
+                                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
+                                      isChosen
+                                        ? "border-primary bg-primary-light/60 font-semibold text-foreground ring-1 ring-primary/30"
+                                        : "border-border/60 bg-card text-muted-foreground"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-game font-bold">
+                                        {opt.key}.
+                                      </span>
+                                      <span>{opt.text}</span>
+                                    </div>
+                                    {isChosen ? (
+                                      <Badge
+                                        variant="default"
+                                        className="text-[9px]"
+                                      >
+                                        Locked In
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Locked Placeholder for Unanswered Questions */}
+                    {remainingCount > 0 ? (
+                      <div className="flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Lock className="size-4 text-primary" />
+                          <span>
+                            {remainingCount} remaining{" "}
+                            {remainingCount === 1
+                              ? "question is"
+                              : "questions are"}{" "}
+                            hidden until {participant.displayName} answers
+                          </span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">
+                          In Progress
+                        </Badge>
+                      </div>
+                    ) : null}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          </CardContent>
+        </Card>
       ) : currentQuestion ? (
-        /* CASE 2: Active Question Display */
+        /* CASE 3: Active Participant Question Display */
         <Card className="border-border bg-card shadow-md">
           <CardHeader className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -741,7 +1162,7 @@ export function LiveBattleQuiz({
           </CardFooter>
         </Card>
       ) : (
-        /* CASE 3: Current student finished all questions; waiting for opponent */
+        /* CASE 4: Current student finished all questions; waiting for opponent */
         <Card className="border-border bg-card py-12 text-center shadow-sm">
           <CardContent className="flex flex-col items-center justify-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
