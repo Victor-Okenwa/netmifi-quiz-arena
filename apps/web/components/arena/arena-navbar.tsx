@@ -3,13 +3,11 @@
 import { LogoIcon } from "@/assets/netmifi";
 import { ProfileMenuPopover } from "@/components/arena/profile-menu-popover";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { AuthenticatedStudentProfile } from "@/lib/supabase/auth";
 import {
   Brain,
   Menu,
   PlusCircle,
-  Search,
   Sparkles,
   Swords,
   Trophy,
@@ -17,8 +15,10 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+
+export { AppSidebar, ArenaAppShell } from "./app-sidebar";
+export type { ArenaActiveTab } from "./app-sidebar";
 
 interface ArenaNavbarProps {
   profile: AuthenticatedStudentProfile;
@@ -66,20 +66,8 @@ const NAV_ITEMS = [
 ];
 
 export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
-
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (q) {
-      router.push(`/arena/find-match?q=${encodeURIComponent(q)}`);
-    } else {
-      router.push("/arena/find-match");
-    }
-  }
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -148,21 +136,6 @@ export function ArenaNavbar({ profile, activeTab }: ArenaNavbarProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {/* Desktop Quick Search Input */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative hidden lg:flex items-center w-48 xl:w-56"
-            >
-              <Search className="pointer-events-none absolute left-2.5 size-3.5 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Find match (e.g. Accountancy)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 pr-2.5 text-xs bg-muted/40 border-border/70 focus-visible:ring-1"
-              />
-            </form>
-
             <ProfileMenuPopover profile={profile} />
 
             {/* Mobile Hamburger Menu Button (Three Lines Icon) */}

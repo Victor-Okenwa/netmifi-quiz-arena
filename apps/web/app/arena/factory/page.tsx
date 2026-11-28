@@ -1,4 +1,4 @@
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import {
   QuestionFactoryStudio,
   type StudioCourse,
@@ -54,10 +54,8 @@ export default async function QuestionFactoryPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} activeTab="factory" />
-
-      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+    <ArenaAppShell profile={profile} activeTab="factory">
+      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div>
           <Link
             href="/arena"
@@ -74,6 +72,6 @@ export default async function QuestionFactoryPage() {
           currentUserId={profile.id}
         />
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }

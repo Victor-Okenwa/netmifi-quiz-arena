@@ -1,5 +1,5 @@
 import { ProfileAvatar } from "@/assets/profiles";
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -112,10 +112,8 @@ export default async function LeaderboardPage() {
   );
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} activeTab="leaderboard" />
-
-      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+    <ArenaAppShell profile={profile} activeTab="leaderboard">
+      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
         <div>
           <h1 className="font-game text-3xl font-extrabold tracking-tight">
             ARENA <span className="text-primary">LEADERBOARD</span>
@@ -281,6 +279,6 @@ export default async function LeaderboardPage() {
           </CardContent>
         </Card>
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }

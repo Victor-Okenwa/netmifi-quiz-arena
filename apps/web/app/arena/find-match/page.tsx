@@ -1,4 +1,4 @@
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import {
   StudentMatchFinder,
   type MatchedStudentItem,
@@ -104,10 +104,8 @@ export default async function FindMatchPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} activeTab="findMatch" />
-
-      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 pt-20 pb-12 sm:px-6 lg:px-8">
+    <ArenaAppShell profile={profile} activeTab="findMatch">
+      <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
         <StudentMatchFinder
           currentUser={profile}
           initialStudents={allStudents}
@@ -115,6 +113,6 @@ export default async function FindMatchPage() {
           departments={allDepartments}
         />
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }

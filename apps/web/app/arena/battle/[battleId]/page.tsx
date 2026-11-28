@@ -1,4 +1,4 @@
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import {
   BattleLobbyArena,
   type LobbyParticipant,
@@ -128,10 +128,8 @@ export default async function BattleRoomPage({
   const isSpectator = !isParticipant;
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} />
-
-      <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+    <ArenaAppShell profile={profile} activeTab="battle">
+      <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/arena"
@@ -227,6 +225,6 @@ export default async function BattleRoomPage({
           justJoinedSlotTwo={justJoinedSlotTwo}
         />
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }

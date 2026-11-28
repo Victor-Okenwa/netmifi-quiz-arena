@@ -1,4 +1,4 @@
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import {
   BattleConfigurator,
   type ConfiguratorCourse,
@@ -62,10 +62,8 @@ export default async function NewBattlePage({
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} activeTab="new" />
-
-      <main className="mx-auto flex w-full max-w-4xl min-w-0 flex-1 flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+    <ArenaAppShell profile={profile} activeTab="new">
+      <main className="mx-auto flex w-full max-w-4xl min-w-0 flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         <div>
           <Link
             href="/arena"
@@ -83,6 +81,6 @@ export default async function NewBattlePage({
           initialTopicId={resolvedParams.topicId}
         />
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }

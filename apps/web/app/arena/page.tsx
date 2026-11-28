@@ -1,5 +1,5 @@
 import { ProfileAvatar } from "@/assets/profiles";
-import { ArenaNavbar } from "@/components/arena/arena-navbar";
+import { ArenaAppShell } from "@/components/arena/app-sidebar";
 import { DeleteBattleButton } from "@/components/arena/delete-battle-button";
 import { QuickJoinCard } from "@/components/arena/quick-join-card";
 import { ViewBattleRoomDialog } from "@/components/arena/view-battle-room-dialog";
@@ -174,9 +174,7 @@ export default async function ArenaPage() {
       : 0;
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
-      <ArenaNavbar profile={profile} activeTab="lobby" />
-
+    <ArenaAppShell profile={profile} activeTab="lobby">
       <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
         {/* Student Identity & Quick Actions Banner */}
         <Card className="w-full min-w-0 overflow-hidden border-primary/30 bg-card shadow-sm">
@@ -590,6 +588,6 @@ export default async function ArenaPage() {
           </div>
         </section>
       </main>
-    </div>
+    </ArenaAppShell>
   );
 }
