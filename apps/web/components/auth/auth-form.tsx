@@ -15,12 +15,13 @@ import { Label } from "@/components/ui/label";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 interface AuthFormProps {
   mode: "login" | "register";
   initialError?: string | null;
+  redirectTarget?: string | null;
 }
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -51,8 +52,20 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-export function AuthForm({ mode, initialError = null }: AuthFormProps) {
+export function AuthForm({
+  mode,
+  initialError = null,
+  redirectTarget = null,
+}: AuthFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const effectiveRedirect =
+    redirectTarget ??
+    searchParams.get("redirect") ??
+    searchParams.get("redirect_to") ??
+    searchParams.get("next") ??
+    null;
+
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,8 +85,8 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
         mode === "register" ? "/api/auth/register" : "/api/auth/login";
       const payload =
         mode === "register"
-          ? { displayName, email, password }
-          : { email, password };
+          ? { displayName, email, password, redirect: effectiveRedirect }
+          : { email, password, redirect: effectiveRedirect };
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -105,7 +118,7 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
         return;
       }
 
-      router.push(data.redirectTo ?? "/onboarding");
+      router.push(data.redirectTo ?? effectiveRedirect ?? "/arena");
       router.refresh();
     } catch (err) {
       setErrorMessage(
@@ -120,10 +133,14 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
     setIsOAuthLoading(true);
     try {
       const supabase = createBrowserSupabaseClient();
+      const callbackUrl = effectiveRedirect
+        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(effectiveRedirect)}`
+        : `${window.location.origin}/auth/callback`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
@@ -278,7 +295,11 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
             <p>
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={
+                  effectiveRedirect
+                    ? `/login?redirect=${encodeURIComponent(effectiveRedirect)}`
+                    : "/login"
+                }
                 className="font-semibold text-primary hover:underline"
               >
                 Sign In
@@ -288,7 +309,11 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
             <p>
               Don&apos;t have an account?{" "}
               <Link
-                href="/register"
+                href={
+                  effectiveRedirect
+                    ? `/register?redirect=${encodeURIComponent(effectiveRedirect)}`
+                    : "/register"
+                }
                 className="font-semibold text-primary hover:underline"
               >
                 Create Account

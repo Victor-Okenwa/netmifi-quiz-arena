@@ -32,13 +32,33 @@ export async function POST(request: Request) {
     const profile = await ensureBaseProfileForUser(data.user);
     const isOnboarded = Boolean(profile.universityId && profile.departmentId);
 
+    const rawRedirect =
+      typeof (body as Record<string, unknown>)?.redirect === "string"
+        ? ((body as Record<string, unknown>).redirect as string).trim()
+        : null;
+    const safeRedirect =
+      rawRedirect &&
+      rawRedirect.startsWith("/") &&
+      !rawRedirect.startsWith("//")
+        ? rawRedirect
+        : null;
+
+    let targetUrl: string;
+    if (isOnboarded) {
+      targetUrl = safeRedirect ?? "/arena";
+    } else {
+      targetUrl = safeRedirect
+        ? `/onboarding?redirect=${encodeURIComponent(safeRedirect)}`
+        : "/onboarding";
+    }
+
     return NextResponse.json({
       user: {
         id: data.user.id,
         email: data.user.email,
       },
       isOnboarded,
-      redirectTo: isOnboarded ? "/arena" : "/onboarding",
+      redirectTo: targetUrl,
     });
   } catch (err) {
     const message =

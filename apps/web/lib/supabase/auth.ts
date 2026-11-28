@@ -247,10 +247,16 @@ export async function getCurrentAuthContext(): Promise<AuthSessionContext | null
  * Server Component guard: requires an authenticated Supabase user.
  * Redirects to `/login` if not authenticated.
  */
-export async function requireAuthUser(): Promise<AuthSessionContext> {
+export async function requireAuthUser(
+  redirectTo?: string,
+): Promise<AuthSessionContext> {
   const context = await getCurrentAuthContext();
   if (!context) {
-    redirect("/login");
+    redirect(
+      redirectTo
+        ? `/login?redirect=${encodeURIComponent(redirectTo)}`
+        : "/login",
+    );
   }
   return context;
 }
@@ -259,13 +265,17 @@ export async function requireAuthUser(): Promise<AuthSessionContext> {
  * Server Component guard: requires an authenticated student who has completed academic onboarding.
  * Redirects to `/login` if unauthenticated or `/onboarding` if academic profile is incomplete.
  */
-export async function requireOnboardedStudent(): Promise<{
+export async function requireOnboardedStudent(redirectTo?: string): Promise<{
   user: User;
   profile: AuthenticatedStudentProfile;
 }> {
-  const context = await requireAuthUser();
+  const context = await requireAuthUser(redirectTo);
   if (!context.profile || !context.isOnboarded) {
-    redirect("/onboarding");
+    redirect(
+      redirectTo
+        ? `/onboarding?redirect=${encodeURIComponent(redirectTo)}`
+        : "/onboarding",
+    );
   }
   return {
     user: context.user,

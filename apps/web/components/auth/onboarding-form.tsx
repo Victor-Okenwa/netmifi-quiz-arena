@@ -61,6 +61,7 @@ interface OnboardingFormProps {
   universities: UniversityOption[];
   departments: DepartmentOption[];
   courses: CoursePreviewOption[];
+  redirectTarget?: string | null;
 }
 
 const ACADEMIC_LEVELS = ["100L", "200L", "300L", "400L", "500L"] as const;
@@ -76,6 +77,7 @@ export function OnboardingForm({
   universities,
   departments,
   courses,
+  redirectTarget = null,
 }: OnboardingFormProps) {
   const router = useRouter();
   const defaultUniId = initialUniversityId ?? universities[0]?.id ?? "";
@@ -158,7 +160,7 @@ export function OnboardingForm({
       }
 
       toast.success("Academic profile saved!");
-      router.push(data.redirectTo ?? "/arena");
+      router.push(redirectTarget ?? data.redirectTo ?? "/arena");
       router.refresh();
     } catch (err) {
       setErrorMessage(

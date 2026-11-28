@@ -3,6 +3,7 @@ import { closeDb, db } from "./client";
 import {
   courses,
   departments,
+  profiles,
   questionOptions,
   questions,
   topics,
@@ -1202,6 +1203,8 @@ async function runSeed() {
   const primaryDepartmentIdsByCode: Partial<
     Record<"CSC" | "STA" | "ACC", string>
   > = {};
+  const uniMapByShortCode = new Map<string, string>();
+  const deptMapByUniAndCode = new Map<string, string>();
 
   for (const uni of NIGERIAN_UNIVERSITIES) {
     const [insertedUni] = await db
@@ -1218,6 +1221,7 @@ async function runSeed() {
       .returning();
 
     if (!insertedUni) continue;
+    uniMapByShortCode.set(uni.shortCode, insertedUni.id);
 
     for (const dept of UNIVERSITY_DEPARTMENTS) {
       const [insertedDept] = await db
@@ -1232,6 +1236,13 @@ async function runSeed() {
           set: { name: dept.name },
         })
         .returning();
+
+      if (insertedDept) {
+        deptMapByUniAndCode.set(
+          `${insertedUni.id}:${dept.code}`,
+          insertedDept.id,
+        );
+      }
 
       if (!primaryDepartmentIdsByCode[dept.code] && insertedDept) {
         primaryDepartmentIdsByCode[dept.code] = insertedDept.id;
@@ -1345,8 +1356,181 @@ async function runSeed() {
     }
   }
 
+  // =========================================================
+  // 4. SEED STUDENT PROFILES (PEERS ACROSS ACC, CSC, STA)
+  // =========================================================
+  const peerProfiles = [
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111101",
+      email: "folake.balogun@student.netmifi.com",
+      displayName: "Folake Balogun",
+      username: "folake_acc",
+      avatarNumber: 3,
+      universityShortCode: "UNILAG",
+      deptCode: "ACC",
+      academicLevel: "200L",
+      xp: 2840,
+      battlesPlayed: 32,
+      battlesWon: 24,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111102",
+      email: "tunde.adeyemi@student.netmifi.com",
+      displayName: "Tunde Adeyemi",
+      username: "tunde_audit",
+      avatarNumber: 2,
+      universityShortCode: "UNILAG",
+      deptCode: "ACC",
+      academicLevel: "300L",
+      xp: 3410,
+      battlesPlayed: 41,
+      battlesWon: 30,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111103",
+      email: "chioma.okoye@student.netmifi.com",
+      displayName: "Chioma Okoye",
+      username: "chioma_ifrs",
+      avatarNumber: 5,
+      universityShortCode: "UI",
+      deptCode: "ACC",
+      academicLevel: "200L",
+      xp: 2150,
+      battlesPlayed: 26,
+      battlesWon: 19,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111104",
+      email: "khalid.danladi@student.netmifi.com",
+      displayName: "Khalid Danladi",
+      username: "khalid_ledger",
+      avatarNumber: 1,
+      universityShortCode: "ABU",
+      deptCode: "ACC",
+      academicLevel: "200L",
+      xp: 1980,
+      battlesPlayed: 20,
+      battlesWon: 14,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111105",
+      email: "emeka.nnamani@student.netmifi.com",
+      displayName: "Emeka Nnamani",
+      username: "emeka_tax",
+      avatarNumber: 4,
+      universityShortCode: "UNN",
+      deptCode: "ACC",
+      academicLevel: "300L",
+      xp: 2670,
+      battlesPlayed: 29,
+      battlesWon: 21,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111106",
+      email: "damilola.bello@student.netmifi.com",
+      displayName: "Damilola Bello",
+      username: "dami_algo",
+      avatarNumber: 1,
+      universityShortCode: "UNILAG",
+      deptCode: "CSC",
+      academicLevel: "200L",
+      xp: 3120,
+      battlesPlayed: 35,
+      battlesWon: 27,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111107",
+      email: "nkechi.eze@student.netmifi.com",
+      displayName: "Nkechi Eze",
+      username: "nkechi_dev",
+      avatarNumber: 5,
+      universityShortCode: "OAU",
+      deptCode: "CSC",
+      academicLevel: "300L",
+      xp: 2940,
+      battlesPlayed: 33,
+      battlesWon: 25,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111108",
+      email: "farouk.ibrahim@student.netmifi.com",
+      displayName: "Farouk Ibrahim",
+      username: "farouk_cyber",
+      avatarNumber: 2,
+      universityShortCode: "ABU",
+      deptCode: "CSC",
+      academicLevel: "100L",
+      xp: 1220,
+      battlesPlayed: 14,
+      battlesWon: 9,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111109",
+      email: "bolanle.shittu@student.netmifi.com",
+      displayName: "Bolanle Shittu",
+      username: "bolanle_stats",
+      avatarNumber: 3,
+      universityShortCode: "UNILAG",
+      deptCode: "STA",
+      academicLevel: "200L",
+      xp: 2450,
+      battlesPlayed: 28,
+      battlesWon: 20,
+    },
+    {
+      id: "aa111111-aaaa-4aaa-aaaa-111111111110",
+      email: "somto.nwosu@student.netmifi.com",
+      displayName: "Somto Nwosu",
+      username: "somto_bayes",
+      avatarNumber: 4,
+      universityShortCode: "FUTO",
+      deptCode: "STA",
+      academicLevel: "300L",
+      xp: 1850,
+      battlesPlayed: 21,
+      battlesWon: 13,
+    },
+  ];
+
+  for (const peer of peerProfiles) {
+    const uniId = uniMapByShortCode.get(peer.universityShortCode);
+    const deptId = uniId
+      ? deptMapByUniAndCode.get(`${uniId}:${peer.deptCode}`)
+      : undefined;
+
+    await db
+      .insert(profiles)
+      .values({
+        id: peer.id,
+        email: peer.email,
+        displayName: peer.displayName,
+        username: peer.username,
+        avatarNumber: peer.avatarNumber,
+        universityId: uniId ?? null,
+        departmentId: deptId ?? null,
+        academicLevel: peer.academicLevel,
+        xp: peer.xp,
+        battlesPlayed: peer.battlesPlayed,
+        battlesWon: peer.battlesWon,
+      })
+      .onConflictDoUpdate({
+        target: profiles.id,
+        set: {
+          displayName: peer.displayName,
+          username: peer.username,
+          avatarNumber: peer.avatarNumber,
+          universityId: uniId ?? null,
+          departmentId: deptId ?? null,
+          academicLevel: peer.academicLevel,
+          xp: peer.xp,
+          battlesPlayed: peer.battlesPlayed,
+          battlesWon: peer.battlesWon,
+        },
+      });
+  }
+
   console.log(
-    `✅ Seeded ${SEED_COURSES.length} courses, ${totalTopics} topics, and ${totalQuestions} approved battle-ready questions across CSC, STA, and ACC.`,
+    `✅ Seeded ${SEED_COURSES.length} courses, ${totalTopics} topics, ${totalQuestions} questions, and ${peerProfiles.length} student peer profiles across CSC, STA, and ACC.`,
   );
   await closeDb();
 }

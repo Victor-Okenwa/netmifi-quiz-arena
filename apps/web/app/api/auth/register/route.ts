@@ -21,6 +21,21 @@ export async function POST(request: Request) {
     const supabase = await createServerSupabaseClient();
     const adminClient = createAdminSupabaseClient();
 
+    const rawRedirect =
+      typeof (body as Record<string, unknown>)?.redirect === "string"
+        ? ((body as Record<string, unknown>).redirect as string).trim()
+        : null;
+    const safeRedirect =
+      rawRedirect &&
+      rawRedirect.startsWith("/") &&
+      !rawRedirect.startsWith("//")
+        ? rawRedirect
+        : null;
+
+    const targetOnboarding = safeRedirect
+      ? `/onboarding?redirect=${encodeURIComponent(safeRedirect)}`
+      : "/onboarding";
+
     // If the service-role client is available, create the user with email pre-confirmed
     // so hackathon students and judges can immediately sign in without email delay.
     if (adminClient) {
@@ -81,7 +96,7 @@ export async function POST(request: Request) {
           id: signInData.user.id,
           email: signInData.user.email,
         },
-        redirectTo: "/onboarding",
+        redirectTo: targetOnboarding,
       });
     }
 
@@ -119,7 +134,7 @@ export async function POST(request: Request) {
         id: data.user.id,
         email: data.user.email,
       },
-      redirectTo: "/onboarding",
+      redirectTo: targetOnboarding,
     });
   } catch (err) {
     const message =

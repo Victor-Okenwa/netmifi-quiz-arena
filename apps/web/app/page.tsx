@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getCurrentAuthContext } from "@/lib/supabase/auth";
 import {
   Brain,
   ChevronRight,
@@ -22,8 +23,24 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+  const auth = await getCurrentAuthContext();
+  const findMatchHref = auth
+    ? auth.isOnboarded
+      ? "/arena/find-match"
+      : "/onboarding?redirect=/arena/find-match"
+    : "/login?redirect=/arena/find-match";
+
+  const instantMatchHref = auth
+    ? auth.isOnboarded
+      ? "/arena"
+      : "/onboarding?redirect=/arena"
+    : "/login?redirect=/arena";
+
+  const registerHref = auth ? "/arena" : "/register?redirect=/arena/find-match";
+
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background text-foreground">
       {/* Top Navigation */}
@@ -48,13 +65,13 @@ export default function Home() {
                 </p>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <a href="/arena">
+                  <Link href={instantMatchHref}>
                     <Button size="lg" className="gap-2 text-base">
                       <Swords className="size-5" />
                       Enter Instant Match
                     </Button>
-                  </a>
-                  <a href="/register">
+                  </Link>
+                  <Link href={registerHref}>
                     <Button
                       size="lg"
                       variant="outline"
@@ -63,7 +80,7 @@ export default function Home() {
                       Create Student Account
                       <ChevronRight className="size-4" />
                     </Button>
-                  </a>
+                  </Link>
                 </div>
 
                 {/* Quick stats banner */}
@@ -141,9 +158,11 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <Button className="mt-5 w-full gap-2" variant="default">
-                    <Zap className="size-4" /> Find Match Now
-                  </Button>
+                  <Link href={findMatchHref} className="mt-5 block w-full">
+                    <Button className="w-full gap-2" variant="default">
+                      <Zap className="size-4" /> Find Match Now
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -192,9 +211,11 @@ export default function Home() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Queue Duel
-                  </Button>
+                  <Link href={findMatchHref} className="w-full">
+                    <Button variant="outline" className="w-full">
+                      Queue Duel
+                    </Button>
+                  </Link>
                 </CardFooter>
               </Card>
 
@@ -223,7 +244,14 @@ export default function Home() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full">Join Bracket</Button>
+                  <Link
+                    href={
+                      auth ? "/leaderboard" : "/login?redirect=/leaderboard"
+                    }
+                    className="w-full"
+                  >
+                    <Button className="w-full">Join Bracket</Button>
+                  </Link>
                 </CardFooter>
               </Card>
 
@@ -252,9 +280,18 @@ export default function Home() {
                   </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Start Training
-                  </Button>
+                  <Link
+                    href={
+                      auth
+                        ? "/arena/practice"
+                        : "/login?redirect=/arena/practice"
+                    }
+                    className="w-full"
+                  >
+                    <Button variant="outline" className="w-full">
+                      Start Training
+                    </Button>
+                  </Link>
                 </CardFooter>
               </Card>
             </div>

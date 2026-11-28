@@ -237,7 +237,17 @@ export default async function ArenaPage() {
                 </div>
               </div>
 
-              <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:items-center">
+              <div className="grid w-full grid-cols-3 gap-2.5 sm:flex sm:w-auto sm:items-center">
+                <Link href="/arena/find-match" className="w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full gap-2 sm:w-auto"
+                  >
+                    <Users className="size-4 text-primary" />
+                    Find Match
+                  </Button>
+                </Link>
                 <Link href="/arena/new" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full gap-2 sm:w-auto">
                     <PlusCircle className="size-4" />

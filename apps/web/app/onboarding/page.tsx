@@ -7,8 +7,27 @@ import {
 import { ensureBaseProfileForUser, requireAuthUser } from "@/lib/supabase/auth";
 import { asc, courses, db, departments, universities } from "@repo/db";
 
-export default async function OnboardingPage() {
-  const { user, profile: existingProfile } = await requireAuthUser();
+interface OnboardingPageProps {
+  searchParams: Promise<{
+    redirect?: string;
+    redirect_to?: string;
+    next?: string;
+  }>;
+}
+
+export default async function OnboardingPage({
+  searchParams,
+}: OnboardingPageProps) {
+  const resolvedParams = await searchParams;
+  const redirectTarget =
+    resolvedParams.redirect ??
+    resolvedParams.redirect_to ??
+    resolvedParams.next ??
+    null;
+
+  const { user, profile: existingProfile } = await requireAuthUser(
+    redirectTarget ?? undefined,
+  );
   const profile = existingProfile ?? (await ensureBaseProfileForUser(user));
 
   let allUniversities = FALLBACK_UNIVERSITIES;
@@ -71,6 +90,7 @@ export default async function OnboardingPage() {
       universities={allUniversities}
       departments={allDepartments}
       courses={allCourses}
+      redirectTarget={redirectTarget}
     />
   );
 }
