@@ -7,15 +7,7 @@ import {
   getStudentProfileById,
 } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import {
-  and,
-  db,
-  departments,
-  eq,
-  ne,
-  profiles,
-  universities,
-} from "@repo/db";
+import { and, db, departments, eq, ne, profiles, universities } from "@repo/db";
 import { academicOnboardingSchema } from "@repo/validators";
 import { NextResponse } from "next/server";
 
@@ -25,7 +17,7 @@ export async function POST(request: Request) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Unauthorized. Please sign in to complete onboarding." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -49,7 +41,7 @@ export async function POST(request: Request) {
 
     let selectedUni = FALLBACK_UNIVERSITIES.find((u) => u.id === universityId);
     let selectedDept = FALLBACK_DEPARTMENTS.find(
-      (d) => d.id === departmentId && d.universityId === universityId
+      (d) => d.id === departmentId && d.universityId === universityId,
     );
 
     const email = (
@@ -84,8 +76,8 @@ export async function POST(request: Request) {
         .where(
           and(
             eq(departments.id, departmentId),
-            eq(departments.universityId, universityId)
-          )
+            eq(departments.universityId, universityId),
+          ),
         )
         .limit(1);
 
@@ -100,8 +92,8 @@ export async function POST(request: Request) {
         .where(
           and(
             eq(profiles.username, username),
-            ne(profiles.id, authContext.user.id)
-          )
+            ne(profiles.id, authContext.user.id),
+          ),
         )
         .limit(1);
 
@@ -110,7 +102,7 @@ export async function POST(request: Request) {
           {
             error: `Username "@${username}" is already taken. Please choose another handle.`,
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -150,7 +142,7 @@ export async function POST(request: Request) {
     if (!selectedUni || !selectedDept) {
       return NextResponse.json(
         { error: "Please select a valid university and department." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

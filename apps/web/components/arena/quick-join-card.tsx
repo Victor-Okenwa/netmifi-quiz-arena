@@ -72,7 +72,7 @@ export function QuickJoinCard() {
             description: data.inviteCode
               ? `Room code: ${data.inviteCode}`
               : undefined,
-          }
+          },
         );
       }
 

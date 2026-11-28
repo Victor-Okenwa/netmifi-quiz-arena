@@ -31,16 +31,13 @@ interface RematchRouteContext {
   }>;
 }
 
-export async function POST(
-  _request: Request,
-  context: RematchRouteContext
-) {
+export async function POST(_request: Request, context: RematchRouteContext) {
   try {
     const authContext = await getCurrentAuthContext();
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to launch a rematch." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -65,20 +62,23 @@ export async function POST(
     if (!sourceBattle) {
       return NextResponse.json(
         { error: "Source battle not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Rematches reuse the source stake, so the requester must still afford it.
-    if (sourceBattle.mode === "reward" && sourceBattle.stakeAmountLamports > 0) {
+    if (
+      sourceBattle.mode === "reward" &&
+      sourceBattle.stakeAmountLamports > 0
+    ) {
       const affordability = await checkStakeAffordability(
         authContext.user.id,
-        sourceBattle.stakeAmountLamports
+        sourceBattle.stakeAmountLamports,
       );
       if (!affordability.ok) {
         return NextResponse.json(
           { error: affordability.error },
-          { status: affordability.status }
+          { status: affordability.status },
         );
       }
     }
@@ -105,8 +105,8 @@ export async function POST(
         .where(
           and(
             eq(questions.courseId, sourceBattle.courseId),
-            eq(questions.approvalStatus, "approved")
-          )
+            eq(questions.approvalStatus, "approved"),
+          ),
         )
         .orderBy(sql`RANDOM()`)
         .limit(sourceBattle.questionCount);
@@ -115,7 +115,7 @@ export async function POST(
     if (candidateQuestions.length === 0) {
       return NextResponse.json(
         { error: "No approved questions available for this rematch." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (!auth) {
       return NextResponse.json(
         { error: "Please sign in to verify your Solana wallet." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     if (!isValidSolanaAddress(walletAddress)) {
       return NextResponse.json(
         { error: "Invalid Base58 Solana public key." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,36 +55,39 @@ export async function POST(request: Request) {
       .where(
         and(
           eq(walletNonces.nonce, nonce),
-          eq(walletNonces.userId, auth.user.id)
-        )
+          eq(walletNonces.userId, auth.user.id),
+        ),
       )
       .limit(1);
 
     if (!nonceRow) {
       return NextResponse.json(
-        { error: "Challenge nonce not found or does not belong to your account." },
-        { status: 400 }
+        {
+          error:
+            "Challenge nonce not found or does not belong to your account.",
+        },
+        { status: 400 },
       );
     }
 
     if (nonceRow.consumedAt) {
       return NextResponse.json(
         { error: "This challenge nonce has already been used." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (Date.now() > nonceRow.expiresAt.getTime()) {
       return NextResponse.json(
         { error: "Challenge nonce has expired. Please request a new one." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (nonceRow.walletAddress !== walletAddress) {
       return NextResponse.json(
         { error: "Wallet address does not match the issued challenge nonce." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
           error:
             "Cryptographic Ed25519 signature verification failed for the provided wallet address.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,7 +127,7 @@ export async function POST(request: Request) {
           error:
             "This Solana wallet is already linked to another student account.",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -136,9 +139,7 @@ export async function POST(request: Request) {
         .set({ consumedAt: now })
         .where(eq(walletNonces.id, nonceRow.id));
 
-      await tx
-        .delete(walletLinks)
-        .where(eq(walletLinks.userId, auth.user.id));
+      await tx.delete(walletLinks).where(eq(walletLinks.userId, auth.user.id));
 
       await tx.insert(walletLinks).values({
         userId: auth.user.id,

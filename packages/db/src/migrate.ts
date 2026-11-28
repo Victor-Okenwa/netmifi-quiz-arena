@@ -67,7 +67,7 @@ async function runMigrations() {
     }
 
     console.log(
-      `✅ Database schema synced in <2s! (${appliedStatements} new statements applied, ${skippedExisting} existing objects verified)`
+      `✅ Database schema synced in <2s! (${appliedStatements} new statements applied, ${skippedExisting} existing objects verified)`,
     );
   } finally {
     await sql.end();

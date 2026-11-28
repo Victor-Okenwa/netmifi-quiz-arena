@@ -19,7 +19,10 @@ function getPresenceMap(): Map<string, Map<string, number>> {
   return g.__netmifiSpectatorPresence;
 }
 
-function pruneExpiredSpectators(battleId: string, nowMs: number): Map<string, number> {
+function pruneExpiredSpectators(
+  battleId: string,
+  nowMs: number,
+): Map<string, number> {
   const store = getPresenceMap();
   const roomMap = store.get(battleId);
   if (!roomMap) {
@@ -44,7 +47,7 @@ function pruneExpiredSpectators(battleId: string, nowMs: number): Map<string, nu
  */
 export function recordSpectatorHeartbeat(
   battleId: string,
-  userId: string
+  userId: string,
 ): number {
   const nowMs = Date.now();
   const store = getPresenceMap();
@@ -63,7 +66,7 @@ export function recordSpectatorHeartbeat(
  */
 export function removeSpectatorHeartbeat(
   battleId: string,
-  userId: string
+  userId: string,
 ): number {
   const nowMs = Date.now();
   const store = getPresenceMap();

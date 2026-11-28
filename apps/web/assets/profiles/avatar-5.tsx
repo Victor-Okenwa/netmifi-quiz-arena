@@ -14,21 +14,32 @@ export function ProfileAvatar5(props: SVGProps<SVGSVGElement>) {
       {...props}
     >
       <defs>
-        <linearGradient id="av5_bg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="av5_bg"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#8B5CF6" />
           <stop offset="1" stopColor="#2E1065" />
         </linearGradient>
       </defs>
       <rect width="120" height="120" rx="60" fill="url(#av5_bg)" />
-      <circle cx="60" cy="60" r="52" stroke="#DDD6FE" strokeOpacity="0.3" strokeWidth="2" />
+      <circle
+        cx="60"
+        cy="60"
+        r="52"
+        stroke="#DDD6FE"
+        strokeOpacity="0.3"
+        strokeWidth="2"
+      />
       {/* Back Hair / Braids */}
       <rect x="31" y="42" width="10" height="38" rx="5" fill="#1E1B4B" />
       <rect x="79" y="42" width="10" height="38" rx="5" fill="#1E1B4B" />
       {/* Shoulders */}
-      <path
-        d="M22 114C26 93 40 84 60 84C80 84 94 93 98 114"
-        fill="#1E1B4B"
-      />
+      <path d="M22 114C26 93 40 84 60 84C80 84 94 93 98 114" fill="#1E1B4B" />
       {/* Star Emblem */}
       <circle cx="60" cy="98" r="5" fill="#C4B5FD" />
       {/* Neck & Face */}

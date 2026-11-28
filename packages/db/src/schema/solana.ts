@@ -32,7 +32,7 @@ export const walletLinks = pgTable(
   (table) => [
     uniqueIndex("wallet_links_user_id_idx").on(table.userId),
     uniqueIndex("wallet_links_wallet_address_idx").on(table.walletAddress),
-  ]
+  ],
 );
 
 /**
@@ -56,7 +56,7 @@ export const walletNonces = pgTable(
   (table) => [
     uniqueIndex("wallet_nonces_nonce_idx").on(table.nonce),
     index("wallet_nonces_user_id_idx").on(table.userId),
-  ]
+  ],
 );
 
 /**
@@ -84,5 +84,5 @@ export const rewardTransactions = pgTable(
   (table) => [
     uniqueIndex("reward_transactions_tx_signature_idx").on(table.txSignature),
     index("reward_transactions_battle_id_idx").on(table.battleId),
-  ]
+  ],
 );

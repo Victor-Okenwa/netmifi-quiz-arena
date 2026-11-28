@@ -3,6 +3,7 @@
  * whether a student can afford a Reward Battle stake.
  */
 import { getServerEnv } from "@/lib/env";
+import { isDemoWalletForUser } from "@/lib/solana/wallet-auth";
 import { db, eq, walletLinks } from "@repo/db";
 import { formatSol } from "@repo/validators";
 
@@ -30,7 +31,7 @@ const balanceCache = new Map<string, { lamports: number; fetchedAt: number }>();
  */
 async function requestBalanceOnce(
   rpcUrl: string,
-  walletAddress: string
+  walletAddress: string,
 ): Promise<number | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
@@ -70,7 +71,7 @@ async function requestBalanceOnce(
  */
 export async function fetchWalletBalanceLamports(
   rpcUrl: string,
-  walletAddress: string
+  walletAddress: string,
 ): Promise<number | null> {
   const cached = balanceCache.get(walletAddress);
   if (cached && Date.now() - cached.fetchedAt < BALANCE_CACHE_TTL_MS) {
@@ -108,7 +109,7 @@ export type StakeAffordabilityResult =
 export async function checkStakeAffordability(
   userId: string,
   stakeAmountLamports: number,
-  walletAddressOverride?: string
+  walletAddressOverride?: string,
 ): Promise<StakeAffordabilityResult> {
   let walletAddress = walletAddressOverride;
   if (!walletAddress) {
@@ -129,10 +130,18 @@ export async function checkStakeAffordability(
     };
   }
 
-  const balanceLamports = await fetchWalletBalanceLamports(
+  const isDemo = isDemoWalletForUser(userId, walletAddress);
+
+  let balanceLamports = await fetchWalletBalanceLamports(
     getServerEnv().NEXT_PUBLIC_SOLANA_RPC_URL,
-    walletAddress
+    walletAddress,
   );
+
+  // If this is a demo wallet without funded Devnet SOL, provision a 5.0 SOL sandbox balance
+  // so judges and testers can immediately create, join, and deposit into Reward Battles.
+  if (isDemo && (balanceLamports === null || balanceLamports === 0)) {
+    balanceLamports = 5_000_000_000;
+  }
 
   if (balanceLamports === null) {
     return {

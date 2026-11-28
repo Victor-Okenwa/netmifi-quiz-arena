@@ -1240,7 +1240,7 @@ async function runSeed() {
   }
 
   console.log(
-    `✅ Seeded ${NIGERIAN_UNIVERSITIES.length} Nigerian universities with ${UNIVERSITY_DEPARTMENTS.length} departments each (Computer Science, Statistics, Accountancy).`
+    `✅ Seeded ${NIGERIAN_UNIVERSITIES.length} Nigerian universities with ${UNIVERSITY_DEPARTMENTS.length} departments each (Computer Science, Statistics, Accountancy).`,
   );
 
   // 2. Seed Courses, Topics, and Approved Questions
@@ -1306,7 +1306,7 @@ async function runSeed() {
         .where(eq(questions.topicId, topicRecord.id));
 
       const existingTextSet = new Set(
-        existingQuestions.map((q) => q.questionText)
+        existingQuestions.map((q) => q.questionText),
       );
 
       for (const qData of topicData.questions) {
@@ -1346,7 +1346,7 @@ async function runSeed() {
   }
 
   console.log(
-    `✅ Seeded ${SEED_COURSES.length} courses, ${totalTopics} topics, and ${totalQuestions} approved battle-ready questions across CSC, STA, and ACC.`
+    `✅ Seeded ${SEED_COURSES.length} courses, ${totalTopics} topics, and ${totalQuestions} approved battle-ready questions across CSC, STA, and ACC.`,
   );
   await closeDb();
 }

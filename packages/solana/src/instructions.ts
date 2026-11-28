@@ -62,7 +62,7 @@ function toPubkey(key: PublicKey | string): PublicKey {
 export function serializeCreateBattleArgs(
   battleId: string,
   stakeAmountLamports: number,
-  expiryTs: number
+  expiryTs: number,
 ): Buffer {
   if (stakeAmountLamports <= 0 || !Number.isInteger(stakeAmountLamports)) {
     throw new Error("stakeAmountLamports must be a positive integer.");
@@ -95,27 +95,27 @@ export function serializeCreateBattleArgs(
  * Builds the `create_battle` Anchor `TransactionInstruction`.
  */
 export function buildCreateBattleInstruction(
-  params: BuildCreateBattleParams
+  params: BuildCreateBattleParams,
 ): TransactionInstruction {
   const programPubkey = toPubkey(
-    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID
+    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID,
   );
   const creatorPubkey = toPubkey(params.creator);
   const authorityPubkey = toPubkey(params.authority);
 
   const { pda: battleEscrowPda } = deriveBattleEscrowPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
   const { pda: battleVaultPda } = deriveBattleVaultPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
 
   const data = serializeCreateBattleArgs(
     params.battleId,
     params.stakeAmountLamports,
-    params.expiryTs
+    params.expiryTs,
   );
 
   return new TransactionInstruction({
@@ -135,20 +135,20 @@ export function buildCreateBattleInstruction(
  * Builds the `join_battle` Anchor `TransactionInstruction`.
  */
 export function buildJoinBattleInstruction(
-  params: BuildJoinBattleParams
+  params: BuildJoinBattleParams,
 ): TransactionInstruction {
   const programPubkey = toPubkey(
-    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID
+    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID,
   );
   const opponentPubkey = toPubkey(params.opponent);
 
   const { pda: battleEscrowPda } = deriveBattleEscrowPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
   const { pda: battleVaultPda } = deriveBattleVaultPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
 
   return new TransactionInstruction({
@@ -167,20 +167,20 @@ export function buildJoinBattleInstruction(
  * Builds the `cancel_battle` Anchor `TransactionInstruction`.
  */
 export function buildCancelBattleInstruction(
-  params: BuildCancelBattleParams
+  params: BuildCancelBattleParams,
 ): TransactionInstruction {
   const programPubkey = toPubkey(
-    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID
+    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID,
   );
   const creatorPubkey = toPubkey(params.creator);
 
   const { pda: battleEscrowPda } = deriveBattleEscrowPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
   const { pda: battleVaultPda } = deriveBattleVaultPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
 
   return new TransactionInstruction({
@@ -199,10 +199,10 @@ export function buildCancelBattleInstruction(
  * Builds the `refund_expired_battle` Anchor `TransactionInstruction`.
  */
 export function buildRefundExpiredBattleInstruction(
-  params: BuildRefundExpiredBattleParams
+  params: BuildRefundExpiredBattleParams,
 ): TransactionInstruction {
   const programPubkey = toPubkey(
-    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID
+    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID,
   );
   const callerPubkey = toPubkey(params.caller);
   const creatorDestination = toPubkey(params.creatorDestination);
@@ -210,11 +210,11 @@ export function buildRefundExpiredBattleInstruction(
 
   const { pda: battleEscrowPda } = deriveBattleEscrowPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
   const { pda: battleVaultPda } = deriveBattleVaultPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
 
   return new TransactionInstruction({

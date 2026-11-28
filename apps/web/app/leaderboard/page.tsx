@@ -108,7 +108,7 @@ export default async function LeaderboardPage() {
   }
 
   const universityStandings = Array.from(universityTotalsMap.values()).sort(
-    (a, b) => b.totalXp - a.totalXp || b.studentCount - a.studentCount
+    (a, b) => b.totalXp - a.totalXp || b.studentCount - a.studentCount,
   );
 
   return (
@@ -200,7 +200,7 @@ export default async function LeaderboardPage() {
                   const winRate =
                     student.battlesPlayed > 0
                       ? Math.round(
-                          (student.battlesWon / student.battlesPlayed) * 100
+                          (student.battlesWon / student.battlesPlayed) * 100,
                         )
                       : 0;
 

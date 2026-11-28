@@ -5,10 +5,7 @@ import {
   type PracticeTopicOption,
   TargetedPracticeDrill,
 } from "@/components/arena/targeted-practice-drill";
-import {
-  FALLBACK_COURSES,
-  FALLBACK_TOPICS,
-} from "@/lib/academic-fallback";
+import { FALLBACK_COURSES, FALLBACK_TOPICS } from "@/lib/academic-fallback";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import {
   and,
@@ -141,8 +138,8 @@ export default async function PracticePage({
         .where(
           and(
             eq(questions.courseId, activeCourseId),
-            eq(questions.approvalStatus, "approved")
-          )
+            eq(questions.approvalStatus, "approved"),
+          ),
         )
         .limit(10);
     }

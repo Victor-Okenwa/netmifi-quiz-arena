@@ -96,7 +96,7 @@ export function ProfileAvatar({
         alt={displayName}
         className={cn(
           "size-10 shrink-0 rounded-full object-cover ring-2 ring-border",
-          className
+          className,
         )}
       />
     );
@@ -109,7 +109,7 @@ export function ProfileAvatar({
     <AvatarSvg
       className={cn(
         "size-10 shrink-0 rounded-full ring-2 ring-border",
-        className
+        className,
       )}
     />
   );

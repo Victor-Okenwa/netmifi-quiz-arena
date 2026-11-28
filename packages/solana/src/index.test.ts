@@ -68,7 +68,9 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     };
 
     const encoded = encodeBattleEscrowState(state);
-    expect(encoded.subarray(0, 8).equals(BATTLE_ESCROW_ACCOUNT_DISCRIMINATOR)).toBe(true);
+    expect(
+      encoded.subarray(0, 8).equals(BATTLE_ESCROW_ACCOUNT_DISCRIMINATOR),
+    ).toBe(true);
 
     const decoded = decodeBattleEscrowState(encoded);
     expect(decoded).toEqual(state);
@@ -108,7 +110,7 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     expect(
       createIx.data
         .subarray(0, 8)
-        .equals(INSTRUCTION_DISCRIMINATORS.createBattle)
+        .equals(INSTRUCTION_DISCRIMINATORS.createBattle),
     ).toBe(true);
 
     const joinIx = buildJoinBattleInstruction({
@@ -118,14 +120,18 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     expect(joinIx.keys).toHaveLength(4);
     expect(joinIx.keys[0]?.pubkey.equals(opponent)).toBe(true);
     expect(joinIx.keys[0]?.isSigner).toBe(true);
-    expect(joinIx.data.equals(INSTRUCTION_DISCRIMINATORS.joinBattle)).toBe(true);
+    expect(joinIx.data.equals(INSTRUCTION_DISCRIMINATORS.joinBattle)).toBe(
+      true,
+    );
 
     const cancelIx = buildCancelBattleInstruction({
       battleId: sampleBattleUuid,
       creator,
     });
     expect(cancelIx.keys[0]?.pubkey.equals(creator)).toBe(true);
-    expect(cancelIx.data.equals(INSTRUCTION_DISCRIMINATORS.cancelBattle)).toBe(true);
+    expect(cancelIx.data.equals(INSTRUCTION_DISCRIMINATORS.cancelBattle)).toBe(
+      true,
+    );
 
     const refundIx = buildRefundExpiredBattleInstruction({
       battleId: sampleBattleUuid,
@@ -135,7 +141,7 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     });
     expect(refundIx.keys).toHaveLength(6);
     expect(
-      refundIx.data.equals(INSTRUCTION_DISCRIMINATORS.refundExpiredBattle)
+      refundIx.data.equals(INSTRUCTION_DISCRIMINATORS.refundExpiredBattle),
     ).toBe(true);
   });
 
@@ -147,7 +153,7 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     const secretJson = JSON.stringify(Array.from(authorityKp.secretKey));
     const parsedKp = parseAuthorityKeypair(secretJson);
     expect(parsedKp.publicKey.toBase58()).toBe(
-      authorityKp.publicKey.toBase58()
+      authorityKp.publicKey.toBase58(),
     );
 
     const finalizeCreatorWinsIx = buildFinalizeBattleInstruction({
@@ -159,7 +165,9 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     });
 
     expect(finalizeCreatorWinsIx.keys).toHaveLength(6);
-    expect(finalizeCreatorWinsIx.keys[0]?.pubkey.equals(parsedKp.publicKey)).toBe(true);
+    expect(
+      finalizeCreatorWinsIx.keys[0]?.pubkey.equals(parsedKp.publicKey),
+    ).toBe(true);
     expect(finalizeCreatorWinsIx.keys[0]?.isSigner).toBe(true);
     expect(finalizeCreatorWinsIx.data.length).toBe(9);
     expect(finalizeCreatorWinsIx.data[8]).toBe(0); // CreatorWins = 0
@@ -181,7 +189,7 @@ describe("Milestone 9: @repo/solana Anchor Escrow SDK & Client", () => {
     expect(byNumber?.name).toBe("SelfPlayNotAllowed");
 
     const byHexLog = decodeEscrowProgramError(
-      new Error("Transaction simulation failed: custom program error: 0x1778")
+      new Error("Transaction simulation failed: custom program error: 0x1778"),
     );
     expect(byHexLog?.code).toBe(6008);
     expect(byHexLog?.name).toBe("UnauthorizedSettlementAuthority");

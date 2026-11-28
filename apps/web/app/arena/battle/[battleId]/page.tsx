@@ -167,8 +167,7 @@ export default async function BattleRoomPage({
                 {battle.mode === "reward" ? (
                   <Badge variant="outline" className="gap-1">
                     <Coins className="size-3.5 text-primary" />
-                    {formatSol(battle.stakeAmountLamports)}{" "}
-                    SOL Stake
+                    {formatSol(battle.stakeAmountLamports)} SOL Stake
                   </Badge>
                 ) : null}
               </div>

@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
           name: string;
           value: string;
           options?: Record<string, unknown>;
-        }[]
+        }[],
       ) {
         for (const { name, value } of cookiesToSet) {
           request.cookies.set(name, value);

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to play question audio." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid questionId." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     if (!questionRow) {
       return NextResponse.json(
         { error: "Question not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 

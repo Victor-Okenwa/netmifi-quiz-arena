@@ -14,20 +14,20 @@ export async function GET(_request: Request, context: RouteContext) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to access this battle." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { battleId } = await context.params;
     const arenaState = await getSanitizedBattleArenaState(
       battleId,
-      authContext.user.id
+      authContext.user.id,
     );
 
     if (!arenaState) {
       return NextResponse.json(
         { error: "Battle arena not found or access denied." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 

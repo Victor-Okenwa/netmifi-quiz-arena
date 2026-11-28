@@ -51,7 +51,7 @@ function toPubkey(key: PublicKey | string): PublicKey {
  * (8-byte discriminator + 1-byte Borsh enum variant index).
  */
 export function serializeFinalizeBattleArgs(
-  outcome: OnChainBattleOutcome
+  outcome: OnChainBattleOutcome,
 ): Buffer {
   const code = BATTLE_OUTCOME_TO_CODE[outcome];
   if (code === undefined) {
@@ -68,10 +68,10 @@ export function serializeFinalizeBattleArgs(
  * Builds the `finalize_battle` Anchor `TransactionInstruction` requiring the backend authority `Signer`.
  */
 export function buildFinalizeBattleInstruction(
-  params: BuildFinalizeBattleParams
+  params: BuildFinalizeBattleParams,
 ): TransactionInstruction {
   const programPubkey = toPubkey(
-    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID
+    params.programId ?? QUIZ_ARENA_ESCROW_PROGRAM_ID,
   );
   const authorityPubkey = toPubkey(params.authority);
   const creatorDestination = toPubkey(params.creatorDestination);
@@ -79,11 +79,11 @@ export function buildFinalizeBattleInstruction(
 
   const { pda: battleEscrowPda } = deriveBattleEscrowPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
   const { pda: battleVaultPda } = deriveBattleVaultPda(
     params.battleId,
-    programPubkey
+    programPubkey,
   );
 
   return new TransactionInstruction({
@@ -107,7 +107,7 @@ export function buildFinalizeBattleInstruction(
 export function parseAuthorityKeypair(secretKeyInput: string): Keypair {
   if (typeof window !== "undefined") {
     throw new Error(
-      "parseAuthorityKeypair must only be invoked on the server, never in browser code."
+      "parseAuthorityKeypair must only be invoked on the server, never in browser code.",
     );
   }
 
@@ -120,7 +120,7 @@ export function parseAuthorityKeypair(secretKeyInput: string): Keypair {
     const parsed = JSON.parse(trimmed) as number[];
     if (!Array.isArray(parsed) || parsed.length !== 64) {
       throw new Error(
-        `Invalid SOLANA_AUTHORITY_SECRET_KEY JSON array length: expected 64 bytes, got ${Array.isArray(parsed) ? parsed.length : "non-array"}.`
+        `Invalid SOLANA_AUTHORITY_SECRET_KEY JSON array length: expected 64 bytes, got ${Array.isArray(parsed) ? parsed.length : "non-array"}.`,
       );
     }
     return Keypair.fromSecretKey(Uint8Array.from(parsed));
@@ -132,7 +132,7 @@ export function parseAuthorityKeypair(secretKeyInput: string): Keypair {
   }
 
   throw new Error(
-    "Unsupported SOLANA_AUTHORITY_SECRET_KEY format: provide a 64-byte JSON array or base64-encoded secret key."
+    "Unsupported SOLANA_AUTHORITY_SECRET_KEY format: provide a 64-byte JSON array or base64-encoded secret key.",
   );
 }
 
@@ -140,11 +140,11 @@ export function parseAuthorityKeypair(secretKeyInput: string): Keypair {
  * Submits and confirms the `finalize_battle` settlement transaction on Solana Devnet.
  */
 export async function executeFinalizeBattleOnChain(
-  params: ExecuteFinalizeBattleParams
+  params: ExecuteFinalizeBattleParams,
 ): Promise<{ txSignature: string; battleEscrowPda: string }> {
   if (typeof window !== "undefined") {
     throw new Error(
-      "executeFinalizeBattleOnChain must only be executed on the server."
+      "executeFinalizeBattleOnChain must only be executed on the server.",
     );
   }
 
@@ -164,7 +164,7 @@ export async function executeFinalizeBattleOnChain(
     params.connection,
     tx,
     [params.authorityKeypair],
-    { commitment: "confirmed" }
+    { commitment: "confirmed" },
   );
 
   return {

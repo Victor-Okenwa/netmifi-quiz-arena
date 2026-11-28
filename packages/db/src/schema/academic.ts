@@ -20,7 +20,7 @@ export const universities = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("universities_short_code_idx").on(table.shortCode)]
+  (table) => [uniqueIndex("universities_short_code_idx").on(table.shortCode)],
 );
 
 export const departments = pgTable(
@@ -39,7 +39,7 @@ export const departments = pgTable(
   (table) => [
     index("departments_university_id_idx").on(table.universityId),
     uniqueIndex("departments_uni_code_idx").on(table.universityId, table.code),
-  ]
+  ],
 );
 
 export const courses = pgTable(
@@ -60,7 +60,7 @@ export const courses = pgTable(
   (table) => [
     uniqueIndex("courses_code_idx").on(table.code),
     index("courses_department_id_idx").on(table.departmentId),
-  ]
+  ],
 );
 
 export const topics = pgTable(
@@ -81,7 +81,7 @@ export const topics = pgTable(
   (table) => [
     index("topics_course_id_idx").on(table.courseId),
     uniqueIndex("topics_course_slug_idx").on(table.courseId, table.slug),
-  ]
+  ],
 );
 
 /**
@@ -120,5 +120,5 @@ export const profiles = pgTable(
     uniqueIndex("profiles_username_idx").on(table.username),
     index("profiles_university_id_idx").on(table.universityId),
     index("profiles_xp_idx").on(table.xp),
-  ]
+  ],
 );

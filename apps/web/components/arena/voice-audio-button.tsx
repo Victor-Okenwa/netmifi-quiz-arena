@@ -30,7 +30,7 @@ export function VoiceAudioButton({
   className,
 }: VoiceAudioButtonProps) {
   const [cachedAudioUrl, setCachedAudioUrl] = useState<string | null>(
-    initialAudioUrl
+    initialAudioUrl,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -99,7 +99,7 @@ export function VoiceAudioButton({
         playWithBrowserSpeechSynthesis(textToSpeak);
       }
     },
-    [playWithBrowserSpeechSynthesis]
+    [playWithBrowserSpeechSynthesis],
   );
 
   // Stop any playing audio and reset cached URL when the active question or battle changes
@@ -268,7 +268,9 @@ export function VoiceAudioButton({
       ) : (
         <Volume2 className="size-3.5 text-primary" />
       )}
-      <span>{isLoading ? "Loading Voice..." : isPlaying ? "Stop Audio" : label}</span>
+      <span>
+        {isLoading ? "Loading Voice..." : isPlaying ? "Stop Audio" : label}
+      </span>
     </Button>
   );
 }

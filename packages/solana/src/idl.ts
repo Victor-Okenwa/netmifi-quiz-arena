@@ -13,11 +13,7 @@ export const BATTLE_VAULT_SEED_PREFIX = "battle_vault" as const;
 export const MAX_BATTLE_SEED_LEN = 32 as const;
 
 export type OnChainBattleEscrowStatus =
-  | "Created"
-  | "Funded"
-  | "Settled"
-  | "Cancelled"
-  | "Refunded";
+  "Created" | "Funded" | "Settled" | "Cancelled" | "Refunded";
 
 export const BATTLE_ESCROW_STATUS_FROM_CODE: Record<
   number,
@@ -66,7 +62,7 @@ export interface EscrowProgramConfig {
  */
 export function computeAnchorDiscriminator(
   namespace: "global" | "account" | "event",
-  name: string
+  name: string,
 ): Buffer {
   const hash = createHash("sha256").update(`${namespace}:${name}`).digest();
   return Buffer.from(hash.subarray(0, 8));
@@ -79,13 +75,13 @@ export const INSTRUCTION_DISCRIMINATORS = {
   cancelBattle: computeAnchorDiscriminator("global", "cancel_battle"),
   refundExpiredBattle: computeAnchorDiscriminator(
     "global",
-    "refund_expired_battle"
+    "refund_expired_battle",
   ),
 } as const;
 
 export const BATTLE_ESCROW_ACCOUNT_DISCRIMINATOR = computeAnchorDiscriminator(
   "account",
-  "BattleEscrowState"
+  "BattleEscrowState",
 );
 
 export const QUIZ_ARENA_ESCROW_IDL = {

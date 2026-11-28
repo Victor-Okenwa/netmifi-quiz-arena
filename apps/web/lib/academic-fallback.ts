@@ -53,7 +53,7 @@ export const FALLBACK_DEPARTMENTS: DepartmentOption[] =
       universityId: uni.id,
       name: dept.name,
       code: dept.code,
-    }))
+    })),
   );
 
 export interface FallbackCourseItem extends CoursePreviewOption {

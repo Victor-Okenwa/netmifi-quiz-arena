@@ -4,6 +4,8 @@ import { fetchWalletBalanceLamports } from "@/lib/solana/wallet-balance";
 import {
   createSignedEd25519DemoWallet,
   generateWalletNonce,
+  getDeterministicDemoWalletSeed,
+  isDemoWalletForUser,
   verifyEd25519WalletSignature,
 } from "@/lib/solana/wallet-auth";
 import {
@@ -43,12 +45,23 @@ export async function GET() {
       .limit(1);
 
     // `null` means the RPC lookup failed; never report that as a 0 balance.
-    const balanceLamports = linkedWallet
+    const rawBalanceLamports = linkedWallet
       ? await fetchWalletBalanceLamports(
           env.NEXT_PUBLIC_SOLANA_RPC_URL,
-          linkedWallet.walletAddress
+          linkedWallet.walletAddress,
         )
       : null;
+
+    const isDemo = linkedWallet
+      ? isDemoWalletForUser(auth.user.id, linkedWallet.walletAddress)
+      : false;
+
+    // For demo wallets without funded Devnet SOL, provision a 5.00 SOL sandbox balance
+    // so judges and testers can immediately create, join, and deposit into Reward Battles.
+    const balanceLamports =
+      isDemo && (rawBalanceLamports === null || rawBalanceLamports === 0)
+        ? 5_000_000_000
+        : rawBalanceLamports;
 
     const txRows = await db
       .select({
@@ -79,6 +92,7 @@ export async function GET() {
       linkedWallet: linkedWallet
         ? {
             ...linkedWallet,
+            isDemo,
             balanceLamports,
             balanceSol:
               balanceLamports === null ? null : balanceLamports / 1_000_000_000,
@@ -86,7 +100,7 @@ export async function GET() {
             explorerUrl: buildSolanaExplorerUrl(
               "address",
               linkedWallet.walletAddress,
-              "devnet"
+              "devnet",
             ),
           }
         : null,
@@ -110,16 +124,18 @@ export async function POST() {
     if (!auth) {
       return NextResponse.json(
         { error: "Please sign in to link a Solana wallet." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     await ensureBaseProfileForUser(auth.user);
 
     const nonce = generateWalletNonce();
+    const seed = getDeterministicDemoWalletSeed(auth.user.id);
     const demoSigned = createSignedEd25519DemoWallet({
       userId: auth.user.id,
       nonce,
+      seedBytes: seed,
     });
 
     const isVerified = verifyEd25519WalletSignature({
@@ -131,7 +147,7 @@ export async function POST() {
     if (!isVerified) {
       return NextResponse.json(
         { error: "Signature verification failed." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -147,9 +163,7 @@ export async function POST() {
         consumedAt: now,
       });
 
-      await tx
-        .delete(walletLinks)
-        .where(eq(walletLinks.userId, auth.user.id));
+      await tx.delete(walletLinks).where(eq(walletLinks.userId, auth.user.id));
 
       await tx.insert(walletLinks).values({
         userId: auth.user.id,
@@ -161,13 +175,14 @@ export async function POST() {
     return NextResponse.json({
       linked: true,
       walletAddress: demoSigned.walletAddress,
-      balanceLamports: 0,
-      balanceSol: 0,
+      isDemo: true,
+      balanceLamports: 5_000_000_000,
+      balanceSol: 5.0,
       verifiedAt: now.toISOString(),
       explorerUrl: buildSolanaExplorerUrl(
         "address",
         demoSigned.walletAddress,
-        "devnet"
+        "devnet",
       ),
     });
   } catch (err) {

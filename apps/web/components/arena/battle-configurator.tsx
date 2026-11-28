@@ -23,10 +23,7 @@ import {
   Swords,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  REWARD_STAKE_OPTIONS_LAMPORTS,
-  formatSol,
-} from "@repo/validators";
+import { REWARD_STAKE_OPTIONS_LAMPORTS, formatSol } from "@repo/validators";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -59,6 +56,7 @@ const TIMER_OPTIONS = [10, 15, 20, 30] as const;
 interface WalletBalanceResponse {
   linkedWallet?: {
     walletAddress?: string;
+    isDemo?: boolean;
     balanceLamports?: number | null;
   } | null;
 }
@@ -68,7 +66,12 @@ type WalletBalanceState =
   | { status: "loading" }
   | { status: "no-wallet" }
   | { status: "unavailable" }
-  | { status: "ok"; lamports: number; walletAddress: string };
+  | {
+      status: "ok";
+      lamports: number;
+      walletAddress: string;
+      isDemo?: boolean;
+    };
 
 export function BattleConfigurator({
   courses,
@@ -79,15 +82,13 @@ export function BattleConfigurator({
   const router = useRouter();
 
   const defaultCourseId =
-    courses.find((c) => c.id === initialCourseId)?.id ??
-    courses[0]?.id ??
-    "";
+    courses.find((c) => c.id === initialCourseId)?.id ?? courses[0]?.id ?? "";
 
   const [courseId, setCourseId] = useState<string>(defaultCourseId);
 
   const courseTopics = useMemo(
     () => topics.filter((t) => t.courseId === courseId),
-    [topics, courseId]
+    [topics, courseId],
   );
 
   const defaultTopicId =
@@ -102,7 +103,7 @@ export function BattleConfigurator({
   const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [mode, setMode] = useState<"free" | "reward">("free");
   const [stakeAmountLamports, setStakeAmountLamports] = useState<number>(
-    REWARD_STAKE_OPTIONS_LAMPORTS[1] ?? 100_000_000
+    REWARD_STAKE_OPTIONS_LAMPORTS[1] ?? 100_000_000,
   );
   const [walletBalance, setWalletBalance] = useState<WalletBalanceState>({
     status: "loading",
@@ -135,6 +136,7 @@ export function BattleConfigurator({
             status: "ok",
             lamports: linked.balanceLamports,
             walletAddress: linked.walletAddress,
+            isDemo: linked.isDemo,
           });
         } else {
           // RPC lookup failed server-side: unknown, not zero.
@@ -203,7 +205,7 @@ export function BattleConfigurator({
       router.refresh();
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Network error. Please try again."
+        err instanceof Error ? err.message : "Network error. Please try again.",
       );
       setIsLoading(false);
     }
@@ -502,7 +504,7 @@ export function BattleConfigurator({
                         ? "No wallet linked"
                         : walletBalance.status === "unavailable"
                           ? "Balance unavailable"
-                          : `Balance: ${formatSol(walletBalance.lamports)} SOL (${walletBalance.walletAddress.slice(0, 4)}...${walletBalance.walletAddress.slice(-4)})`}
+                          : `${walletBalance.isDemo ? "Demo Balance" : "Balance"}: ${formatSol(walletBalance.lamports)} SOL (${walletBalance.isDemo ? "Demo" : `${walletBalance.walletAddress.slice(0, 4)}...${walletBalance.walletAddress.slice(-4)}`})`}
                   </Badge>
                   {walletBalance.status === "unavailable" ? (
                     <Button
@@ -565,7 +567,9 @@ export function BattleConfigurator({
               ) : walletBalance.status === "ok" && !canAffordSelectedStake ? (
                 <p className="flex items-center gap-1.5 text-xs text-destructive">
                   <AlertCircle className="size-3.5" />
-                  Your balance is too low for a {formatSol(stakeAmountLamports)}{" "}
+                  Your balance is too low for a {formatSol(
+                    stakeAmountLamports,
+                  )}{" "}
                   SOL stake. Pick a smaller amount or top up your wallet.
                 </p>
               ) : null}

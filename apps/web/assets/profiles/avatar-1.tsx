@@ -14,22 +14,40 @@ export function ProfileAvatar1(props: SVGProps<SVGSVGElement>) {
       {...props}
     >
       <defs>
-        <linearGradient id="av1_bg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="av1_bg"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#E11D48" />
           <stop offset="1" stopColor="#881337" />
         </linearGradient>
-        <linearGradient id="av1_visor" x1="34" y1="52" x2="86" y2="64" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="av1_visor"
+          x1="34"
+          y1="52"
+          x2="86"
+          y2="64"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#38BDF8" />
           <stop offset="1" stopColor="#818CF8" />
         </linearGradient>
       </defs>
       <rect width="120" height="120" rx="60" fill="url(#av1_bg)" />
-      <circle cx="60" cy="60" r="52" stroke="#FDA4AF" strokeOpacity="0.25" strokeWidth="2" />
-      {/* Shoulders / Hoodie */}
-      <path
-        d="M22 114C25 93 40 84 60 84C80 84 95 93 98 114"
-        fill="#1E293B"
+      <circle
+        cx="60"
+        cy="60"
+        r="52"
+        stroke="#FDA4AF"
+        strokeOpacity="0.25"
+        strokeWidth="2"
       />
+      {/* Shoulders / Hoodie */}
+      <path d="M22 114C25 93 40 84 60 84C80 84 95 93 98 114" fill="#1E293B" />
       <path
         d="M46 84L60 98L74 84"
         stroke="#FB7185"

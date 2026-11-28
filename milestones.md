@@ -8,30 +8,33 @@
 
 ## 📊 Milestone Status Dashboard
 
-| # | Milestone | Key Workspace Areas | Status |
-|---|---|---|---|
-| **M0** | Foundation, Brand Identity & Persistent Engineering Rules | `apps/web`, `AGENTS.md` | ✅ **COMPLETED** |
-| **M1** | Monorepo Plumbing, Shared Packages & Environment Config | `package.json`, `packages/*`, `.env.example` | ✅ **COMPLETED** |
-| **M2** | Local Docker PostgreSQL & Drizzle Database Architecture | `infrastructure/docker`, `packages/db` | ✅ **COMPLETED** |
-| **M3** | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M4** | Academic Catalog, Dashboard & Arena Lobby UI | `apps/web` | ✅ **COMPLETED** |
-| **M5** | Core Battle Engine & Real-Time Multiplayer Sync | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M6** | Post-Battle Diagnosis, Targeted Practice & Rematch Loop | `apps/web`, `packages/db` | ✅ **COMPLETED** |
-| **M7** | ElevenLabs Voice-Enabled Quiz & Winner Announcements | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
-| **M8** | Firecrawl Question Factory & Human Review Pipeline | `packages/integrations/firecrawl`, `apps/web` | ✅ **COMPLETED** |
-| **M9** | Solana Anchor Reward Escrow Program (Devnet) | `programs/`, `packages/solana` | ✅ **COMPLETED** |
-| **M10** | Wallet Linking & End-to-End Reward Battle Settlement | `packages/solana`, `apps/web` | ✅ **COMPLETED** |
-| **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo | Entire Monorepo | ⏳ **NEXT UP** |
+| #       | Milestone                                                    | Key Workspace Areas                            | Status           |
+| ------- | ------------------------------------------------------------ | ---------------------------------------------- | ---------------- |
+| **M0**  | Foundation, Brand Identity & Persistent Engineering Rules    | `apps/web`, `AGENTS.md`                        | ✅ **COMPLETED** |
+| **M1**  | Monorepo Plumbing, Shared Packages & Environment Config      | `package.json`, `packages/*`, `.env.example`   | ✅ **COMPLETED** |
+| **M2**  | Local Docker PostgreSQL & Drizzle Database Architecture      | `infrastructure/docker`, `packages/db`         | ✅ **COMPLETED** |
+| **M3**  | Student Authentication & Academic Onboarding (Supabase Auth) | `apps/web`, `packages/db`                      | ✅ **COMPLETED** |
+| **M4**  | Academic Catalog, Dashboard & Arena Lobby UI                 | `apps/web`                                     | ✅ **COMPLETED** |
+| **M5**  | Core Battle Engine & Real-Time Multiplayer Sync              | `apps/web`, `packages/db`                      | ✅ **COMPLETED** |
+| **M6**  | Post-Battle Diagnosis, Targeted Practice & Rematch Loop      | `apps/web`, `packages/db`                      | ✅ **COMPLETED** |
+| **M7**  | ElevenLabs Voice-Enabled Quiz & Winner Announcements         | `packages/integrations/elevenlabs`, `apps/web` | ✅ **COMPLETED** |
+| **M8**  | Firecrawl Question Factory & Human Review Pipeline           | `packages/integrations/firecrawl`, `apps/web`  | ✅ **COMPLETED** |
+| **M9**  | Solana Anchor Reward Escrow Program (Devnet)                 | `programs/`, `packages/solana`                 | ✅ **COMPLETED** |
+| **M10** | Wallet Linking & End-to-End Reward Battle Settlement         | `packages/solana`, `apps/web`                  | ✅ **COMPLETED** |
+| **M11** | End-to-End QA, Devnet/Vercel Deployment & Hackathon Demo     | Entire Monorepo                                | ⏳ **NEXT UP**   |
 
 ---
 
 ## Milestone 0: Foundation, Brand Identity & Persistent Engineering Rules
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Establish the monorepo foundation, port the official NetMifi brand identity and design tokens into `apps/web`, ensure `packages/ui` remains unused/empty, and persist the 8 engineering rule categories across the workspace.
 
 ### Completed Deliverables
+
 - [x] Initialized `netmifi-quiz-arena` with Bun (`1.3.2`) and Turborepo (`^2.11.13`).
 - [x] Migrated official NetMifi `favicon.ico`, `LogoIcon`, `MascotIcon`, and local `Lexend` (`--font-sans`) + `Orbitron` (`--font-game`) fonts into `apps/web`.
 - [x] Configured Tailwind CSS v4 with NetMifi `oklch` light/dark color tokens and shadcn/ui in `apps/web` (`components.json`, `lib/utils.ts`, core UI primitives).
@@ -41,12 +44,15 @@ Establish the monorepo foundation, port the official NetMifi brand identity and 
 ---
 
 ## Milestone 1: Monorepo Plumbing, Shared Packages & Environment Config
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Wire up the empty workspace package directories (`packages/db`, `packages/types`, `packages/validators`, `packages/solana`, `packages/integrations/firecrawl`, `packages/integrations/elevenlabs`) with clean TypeScript/Bun configurations and establish type-safe environment variable validation before writing domain code.
 
 ### Scope & Deliverables
+
 - [x] **Workspace Discovery & TypeScript Alignment**:
   - Updated root `package.json` `"workspaces"` array to include nested integrations (`["apps/*", "packages/*", "packages/integrations/*"]`).
   - Aligned TypeScript versions (`^5.9.3`) across root and workspace packages so `bun run check-types` runs without version drift.
@@ -62,18 +68,22 @@ Wire up the empty workspace package directories (`packages/db`, `packages/types`
   - Created server/client environment validation helper (`apps/web/lib/env.ts`) so missing or misconfigured variables fail fast with clear error messages.
 
 ### Acceptance Criteria
+
 - `bun run check-types` succeeds across the entire monorepo with 0 errors.
 - `apps/web` can import types and Zod schemas from `@repo/types` and `@repo/validators`.
 
 ---
 
 ## Milestone 2: Local Docker PostgreSQL & Drizzle Database Architecture
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Stand up the local Docker PostgreSQL environment and implement the complete, production-ready Drizzle ORM relational schema, migration workflow, and academic seed data in `packages/db`.
 
 ### Scope & Deliverables
+
 - [x] **Local Docker PostgreSQL (`infrastructure/docker/docker-compose.yml`)**:
   - Configured PostgreSQL 16 (`postgres:16-alpine`) container with persistent named volume, healthcheck, local port binding (`127.0.0.1:5432:5432`), and environment-driven credentials matching `.env.example`.
 - [x] **Drizzle Client & Config (`packages/db`)**:
@@ -102,18 +112,22 @@ Stand up the local Docker PostgreSQL environment and implement the complete, pro
   - Seed script (`packages/db/src/seed.ts`) populating 6 Nigerian universities (UNILAG, UI, OAU, UNN, FUTO, ABU), Computer Science departments, 3 core courses (`CSC 201`, `CSC 305`, `CSC 309`), 10 topics, and 22 approved battle-ready multiple-choice questions.
 
 ### Acceptance Criteria
+
 - Docker PostgreSQL container starts cleanly and passes healthchecks.
 - Drizzle migrations push/apply cleanly and `bun run db:seed` populates the academic catalog and starter question bank idempotently.
 
 ---
 
 ## Milestone 3: Student Authentication & Academic Onboarding (Supabase Auth)
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Enable students to register, log in, and set up their academic profile (University, Department, Courses) using **Supabase Auth** and **Drizzle**, with zero cryptocurrency wallet requirement.
 
 ### Scope & Deliverables
+
 - [x] **Supabase Auth Integration (`apps/web/lib/supabase/`)**:
   - Server client (`server.ts`), browser client (`client.ts`), admin service-role helper, and Next.js middleware (`apps/web/middleware.ts`) for session refresh using `@supabase/ssr`.
   - Server-side authentication guards (`getCurrentAuthContext()`, `requireAuthUser()`, `requireOnboardedStudent()`) in `apps/web/lib/supabase/auth.ts` that call `supabase.auth.getUser()` and load/sync the student's Drizzle `profile`.
@@ -124,41 +138,49 @@ Enable students to register, log in, and set up their academic profile (Universi
   - Persists profile to PostgreSQL via Drizzle and redirects to the authenticated Arena Hub (`/arena`).
 
 ### Acceptance Criteria
+
 - A new student can sign up with email/password, complete academic onboarding without connecting a wallet, and have their profile persisted in PostgreSQL.
 - Unauthenticated requests to protected routes or API endpoints are rejected on the server.
 
 ---
 
 ## Milestone 4: Academic Catalog, Student Dashboard & Arena Lobby UI
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Build the primary student-facing Arena Dashboard, Course/Topic Explorer, and Battle Creation / Matchmaking Lobby in `apps/web` using the NetMifi design system.
 
 ### Scope & Deliverables
+
 - [x] **Shared Arena Navigation Bar (`apps/web/components/arena/arena-navbar.tsx`)**:
   - Top navbar with Arena Lobby (`/arena`), New Battle (`/arena/new`), Leaderboard (`/leaderboard`), student university/level badge, `<ProfileAvatar />` (`1`–`5` fallback + `avatarUrl`), and Sign Out button.
 - [x] **Arena Dashboard & Matchmaking Lobby (`/arena`)**:
   - Displays student's academic profile, `<ProfileAvatar />`, XP, battles played, victories, win rate, recent battles, Quick-Join by Invite Code card (`quick-join-card.tsx`), Open Challenges feed, and Courses & Battle Topics Explorer.
 - [x] **Course & Topic Battle Configurator (`/arena/new` & `POST /api/battles`)**:
   - Filter by University Course and specific Topic (or All Course Topics), with URL query pre-selection (`?courseId=...&topicId=...`).
-  - Select Battle Mode (**Standard Battle** or **Reward Battle**), Question Count (`3`, `5`, `10`), Timer per Question (`10s`, `15s`, `20s`, `30s`), and Visibility (*Open Lobby* vs. *Private Friend Invite*).
+  - Select Battle Mode (**Standard Battle** or **Reward Battle**), Question Count (`3`, `5`, `10`), Timer per Question (`10s`, `15s`, `20s`, `30s`), and Visibility (_Open Lobby_ vs. _Private Friend Invite_).
   - Creates the battle, assigns approved questions, generates an 8-character invite code, and opens `/arena/battle/[battleId]`.
 - [x] **Leaderboard View (`/leaderboard`)**:
   - Inter-University Standings (`UNILAG`, `UI`, `OAU`, `UNN`, `FUTO`, `ABU`) and Top Student Rankings by XP and victories.
 
 ### Acceptance Criteria
+
 - Authenticated students can browse courses/topics, configure a new battle, generate a shareable challenge code/link, join by invite code, view open battles in the lobby, and inspect the leaderboard.
 
 ---
 
 ## Milestone 5: Core Battle Engine & Real-Time Multiplayer Synchronization
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Implement the server-authoritative quiz battle engine and real-time multiplayer synchronization using **Drizzle transactions** (source of truth) and **Supabase Realtime** (event broadcast & presence).
 
 ### Scope & Deliverables
+
 - [x] **Server-Authoritative Battle Service (`apps/web/lib/battle-engine/engine.ts` & `apps/web/lib/battle-join.ts`)**:
   - Strict state machine transitions: `WAITING → READY → ACTIVE → COMPLETED` (plus `CANCELLED` and `EXPIRED`).
   - `createBattle` (`POST /api/battles`): Validates course/topic availability, selects balanced approved questions, creates battle record.
@@ -174,17 +196,21 @@ Implement the server-authoritative quiz battle engine and real-time multiplayer 
   - Interactive `A / B / C / D` option cards, waiting-for-opponent completion screen, and final Victory/Draw/Diagnosis summary banner.
 
 ### Acceptance Criteria
+
 - Two students in separate browser sessions can create/join a battle, ready up through the 20s 3D countdown, answer timed questions simultaneously with real-time progress updates, and reach a server-verified winner announcement without any answer key exposure in network payloads.
 
 ---
 
 ## Milestone 6: Post-Battle Diagnosis, Targeted Practice & Rematch Loop
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH`**) so every battle turns competition into measurable academic improvement.
 
 ### Scope & Deliverables
+
 - [x] **Post-Battle Diagnosis Engine & UI (`/arena/battle/[battleId]` & `/arena/battle/[battleId]/results`)**:
   - **Winner & Score Summary**: Final scores, accuracy percentage, and average response time comparison with per-participant shadcn Tabs (`Slot 1` & `Slot 2`).
   - **Topic-by-Topic Breakdown**: Visual accuracy cards per topic (`Strong` vs. `Review`) with direct **"Practice Weak Topic"** links.
@@ -196,17 +222,21 @@ Complete the core product loop (**`BATTLE → DIAGNOSIS → PRACTICE → REMATCH
   - "Challenge Opponent to Rematch" button on the diagnosis and practice completion screens that spawns a new battle in the same course/topic and notifies the opponent via Supabase Realtime (`rematch_offered` broadcast banner).
 
 ### Acceptance Criteria
+
 - After completing a battle, both the winner and loser see their topic-level diagnosis, can launch a targeted practice session on their weakest topic, and can initiate a rematch in one click.
 
 ---
 
 ## Milestone 7: ElevenLabs Voice-Enabled Quiz & Winner Announcements
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so questions can be read aloud during battles and battle outcomes are announced by an AI quiz host without duplicate generation calls.
 
 ### Scope & Deliverables
+
 - [x] **ElevenLabs Integration Module (`packages/integrations/elevenlabs`)**:
   - Server-only TTS client using `ELEVENLABS_API_KEY`.
   - Deterministic content hash computation: `sha256(normalizedText + voiceId + modelId)`.
@@ -215,21 +245,25 @@ Integrate **ElevenLabs Text-to-Speech** with **Supabase Storage** caching so que
   - On cache miss: generate MP3 buffer via ElevenLabs → upload to Supabase Storage (`quiz-audio` bucket) → save storage reference and metadata in `audio_assets` → return signed/public URL.
 - [x] **In-Battle Question Audio & Winner Announcement UI (`apps/web/components/arena/voice-audio-button.tsx`)**:
   - Optional "Read Aloud" speaker toggle on active battle and practice questions (plays verbatim question text without blocking the timer).
-  - Spoken winner announcement on the Battle Diagnosis screen (e.g., *"Congratulations! Chidi has won the Data Structures battle with 850 points against 720!"*) with automatic Web Speech / text fallback if TTS is disabled or offline.
+  - Spoken winner announcement on the Battle Diagnosis screen (e.g., _"Congratulations! Chidi has won the Data Structures battle with 850 points against 720!"_) with automatic Web Speech / text fallback if TTS is disabled or offline.
 
 ### Acceptance Criteria
+
 - Opening a question or battle result plays the ElevenLabs voice audio; subsequent plays of the same question reuse the cached Supabase Storage audio file with zero duplicate ElevenLabs API requests.
 - If `ELEVENLABS_API_KEY` is absent or an API error occurs, the battle and results page function normally with text fallback.
 
 ---
 
 ## Milestone 8: Firecrawl Question Factory & Human Review Pipeline
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Build the **Question Factory** (`SOURCE URL → FIRECRAWL → NORMALIZATION → AI QUESTION GENERATION → HUMAN REVIEW → APPROVED QUESTION BANK`) to scale course-specific question banks safely.
 
 ### Scope & Deliverables
+
 - [x] **Firecrawl Extraction & Normalization Module (`packages/integrations/firecrawl`)**:
   - Server-only Firecrawl client with `FIRECRAWL_API_KEY`.
   - Strict URL validation and SSRF protection (`isSafeIngestionUrl`: HTTPS only, blocks private/loopback/cloud metadata IP ranges).
@@ -248,18 +282,22 @@ Build the **Question Factory** (`SOURCE URL → FIRECRAWL → NORMALIZATION → 
   - Accessible from the top navigation profile dropdown menu (`ProfileMenuPopover`).
 
 ### Acceptance Criteria
+
 - An authorized reviewer can submit an educational URL, see extracted content turned into draft questions (`review_required`), edit and approve a question, and immediately use that approved question in a live battle.
 - Unreviewed (`draft`) or `rejected` questions are never served in battles.
 
 ---
 
 ## Milestone 9: Solana Anchor Reward Escrow Program (Devnet)
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Build, test, and verify the custom Rust + Anchor smart contract in `programs/` and its TypeScript SDK in `packages/solana` for trust-minimized Devnet reward-battle escrow and settlement.
 
 ### Scope & Deliverables
+
 - [x] **Solana / Anchor Toolchain & Workspace Setup (`programs/`)**:
   - Configured `programs/Anchor.toml` targeting Solana **Devnet** (`Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS`) and `programs/Cargo.toml` workspace.
 - [x] **Anchor Escrow Smart Contract (`programs/quiz-arena-escrow/src/lib.rs`)**:
@@ -276,17 +314,21 @@ Build, test, and verify the custom Rust + Anchor smart contract in `programs/` a
   - Exported `QUIZ_ARENA_ESCROW_IDL`, 8-byte SHA-256 instruction/account discriminators, deterministic PDA derivation helpers (`deriveBattleEscrowPda`, `deriveBattleVaultPda`), Borsh state serializer/decoder (`encodeBattleEscrowState`, `decodeBattleEscrowState`), client-safe transaction builders (`buildCreateBattleInstruction`, `buildJoinBattleInstruction`, `buildCancelBattleInstruction`, `buildRefundExpiredBattleInstruction`), server-only settlement builders (`buildFinalizeBattleInstruction`, `parseAuthorityKeypair`, `executeFinalizeBattleOnChain`), and custom error decoder (`decodeEscrowProgramError`).
 
 ### Acceptance Criteria
+
 - Verified via `cargo test` in `programs/` (6/6 passed) and `bun test` in `packages/solana` (6/6 passed, 40 assertions) covering the happy path (create → join → finalize payout), 50/50 draw split, creator cancellation refund, expired battle refund, and rejection of self-play, unauthorized signers, or double-settlement attempts.
 
 ---
 
 ## Milestone 10: Wallet Linking & End-to-End Reward Battle Settlement
+
 **Status:** ✅ **COMPLETED**
 
 ### Goal
+
 Connect the Next.js application to the Solana Devnet escrow program so students who want optional financial stakes can link a verified wallet, fund a reward battle, and receive automatic on-chain settlement upon battle completion.
 
 ### Scope & Deliverables
+
 - [x] **Cryptographic Wallet Linking (`/settings/wallet` & Battle Lobby)**:
   - Dual wallet support in `apps/web/components/wallet/wallet-link-studio.tsx`: supports injected Solana browser wallets (`window.solana` — Phantom/Solflare) and a 1-Click Cryptographic Ed25519 Devnet Demo Wallet.
   - Server endpoints (`POST /api/wallet/nonce`, `POST /api/wallet/verify`, `GET/POST/DELETE /api/wallet`) generating expiring challenge nonces (`wallet_nonces`), verifying 64-byte Ed25519 signatures via `node:crypto`, and enforcing 1:1 persistence in `wallet_links`.
@@ -297,18 +339,22 @@ Connect the Next.js application to the Solana Devnet escrow program so students 
   - When `submitParticipantAnswer` completes a Reward Battle off-chain, `settleCompletedRewardBattle` automatically signs the `finalize_battle` instruction with `SOLANA_AUTHORITY_SECRET_KEY`, records the settlement transaction in `reward_transactions` and `battles.settlementTxSignature`, and renders the **Solana Devnet Escrow Settlement Card** with Solana Explorer Devnet links on the Battle Diagnosis screen.
 
 ### Acceptance Criteria
+
 - Free battles continue to work with zero wallet connection.
 - Two wallet-linked students can deposit Devnet test stakes into a Reward Battle, play the quiz battle, and see the on-chain escrow automatically settled to the winner (or split 50/50 on draw) with a verifiable Devnet transaction signature.
 
 ---
 
 ## Milestone 11: End-to-End QA, Deployment & Dev3pack Hackathon Demo
+
 **Status:** ⬜ **PENDING**
 
 ### Goal
+
 Verify all security and quality invariants, deploy the application and database to production (Supabase + Vercel + Solana Devnet), and prepare a crisp end-to-end hackathon demonstration walkthrough.
 
 ### Scope & Deliverables
+
 - [ ] **Critical-Path Test Suite**:
   - Automated unit/integration tests for battle scoring, answer-key stripping, diagnosis calculations, URL SSRF validation, and Anchor escrow state transitions.
 - [ ] **Deployment & Environment Verification**:

@@ -17,18 +17,18 @@
  * These correspond to CSS variable names in globals.css.
  */
 export const fontFamilies = {
-	sans: "Inter",
-	mono: "JetBrains Mono",
+  sans: "Inter",
+  mono: "JetBrains Mono",
 } as const;
 
 /**
  * Font weights available in the design system.
  */
 export const fontWeights = {
-	regular: 400,
-	medium: 500,
-	semibold: 600,
-	bold: 700,
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
 } as const;
 
 export type FontFamily = keyof typeof fontFamilies;

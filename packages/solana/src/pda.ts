@@ -30,7 +30,7 @@ export function normalizeBattleIdToSeed(rawBattleId: string): string {
   const byteLen = Buffer.byteLength(compact, "utf8");
   if (byteLen === 0 || byteLen > MAX_BATTLE_SEED_LEN) {
     throw new Error(
-      `Invalid battle seed length (${byteLen} bytes): must be between 1 and ${MAX_BATTLE_SEED_LEN} bytes after stripping hyphens.`
+      `Invalid battle seed length (${byteLen} bytes): must be between 1 and ${MAX_BATTLE_SEED_LEN} bytes after stripping hyphens.`,
     );
   }
   return compact;
@@ -48,7 +48,7 @@ function resolveProgramPublicKey(programId?: PublicKey | string): PublicKey {
  */
 export function deriveBattleEscrowPda(
   battleId: string,
-  programId?: PublicKey | string
+  programId?: PublicKey | string,
 ): DerivedBattlePda {
   const battleSeed = normalizeBattleIdToSeed(battleId);
   const programPubkey = resolveProgramPublicKey(programId);
@@ -58,7 +58,7 @@ export function deriveBattleEscrowPda(
       Buffer.from(BATTLE_ESCROW_SEED_PREFIX, "utf8"),
       Buffer.from(battleSeed, "utf8"),
     ],
-    programPubkey
+    programPubkey,
   );
 
   return { pda, bump, battleSeed };
@@ -70,7 +70,7 @@ export function deriveBattleEscrowPda(
  */
 export function deriveBattleVaultPda(
   battleId: string,
-  programId?: PublicKey | string
+  programId?: PublicKey | string,
 ): DerivedBattlePda {
   const battleSeed = normalizeBattleIdToSeed(battleId);
   const programPubkey = resolveProgramPublicKey(programId);
@@ -80,7 +80,7 @@ export function deriveBattleVaultPda(
       Buffer.from(BATTLE_VAULT_SEED_PREFIX, "utf8"),
       Buffer.from(battleSeed, "utf8"),
     ],
-    programPubkey
+    programPubkey,
   );
 
   return { pda, bump, battleSeed };

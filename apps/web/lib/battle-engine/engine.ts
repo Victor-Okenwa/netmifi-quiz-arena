@@ -1,6 +1,4 @@
-import {
-  getOrCreateCachedAudioAsset,
-} from "@/lib/audio/tts-cache";
+import { getOrCreateCachedAudioAsset } from "@/lib/audio/tts-cache";
 import {
   getActiveSpectatorCount,
   recordSpectatorHeartbeat,
@@ -136,7 +134,7 @@ export function calculateQuestionPoints(params: {
   const timeLimitMs = Math.max(1000, params.timeLimitSeconds * 1000);
   const clampedElapsedMs = Math.max(
     0,
-    Math.min(timeLimitMs, params.clientElapsedMs)
+    Math.min(timeLimitMs, params.clientElapsedMs),
   );
   const speedRatio = 1 - clampedElapsedMs / timeLimitMs;
   const speedBonus = Math.round(50 * speedRatio);
@@ -152,7 +150,7 @@ export function calculateQuestionPoints(params: {
  */
 export async function getSanitizedBattleArenaState(
   battleId: string,
-  userId: string
+  userId: string,
 ): Promise<SanitizedBattleArenaState | null> {
   const [battleRow] = await db
     .select({
@@ -549,8 +547,8 @@ export async function submitParticipantAnswer(params: {
       .where(
         and(
           eq(battleParticipants.battleId, params.battleId),
-          eq(battleParticipants.userId, params.userId)
-        )
+          eq(battleParticipants.userId, params.userId),
+        ),
       )
       .limit(1);
 
@@ -570,8 +568,8 @@ export async function submitParticipantAnswer(params: {
       .where(
         and(
           eq(battleQuestions.battleId, params.battleId),
-          eq(battleQuestions.questionId, params.questionId)
-        )
+          eq(battleQuestions.questionId, params.questionId),
+        ),
       )
       .limit(1);
 
@@ -589,15 +587,15 @@ export async function submitParticipantAnswer(params: {
         and(
           eq(answerSubmissions.battleId, params.battleId),
           eq(answerSubmissions.userId, params.userId),
-          eq(answerSubmissions.questionId, params.questionId)
-        )
+          eq(answerSubmissions.questionId, params.questionId),
+        ),
       )
       .limit(1);
 
     const timeLimitMs = battleQuestion.timeLimitSeconds * 1000;
     const clampedResponseTimeMs = Math.max(
       200,
-      Math.min(timeLimitMs, params.clientElapsedMs)
+      Math.min(timeLimitMs, params.clientElapsedMs),
     );
 
     let pointsAwarded = existingSub?.pointsAwarded ?? 0;
@@ -668,7 +666,7 @@ export async function submitParticipantAnswer(params: {
       .where(eq(answerSubmissions.battleId, params.battleId));
 
     const mySubmissions = allSubmissions.filter(
-      (s) => s.userId === params.userId
+      (s) => s.userId === params.userId,
     );
     const myAnsweredCount = mySubmissions.length;
     const myFinished = myAnsweredCount >= totalQuestions;
@@ -697,7 +695,7 @@ export async function submitParticipantAnswer(params: {
       allParticipants.length === 2 &&
       allParticipants.every((p) => {
         const count = allSubmissions.filter(
-          (s) => s.userId === p.userId
+          (s) => s.userId === p.userId,
         ).length;
         return count >= totalQuestions;
       });
@@ -733,7 +731,7 @@ export async function submitParticipantAnswer(params: {
         allBattleQuestions.map((q) => [
           q.questionId,
           { topicId: q.topicId, topicName: q.topicName },
-        ])
+        ]),
       );
 
       const participantDiagnoses: Record<string, StoredParticipantDiagnosis> =
@@ -745,7 +743,7 @@ export async function submitParticipantAnswer(params: {
         const totalCorrect = userSubs.filter((s) => s.isCorrect).length;
         const totalTime = userSubs.reduce(
           (acc, s) => acc + s.responseTimeMs,
-          0
+          0,
         );
 
         const topicStats = new Map<
@@ -783,7 +781,7 @@ export async function submitParticipantAnswer(params: {
         }
 
         const topicBreakdowns: StoredTopicBreakdown[] = Array.from(
-          topicStats.values()
+          topicStats.values(),
         ).map((t) => {
           const accuracyPercent =
             t.totalQuestions > 0

@@ -11,7 +11,7 @@ export async function createServerSupabaseClient() {
   const env = getServerEnv();
   if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables."
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.",
     );
   }
 
@@ -30,7 +30,7 @@ export async function createServerSupabaseClient() {
             name: string;
             value: string;
             options?: Record<string, unknown>;
-          }[]
+          }[],
         ) {
           try {
             for (const { name, value, options } of cookiesToSet) {
@@ -42,7 +42,7 @@ export async function createServerSupabaseClient() {
           }
         },
       },
-    }
+    },
   );
 }
 
@@ -64,6 +64,6 @@ export function createAdminSupabaseClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
-    }
+    },
   );
 }

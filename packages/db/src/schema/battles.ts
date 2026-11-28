@@ -64,7 +64,7 @@ export const battles = pgTable(
     isDraw: boolean("is_draw").notNull().default(false),
     winnerAnnouncementAudioId: uuid("winner_announcement_audio_id").references(
       () => audioAssets.id,
-      { onDelete: "set null" }
+      { onDelete: "set null" },
     ),
     settlementTxSignature: text("settlement_tx_signature"),
     startedAt: timestamp("started_at", { withTimezone: true }),
@@ -79,7 +79,7 @@ export const battles = pgTable(
     index("battles_status_mode_idx").on(table.status, table.mode),
     index("battles_course_topic_idx").on(table.courseId, table.topicId),
     index("battles_creator_user_id_idx").on(table.creatorUserId),
-  ]
+  ],
 );
 
 export const battleParticipants = pgTable(
@@ -107,14 +107,14 @@ export const battleParticipants = pgTable(
   (table) => [
     uniqueIndex("battle_participants_battle_user_idx").on(
       table.battleId,
-      table.userId
+      table.userId,
     ),
     uniqueIndex("battle_participants_battle_slot_idx").on(
       table.battleId,
-      table.slotIndex
+      table.slotIndex,
     ),
     index("battle_participants_user_id_idx").on(table.userId),
-  ]
+  ],
 );
 
 export const battleQuestions = pgTable(
@@ -133,13 +133,13 @@ export const battleQuestions = pgTable(
   (table) => [
     uniqueIndex("battle_questions_battle_question_idx").on(
       table.battleId,
-      table.questionId
+      table.questionId,
     ),
     uniqueIndex("battle_questions_battle_order_idx").on(
       table.battleId,
-      table.orderIndex
+      table.orderIndex,
     ),
-  ]
+  ],
 );
 
 /**
@@ -171,13 +171,13 @@ export const answerSubmissions = pgTable(
     uniqueIndex("answer_submissions_battle_user_question_idx").on(
       table.battleId,
       table.userId,
-      table.questionId
+      table.questionId,
     ),
     index("answer_submissions_battle_user_idx").on(
       table.battleId,
-      table.userId
+      table.userId,
     ),
-  ]
+  ],
 );
 
 export const battleResults = pgTable(
@@ -200,5 +200,5 @@ export const battleResults = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("battle_results_battle_id_idx").on(table.battleId)]
+  (table) => [uniqueIndex("battle_results_battle_id_idx").on(table.battleId)],
 );

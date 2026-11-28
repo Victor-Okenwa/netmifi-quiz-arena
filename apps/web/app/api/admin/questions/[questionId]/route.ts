@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ questionId: string }> }
+  { params }: { params: Promise<{ questionId: string }> },
 ) {
   try {
     const auth = await getCurrentAuthContext();
@@ -15,7 +15,10 @@ export async function PATCH(
 
     const { questionId } = await params;
     if (!questionId) {
-      return NextResponse.json({ error: "Missing question ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing question ID" },
+        { status: 400 },
+      );
     }
 
     const body = await request.json();
@@ -24,12 +27,17 @@ export async function PATCH(
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       return NextResponse.json(
-        { error: issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid review parameters." },
-        { status: 400 }
+        {
+          error: issue
+            ? `${issue.path.join(".")}: ${issue.message}`
+            : "Invalid review parameters.",
+        },
+        { status: 400 },
       );
     }
 
-    const targetStatus = parsed.data.action === "approve" ? "approved" : "rejected";
+    const targetStatus =
+      parsed.data.action === "approve" ? "approved" : "rejected";
 
     // Build update object
     const updateValues: Record<string, unknown> = {
@@ -62,7 +70,10 @@ export async function PATCH(
       });
 
     if (!updatedQuestion) {
-      return NextResponse.json({ error: "Question not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Question not found." },
+        { status: 404 },
+      );
     }
 
     // Update options if modified during review
@@ -77,8 +88,8 @@ export async function PATCH(
             .where(
               and(
                 eq(questionOptions.questionId, questionId),
-                eq(questionOptions.optionKey, key)
-              )
+                eq(questionOptions.optionKey, key),
+              ),
             );
         }
       }
@@ -91,7 +102,8 @@ export async function PATCH(
       message: `Question marked as ${updatedQuestion.approvalStatus}.`,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
+    const message =
+      err instanceof Error ? err.message : "Internal Server Error";
     console.error("[PATCH /api/admin/questions/[questionId]] Error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }

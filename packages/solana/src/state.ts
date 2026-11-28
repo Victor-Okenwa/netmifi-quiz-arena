@@ -35,11 +35,11 @@ export interface DecodedBattleEscrowState {
  * (8-byte account discriminator + Borsh-encoded fields).
  */
 export function encodeBattleEscrowState(
-  state: DecodedBattleEscrowState
+  state: DecodedBattleEscrowState,
 ): Buffer {
   const seedBytes = Buffer.from(
     normalizeBattleIdToSeed(state.battleSeed),
-    "utf8"
+    "utf8",
   );
   // Layout size:
   // 8 (discriminator)
@@ -113,20 +113,20 @@ export function encodeBattleEscrowState(
  * Deserializes an on-chain `BattleEscrowState` account buffer and verifies its Anchor discriminator.
  */
 export function decodeBattleEscrowState(
-  rawData: Uint8Array | Buffer
+  rawData: Uint8Array | Buffer,
 ): DecodedBattleEscrowState {
   const buf = Buffer.isBuffer(rawData) ? rawData : Buffer.from(rawData);
 
   if (buf.length < 12) {
     throw new Error(
-      `Invalid BattleEscrowState account data: buffer too short (${buf.length} bytes).`
+      `Invalid BattleEscrowState account data: buffer too short (${buf.length} bytes).`,
     );
   }
 
   const actualDisc = buf.subarray(0, 8);
   if (!actualDisc.equals(BATTLE_ESCROW_ACCOUNT_DISCRIMINATOR)) {
     throw new Error(
-      "Invalid BattleEscrowState account discriminator: data does not belong to BattleEscrowState."
+      "Invalid BattleEscrowState account discriminator: data does not belong to BattleEscrowState.",
     );
   }
 
@@ -136,7 +136,7 @@ export function decodeBattleEscrowState(
 
   if (seedLen === 0 || seedLen > 32 || buf.length < offset + seedLen + 180) {
     throw new Error(
-      `Corrupted BattleEscrowState account layout (seedLen=${seedLen}, totalLen=${buf.length}).`
+      `Corrupted BattleEscrowState account layout (seedLen=${seedLen}, totalLen=${buf.length}).`,
     );
   }
 
@@ -214,7 +214,7 @@ export function decodeBattleEscrowState(
 export async function fetchOnChainBattleEscrow(
   connection: Connection,
   battleId: string,
-  programId?: PublicKey | string
+  programId?: PublicKey | string,
 ): Promise<DecodedBattleEscrowState | null> {
   const { pda } = deriveBattleEscrowPda(battleId, programId);
   const accountInfo = await connection.getAccountInfo(pda, "confirmed");

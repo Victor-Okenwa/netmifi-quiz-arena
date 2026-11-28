@@ -19,7 +19,7 @@ export const ESCROW_ERROR_BY_CODE: Record<number, DecodedEscrowError> =
         name: err.name,
         message: err.msg,
       },
-    ])
+    ]),
   );
 
 /**
@@ -27,7 +27,7 @@ export const ESCROW_ERROR_BY_CODE: Record<number, DecodedEscrowError> =
  * from an RPC error or simulation failure message.
  */
 export function decodeEscrowProgramError(
-  error: unknown
+  error: unknown,
 ): DecodedEscrowError | null {
   if (typeof error === "number" && ESCROW_ERROR_BY_CODE[error]) {
     return ESCROW_ERROR_BY_CODE[error] ?? null;

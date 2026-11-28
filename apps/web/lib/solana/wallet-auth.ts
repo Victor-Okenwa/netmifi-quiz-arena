@@ -6,6 +6,7 @@
  */
 
 import {
+  createHash,
   createPrivateKey,
   createPublicKey,
   generateKeyPairSync,
@@ -20,19 +21,49 @@ import {
 } from "@repo/solana";
 
 /**
+ * Returns a deterministic 32-byte Ed25519 seed for a student's Demo Wallet.
+ * This guarantees the user always retains the same persistent demo address
+ * and enables server-side transaction signing on behalf of the demo wallet.
+ */
+export function getDeterministicDemoWalletSeed(userId: string): Uint8Array {
+  const hash = createHash("sha256")
+    .update("netmifi:devnet:demo-wallet:")
+    .update(userId)
+    .digest();
+  return new Uint8Array(hash);
+}
+
+/**
+ * Checks whether the given address is the user's persistent Demo Wallet.
+ */
+export function isDemoWalletForUser(
+  userId: string,
+  walletAddress: string,
+): boolean {
+  try {
+    const seed = getDeterministicDemoWalletSeed(userId);
+    const demo = createSignedEd25519DemoWallet({
+      userId,
+      nonce: "check-address",
+      seedBytes: seed,
+    });
+    return demo.walletAddress === walletAddress;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fixed 12-byte ASN.1 DER SPKI prefix for a raw 32-byte Ed25519 public key (RFC 8410).
  */
-const ED25519_SPKI_DER_PREFIX = Buffer.from(
-  "302a300506032b6570032100",
-  "hex"
-);
+const ED25519_SPKI_DER_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 
 /**
  * Fixed 16-byte ASN.1 DER PKCS#8 prefix for a raw 32-byte Ed25519 private seed (RFC 8410).
  */
 const ED25519_PKCS8_DER_PREFIX = Buffer.from(
   "302e020100300506032b657004220420",
-  "hex"
+  "hex",
 );
 
 export interface WalletChallengePayload {
@@ -53,7 +84,7 @@ export function generateWalletNonce(): string {
  * to prove cryptographic ownership of `walletAddress`.
  */
 export function buildWalletChallengeMessage(
-  params: WalletChallengePayload
+  params: WalletChallengePayload,
 ): string {
   return [
     "Netmifi Quiz Arena — Solana Wallet Ownership Verification",
@@ -152,7 +183,7 @@ export function createSignedEd25519DemoWallet(params: {
   const sigBuffer = cryptoSign(
     null,
     Buffer.from(message, "utf8"),
-    privateKeyObj
+    privateKeyObj,
   );
 
   return {

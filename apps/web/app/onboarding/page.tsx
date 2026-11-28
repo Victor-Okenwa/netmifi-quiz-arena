@@ -4,22 +4,12 @@ import {
   FALLBACK_DEPARTMENTS,
   FALLBACK_UNIVERSITIES,
 } from "@/lib/academic-fallback";
-import {
-  ensureBaseProfileForUser,
-  requireAuthUser,
-} from "@/lib/supabase/auth";
-import {
-  asc,
-  courses,
-  db,
-  departments,
-  universities,
-} from "@repo/db";
+import { ensureBaseProfileForUser, requireAuthUser } from "@/lib/supabase/auth";
+import { asc, courses, db, departments, universities } from "@repo/db";
 
 export default async function OnboardingPage() {
   const { user, profile: existingProfile } = await requireAuthUser();
-  const profile =
-    existingProfile ?? (await ensureBaseProfileForUser(user));
+  const profile = existingProfile ?? (await ensureBaseProfileForUser(user));
 
   let allUniversities = FALLBACK_UNIVERSITIES;
   let allDepartments = FALLBACK_DEPARTMENTS;

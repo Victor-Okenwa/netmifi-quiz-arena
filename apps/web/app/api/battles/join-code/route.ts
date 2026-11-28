@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to join or spectate a battle." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -84,14 +84,14 @@ export async function POST(request: Request) {
         {
           error: `No battle room found matching "${parsedCode ?? parsedBattleId}". Check the code and try again.`,
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (battle.status === "CANCELLED" || battle.status === "EXPIRED") {
       return NextResponse.json(
         { error: "This battle invitation has expired or was cancelled." },
-        { status: 410 }
+        { status: 410 },
       );
     }
 

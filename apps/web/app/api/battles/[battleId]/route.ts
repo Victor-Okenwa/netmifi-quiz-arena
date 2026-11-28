@@ -80,7 +80,7 @@ async function deleteCreatorBattleRoom(battleId: string, callerUserId: string) {
     .where(eq(battleParticipants.battleId, battleId));
 
   const opponentJoined = participants.some(
-    (p) => p.slotIndex === 2 || p.userId !== callerUserId
+    (p) => p.slotIndex === 2 || p.userId !== callerUserId,
   );
 
   if (opponentJoined) {
@@ -205,7 +205,7 @@ export async function GET(request: Request, context: RouteContext) {
     if (!snapshot) {
       return NextResponse.json(
         { error: "Battle room not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -213,17 +213,17 @@ export async function GET(request: Request, context: RouteContext) {
       const auth = await getCurrentAuthContext();
       if (auth) {
         const isParticipant = snapshot.participants.some(
-          (p) => p.userId === auth.user.id
+          (p) => p.userId === auth.user.id,
         );
         if (!isParticipant) {
           snapshot.spectatorCount = recordSpectatorHeartbeat(
             battleId,
-            auth.user.id
+            auth.user.id,
           );
         } else {
           snapshot.spectatorCount = removeSpectatorHeartbeat(
             battleId,
-            auth.user.id
+            auth.user.id,
           );
         }
       }
@@ -233,7 +233,7 @@ export async function GET(request: Request, context: RouteContext) {
   } catch {
     return NextResponse.json(
       { error: "Failed to load battle status." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -244,7 +244,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to interact with this battle room." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -256,12 +256,12 @@ export async function POST(request: Request, context: RouteContext) {
     if (action === "delete_room") {
       const outcome = await deleteCreatorBattleRoom(
         battleId,
-        authContext.user.id
+        authContext.user.id,
       );
       if (!outcome.ok) {
         return NextResponse.json(
           { error: outcome.error },
-          { status: outcome.status }
+          { status: outcome.status },
         );
       }
       return NextResponse.json({
@@ -275,7 +275,7 @@ export async function POST(request: Request, context: RouteContext) {
       if (!outcome.joined) {
         return NextResponse.json(
           { error: outcome.error ?? "Unable to join battle room." },
-          { status: 409 }
+          { status: 409 },
         );
       }
       const snapshot = await getBattleLobbySnapshot(battleId);
@@ -302,7 +302,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!battle) {
       return NextResponse.json(
         { error: "Battle room not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -313,7 +313,7 @@ export async function POST(request: Request, context: RouteContext) {
     ) {
       return NextResponse.json(
         { error: "The battle has already started or ended." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -330,13 +330,13 @@ export async function POST(request: Request, context: RouteContext) {
       .orderBy(asc(battleParticipants.slotIndex));
 
     const callerParticipant = participants.find(
-      (p) => p.userId === authContext.user.id
+      (p) => p.userId === authContext.user.id,
     );
 
     if (!callerParticipant) {
       return NextResponse.json(
         { error: "You are not a participant in this battle room." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -346,7 +346,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (bothCurrentlyReady && battle.startedAt) {
       const remainingSeconds = Math.ceil(
-        (battle.startedAt.getTime() - Date.now()) / 1000
+        (battle.startedAt.getTime() - Date.now()) / 1000,
       );
       if (remainingSeconds <= LOCK_THRESHOLD_SECONDS) {
         return NextResponse.json(
@@ -354,7 +354,7 @@ export async function POST(request: Request, context: RouteContext) {
             error:
               "Countdown is under 10 seconds! Ready state and leaving are now locked.",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -372,7 +372,7 @@ export async function POST(request: Request, context: RouteContext) {
             error:
               "Please deposit your SOL stake into the Solana Devnet Escrow Vault before locking in Ready.",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -383,7 +383,7 @@ export async function POST(request: Request, context: RouteContext) {
           .where(eq(battleParticipants.id, callerParticipant.id));
 
         const updatedParticipants = participants.map((p) =>
-          p.id === callerParticipant.id ? { ...p, isReady: nextReadyState } : p
+          p.id === callerParticipant.id ? { ...p, isReady: nextReadyState } : p,
         );
 
         const nowBothReady =
@@ -392,7 +392,7 @@ export async function POST(request: Request, context: RouteContext) {
 
         if (nowBothReady) {
           const countdownEndsAt = new Date(
-            Date.now() + COUNTDOWN_DURATION_SECONDS * 1000
+            Date.now() + COUNTDOWN_DURATION_SECONDS * 1000,
           );
           await tx
             .update(battles)
@@ -423,7 +423,7 @@ export async function POST(request: Request, context: RouteContext) {
       if (callerParticipant.slotIndex !== 2) {
         return NextResponse.json(
           { error: "Only the opponent in Slot 2 can leave this room." },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -434,8 +434,8 @@ export async function POST(request: Request, context: RouteContext) {
             and(
               eq(battleParticipants.battleId, battleId),
               eq(battleParticipants.userId, authContext.user.id),
-              eq(battleParticipants.slotIndex, 2)
-            )
+              eq(battleParticipants.slotIndex, 2),
+            ),
           );
 
         await tx
@@ -467,20 +467,20 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to delete this battle room." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { battleId } = await context.params;
     const outcome = await deleteCreatorBattleRoom(
       battleId,
-      authContext.user.id
+      authContext.user.id,
     );
 
     if (!outcome.ok) {
       return NextResponse.json(
         { error: outcome.error },
-        { status: outcome.status }
+        { status: outcome.status },
       );
     }
 

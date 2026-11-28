@@ -29,7 +29,7 @@ const serverEnvSchema = publicEnvSchema.extend({
     .string()
     .min(1)
     .default(
-      "postgresql://netmifi:netmifi_local_password@127.0.0.1:5432/netmifi_quiz_arena"
+      "postgresql://netmifi:netmifi_local_password@127.0.0.1:5432/netmifi_quiz_arena",
     ),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   SOLANA_PROGRAM_ID: z
@@ -70,7 +70,7 @@ export function getPublicEnv(): PublicEnv {
 export function getServerEnv(): ServerEnv {
   if (typeof window !== "undefined") {
     throw new Error(
-      "getServerEnv() must only be called on the server, never in client code."
+      "getServerEnv() must only be called on the server, never in client code.",
     );
   }
 

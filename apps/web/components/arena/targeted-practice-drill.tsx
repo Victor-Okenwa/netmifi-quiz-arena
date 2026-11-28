@@ -97,11 +97,11 @@ export function TargetedPracticeDrill({
 
   const answeredList = useMemo(
     () => Object.values(answersByQuestionId),
-    [answersByQuestionId]
+    [answersByQuestionId],
   );
   const correctCount = useMemo(
     () => answeredList.filter((a) => a.isCorrect).length,
-    [answeredList]
+    [answeredList],
   );
   const accuracyPercent =
     answeredList.length > 0
@@ -176,7 +176,7 @@ export function TargetedPracticeDrill({
       router.push(
         `/arena/new?courseId=${selectedCourseId}${
           selectedTopicIds[0] ? `&topicId=${selectedTopicIds[0]}` : ""
-        }`
+        }`,
       );
       return;
     }
@@ -300,7 +300,9 @@ export function TargetedPracticeDrill({
                 }`}
               >
                 <Badge
-                  variant={selectedTopicIds.length === 0 ? "default" : "outline"}
+                  variant={
+                    selectedTopicIds.length === 0 ? "default" : "outline"
+                  }
                   className="cursor-pointer text-[11px]"
                 >
                   All {activeCourse?.code} Topics
@@ -479,7 +481,7 @@ export function TargetedPracticeDrill({
                 style={{
                   width: `${Math.round(
                     ((currentIndex + (isChecked ? 1 : 0)) / totalQuestions) *
-                      100
+                      100,
                   )}%`,
                 }}
               />

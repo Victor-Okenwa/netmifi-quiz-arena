@@ -13,10 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  FALLBACK_COURSES,
-  FALLBACK_TOPICS,
-} from "@/lib/academic-fallback";
+import { FALLBACK_COURSES, FALLBACK_TOPICS } from "@/lib/academic-fallback";
 import { getActiveSpectatorCount } from "@/lib/battle-engine/spectator-presence";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import {
@@ -135,8 +132,8 @@ export default async function ArenaPage() {
           .where(
             and(
               inArray(battles.status, ["WAITING", "READY", "ACTIVE"]),
-              eq(battles.isPrivate, false)
-            )
+              eq(battles.isPrivate, false),
+            ),
           )
           .orderBy(desc(battles.createdAt))
           .limit(10),
@@ -248,7 +245,11 @@ export default async function ArenaPage() {
                   </Button>
                 </Link>
                 <Link href="/leaderboard" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full gap-2 sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full gap-2 sm:w-auto"
+                  >
                     <Trophy className="size-4 text-primary" />
                     Rankings
                   </Button>
@@ -379,8 +380,7 @@ export default async function ArenaPage() {
                                   className="gap-1 text-[10px]"
                                 >
                                   <Coins className="size-3 text-primary" />
-                                  {formatSol(battle.stakeAmountLamports)}{" "}
-                                  SOL
+                                  {formatSol(battle.stakeAmountLamports)} SOL
                                 </Badge>
                               ) : null}
                             </div>
@@ -501,7 +501,7 @@ export default async function ArenaPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {availableCourses.map((course) => {
               const courseTopics = availableTopics.filter(
-                (t) => t.courseId === course.id
+                (t) => t.courseId === course.id,
               );
               return (
                 <Card
@@ -551,7 +551,11 @@ export default async function ArenaPage() {
                       href={`/arena/new?courseId=${course.id}`}
                       className="w-full"
                     >
-                      <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 text-xs"
+                      >
                         <Swords className="size-3.5 text-primary" />
                         Battle
                       </Button>
@@ -560,7 +564,11 @@ export default async function ArenaPage() {
                       href={`/arena/practice?courseId=${course.id}`}
                       className="w-full"
                     >
-                      <Button variant="secondary" size="sm" className="w-full gap-1.5 text-xs">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full gap-1.5 text-xs"
+                      >
                         <BookOpen className="size-3.5 text-primary" />
                         Practice
                       </Button>

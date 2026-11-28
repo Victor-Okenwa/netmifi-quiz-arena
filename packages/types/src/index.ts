@@ -4,12 +4,7 @@
  */
 
 export type BattleStatus =
-  | "WAITING"
-  | "READY"
-  | "ACTIVE"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "EXPIRED";
+  "WAITING" | "READY" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "EXPIRED";
 
 export type BattleMode = "free" | "reward";
 

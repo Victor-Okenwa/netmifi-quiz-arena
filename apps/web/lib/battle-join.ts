@@ -1,11 +1,4 @@
-import {
-  and,
-  asc,
-  battleParticipants,
-  battles,
-  db,
-  eq,
-} from "@repo/db";
+import { and, asc, battleParticipants, battles, db, eq } from "@repo/db";
 import type { User } from "@supabase/supabase-js";
 import { checkStakeAffordability } from "./solana/wallet-balance";
 import { ensureBaseProfileForUser } from "./supabase/auth";
@@ -24,7 +17,7 @@ export interface JoinBattleOutcome {
  */
 export async function joinBattleAsOpponent(
   battleId: string,
-  user: User
+  user: User,
 ): Promise<JoinBattleOutcome> {
   // Ensure the joining user has a valid `profiles` row in PostgreSQL
   await ensureBaseProfileForUser(user);
@@ -97,7 +90,7 @@ export async function joinBattleAsOpponent(
   if (battle.mode === "reward" && battle.stakeAmountLamports > 0) {
     const affordability = await checkStakeAffordability(
       user.id,
-      battle.stakeAmountLamports
+      battle.stakeAmountLamports,
     );
     if (!affordability.ok) {
       return {

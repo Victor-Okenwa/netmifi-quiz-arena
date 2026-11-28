@@ -90,7 +90,7 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
 
       if (!response.ok) {
         setErrorMessage(
-          data.error ?? "Authentication failed. Please try again."
+          data.error ?? "Authentication failed. Please try again.",
         );
         setIsLoading(false);
         return;
@@ -99,7 +99,7 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
       if (data.requiresEmailVerification) {
         setInfoMessage(
           data.message ??
-            "Account created! Check your email inbox to confirm your address."
+            "Account created! Check your email inbox to confirm your address.",
         );
         setIsLoading(false);
         return;
@@ -109,7 +109,7 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
       router.refresh();
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Network error. Please try again."
+        err instanceof Error ? err.message : "Network error. Please try again.",
       );
       setIsLoading(false);
     }
@@ -139,7 +139,7 @@ export function AuthForm({ mode, initialError = null }: AuthFormProps) {
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Google sign-in could not be started."
+          : "Google sign-in could not be started.",
       );
       setIsOAuthLoading(false);
     }

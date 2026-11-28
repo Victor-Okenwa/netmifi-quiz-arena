@@ -13,12 +13,7 @@ interface RouteContext {
 const submitAnswerPayloadSchema = z.object({
   questionId: z.string().uuid("Invalid question ID"),
   selectedOptionKey: optionKeySchema.nullable().default(null),
-  clientElapsedMs: z
-    .number()
-    .int()
-    .nonnegative()
-    .max(120_000)
-    .default(15_000),
+  clientElapsedMs: z.number().int().nonnegative().max(120_000).default(15_000),
   timedOut: z.boolean().default(false),
 });
 
@@ -28,7 +23,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to submit an answer." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 

@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   if (!code) {
     return NextResponse.redirect(
-      `${baseOrigin}/login?error=missing_oauth_code`
+      `${baseOrigin}/login?error=missing_oauth_code`,
     );
   }
 
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     const env = getServerEnv();
     if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       return NextResponse.redirect(
-        `${baseOrigin}/login?error=oauth_not_configured`
+        `${baseOrigin}/login?error=oauth_not_configured`,
       );
     }
 
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
               name: string;
               value: string;
               options?: Record<string, unknown>;
-            }[]
+            }[],
           ) {
             for (const cookie of cookiesToSet) {
               pendingCookies.push(cookie);
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
             }
           },
         },
-      }
+      },
     );
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -72,8 +72,8 @@ export async function GET(request: Request) {
     if (error || !data.user) {
       return NextResponse.redirect(
         `${baseOrigin}/login?error=${encodeURIComponent(
-          error?.message ?? "Google sign-in could not be completed."
-        )}`
+          error?.message ?? "Google sign-in could not be completed.",
+        )}`,
       );
     }
 
@@ -97,7 +97,7 @@ export async function GET(request: Request) {
     const message =
       err instanceof Error ? err.message : "Authentication callback failed.";
     return NextResponse.redirect(
-      `${baseOrigin}/login?error=${encodeURIComponent(message)}`
+      `${baseOrigin}/login?error=${encodeURIComponent(message)}`,
     );
   }
 }

@@ -111,7 +111,8 @@ export async function getOrCreateCachedAudioAsset(params: {
 }): Promise<AudioResolutionResult> {
   const env = getServerEnv();
   const normalizedText = normalizeSpeechText(params.text);
-  const voiceId = env.ELEVENLABS_DEFAULT_VOICE_ID || DEFAULT_ELEVENLABS_VOICE_ID;
+  const voiceId =
+    env.ELEVENLABS_DEFAULT_VOICE_ID || DEFAULT_ELEVENLABS_VOICE_ID;
   const modelId = DEFAULT_ELEVENLABS_MODEL_ID;
 
   if (!normalizedText) {
@@ -142,7 +143,11 @@ export async function getOrCreateCachedAudioAsset(params: {
       .where(eq(audioAssets.contentHash, contentHash))
       .limit(1);
 
-    if (existingAsset && existingAsset.status === "ready" && existingAsset.publicUrl) {
+    if (
+      existingAsset &&
+      existingAsset.status === "ready" &&
+      existingAsset.publicUrl
+    ) {
       await linkAudioAssetToEntity({
         audioAssetId: existingAsset.id,
         questionId: params.questionId,

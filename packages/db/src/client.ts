@@ -19,9 +19,7 @@ const globalForDb = globalThis as unknown as {
  */
 export function getDb(connectionString?: string): Database {
   const url =
-    connectionString ??
-    process.env.DATABASE_URL ??
-    DEFAULT_LOCAL_DATABASE_URL;
+    connectionString ?? process.env.DATABASE_URL ?? DEFAULT_LOCAL_DATABASE_URL;
 
   if (!globalForDb.drizzleDb) {
     const sqlClient = postgres(url, {

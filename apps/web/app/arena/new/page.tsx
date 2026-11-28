@@ -4,10 +4,7 @@ import {
   type ConfiguratorCourse,
   type ConfiguratorTopic,
 } from "@/components/arena/battle-configurator";
-import {
-  FALLBACK_COURSES,
-  FALLBACK_TOPICS,
-} from "@/lib/academic-fallback";
+import { FALLBACK_COURSES, FALLBACK_TOPICS } from "@/lib/academic-fallback";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import { asc, courses, db, topics } from "@repo/db";
 import { ArrowLeft } from "lucide-react";

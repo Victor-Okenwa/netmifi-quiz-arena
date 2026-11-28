@@ -83,20 +83,20 @@ export function OnboardingForm({
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [username, setUsername] = useState(initialUsername);
   const [avatarNumber, setAvatarNumber] = useState<AvatarNumber>(
-    normalizeAvatarNumber(initialAvatarNumber)
+    normalizeAvatarNumber(initialAvatarNumber),
   );
   const [universityId, setUniversityId] = useState(defaultUniId);
   const [academicLevel, setAcademicLevel] = useState(
-    initialAcademicLevel || "200L"
+    initialAcademicLevel || "200L",
   );
 
   const filteredDepartments = useMemo(
     () => departments.filter((dept) => dept.universityId === universityId),
-    [departments, universityId]
+    [departments, universityId],
   );
 
   const [departmentId, setDepartmentId] = useState(
-    initialDepartmentId ?? filteredDepartments[0]?.id ?? ""
+    initialDepartmentId ?? filteredDepartments[0]?.id ?? "",
   );
 
   const selectedDeptCode = useMemo(() => {
@@ -106,7 +106,7 @@ export function OnboardingForm({
 
   const matchingDepartmentCourses = useMemo(() => {
     const filtered = courses.filter((c) =>
-      c.code.toUpperCase().startsWith(selectedDeptCode.toUpperCase())
+      c.code.toUpperCase().startsWith(selectedDeptCode.toUpperCase()),
     );
     return filtered.length > 0 ? filtered : courses;
   }, [courses, selectedDeptCode]);
@@ -117,12 +117,10 @@ export function OnboardingForm({
   function handleUniversityChange(newUniId: string) {
     setUniversityId(newUniId);
     const matchingDepts = departments.filter(
-      (dept) => dept.universityId === newUniId
+      (dept) => dept.universityId === newUniId,
     );
     // Preserve the same department code (e.g. STA or ACC) when switching university
-    const sameCodeDept = matchingDepts.find(
-      (d) => d.code === selectedDeptCode
-    );
+    const sameCodeDept = matchingDepts.find((d) => d.code === selectedDeptCode);
     setDepartmentId(sameCodeDept?.id ?? matchingDepts[0]?.id ?? "");
   }
 
@@ -164,7 +162,7 @@ export function OnboardingForm({
       router.refresh();
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Network error. Please try again."
+        err instanceof Error ? err.message : "Network error. Please try again.",
       );
       setIsLoading(false);
     }
@@ -307,7 +305,7 @@ export function OnboardingForm({
                   value={username}
                   onChange={(e) =>
                     setUsername(
-                      e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+                      e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
                     )
                   }
                   placeholder="chidi_csc"

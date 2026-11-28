@@ -32,7 +32,14 @@ export interface CreateIngestionJobParams {
 export interface IngestionJobRecord {
   jobId: string;
   sourceId: string;
-  status: "pending" | "crawling" | "processing" | "generating" | "review_required" | "completed" | "failed";
+  status:
+    | "pending"
+    | "crawling"
+    | "processing"
+    | "generating"
+    | "review_required"
+    | "completed"
+    | "failed";
   questionsGeneratedCount: number;
   errorMessage?: string | null;
   sourceTitle: string;
@@ -49,23 +56,29 @@ export interface IngestionJobRecord {
  * Enforces course protection: existing course codes CANNOT be overwritten.
  */
 export async function createAndRunIngestionJob(
-  params: CreateIngestionJobParams
-): Promise<{ jobId: string; sourceId: string; courseId: string; topicId: string }> {
-  const normalizedCode = params.courseCode.trim().replace(/\s+/g, " ").toUpperCase();
+  params: CreateIngestionJobParams,
+): Promise<{
+  jobId: string;
+  sourceId: string;
+  courseId: string;
+  topicId: string;
+}> {
+  const normalizedCode = params.courseCode
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
   const codeWithoutSpaces = normalizedCode.replace(/\s+/g, "");
 
   // 1. Course Protection Guardrail: Verify course code does NOT already exist
   const existing = await db
     .select({ id: courses.id, code: courses.code })
     .from(courses)
-    .where(
-      sql`UPPER(REPLACE(${courses.code}, ' ', '')) = ${codeWithoutSpaces}`
-    )
+    .where(sql`UPPER(REPLACE(${courses.code}, ' ', '')) = ${codeWithoutSpaces}`)
     .limit(1);
 
   if (existing.length > 0) {
     throw new Error(
-      `Course code "${normalizedCode}" already exists in the catalog. To protect accredited university curricula, you cannot overwrite existing courses. Please choose a new unique custom course code (e.g. SOL 101, WEB 301, AI 401).`
+      `Course code "${normalizedCode}" already exists in the catalog. To protect accredited university curricula, you cannot overwrite existing courses. Please choose a new unique custom course code (e.g. SOL 101, WEB 301, AI 401).`,
     );
   }
 
@@ -137,11 +150,18 @@ export async function createAndRunIngestionJob(
   }
 
   // 6. Trigger asynchronous processing without blocking the initial HTTP response
-  runIngestionPipeline(jobRecord.id, sourceRecord.id, newCourse, newTopic, params.sourceUrl).catch(
-    (err) => {
-      console.error(`[QuestionFactory] Background job ${jobRecord.id} failed unhandled:`, err);
-    }
-  );
+  runIngestionPipeline(
+    jobRecord.id,
+    sourceRecord.id,
+    newCourse,
+    newTopic,
+    params.sourceUrl,
+  ).catch((err) => {
+    console.error(
+      `[QuestionFactory] Background job ${jobRecord.id} failed unhandled:`,
+      err,
+    );
+  });
 
   return {
     jobId: jobRecord.id,
@@ -159,7 +179,7 @@ export async function runIngestionPipeline(
   sourceId: string,
   course: { id: string; code: string; title: string },
   topic: { id: string; name: string },
-  sourceUrl: string
+  sourceUrl: string,
 ): Promise<void> {
   const startedAt = new Date();
 
@@ -211,7 +231,9 @@ export async function runIngestionPipeline(
     });
 
     if (draftQuestions.length === 0) {
-      throw new Error("Question generator returned 0 questions from the extracted source.");
+      throw new Error(
+        "Question generator returned 0 questions from the extracted source.",
+      );
     }
 
     // Stage 4: Persist Questions and Options (Strictly approvalStatus = 'draft')
@@ -237,7 +259,7 @@ export async function runIngestionPipeline(
             questionId: insertedQuestion.id,
             optionKey: key,
             optionText: draft.options[key],
-          }))
+          })),
         );
       }
     }

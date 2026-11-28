@@ -43,7 +43,7 @@ export const contentSources = pgTable(
     licenseNotes: text("license_notes"),
     submittedByUserId: uuid("submitted_by_user_id").references(
       () => profiles.id,
-      { onDelete: "set null" }
+      { onDelete: "set null" },
     ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -51,7 +51,7 @@ export const contentSources = pgTable(
   },
   (table) => [
     index("content_sources_course_topic_idx").on(table.courseId, table.topicId),
-  ]
+  ],
 );
 
 export const ingestionJobs = pgTable(
@@ -75,7 +75,7 @@ export const ingestionJobs = pgTable(
   (table) => [
     index("ingestion_jobs_source_id_idx").on(table.sourceId),
     index("ingestion_jobs_status_idx").on(table.status),
-  ]
+  ],
 );
 
 /**
@@ -98,7 +98,9 @@ export const audioAssets = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [uniqueIndex("audio_assets_content_hash_idx").on(table.contentHash)]
+  (table) => [
+    uniqueIndex("audio_assets_content_hash_idx").on(table.contentHash),
+  ],
 );
 
 /**
@@ -132,7 +134,7 @@ export const questions = pgTable(
     }),
     reviewedByUserId: uuid("reviewed_by_user_id").references(
       () => profiles.id,
-      { onDelete: "set null" }
+      { onDelete: "set null" },
     ),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -146,10 +148,10 @@ export const questions = pgTable(
     index("questions_course_topic_status_idx").on(
       table.courseId,
       table.topicId,
-      table.approvalStatus
+      table.approvalStatus,
     ),
     index("questions_approval_status_idx").on(table.approvalStatus),
-  ]
+  ],
 );
 
 export const questionOptions = pgTable(
@@ -166,7 +168,7 @@ export const questionOptions = pgTable(
     index("question_options_question_id_idx").on(table.questionId),
     uniqueIndex("question_options_question_key_idx").on(
       table.questionId,
-      table.optionKey
+      table.optionKey,
     ),
-  ]
+  ],
 );

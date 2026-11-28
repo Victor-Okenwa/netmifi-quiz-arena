@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     if (!auth) {
       return NextResponse.json(
         { error: "Please sign in to request a wallet verification nonce." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
           error:
             "This Solana wallet is already linked to another student profile.",
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -74,8 +74,8 @@ export async function POST(request: Request) {
         and(
           eq(walletNonces.userId, auth.user.id),
           eq(walletNonces.walletAddress, walletAddress),
-          isNotNull(walletNonces.consumedAt)
-        )
+          isNotNull(walletNonces.consumedAt),
+        ),
       )
       .limit(1);
 

@@ -71,15 +71,14 @@ function TabsList({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
       data-slot="tabs-list"
       className={cn(
         "grid min-h-11 w-full min-w-0 grid-cols-1 items-center gap-1 rounded-xl bg-muted p-1 text-muted-foreground sm:grid-cols-2",
-        className
+        className,
       )}
       {...props}
     />
   );
 }
 
-export interface TabsTriggerProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface TabsTriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
 }
 
@@ -105,7 +104,7 @@ function TabsTrigger({
         isActive
           ? "bg-card text-foreground shadow-xs ring-1 ring-border/60"
           : "text-muted-foreground hover:text-foreground",
-        className
+        className,
       )}
       {...props}
     >

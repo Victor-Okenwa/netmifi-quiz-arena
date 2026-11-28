@@ -34,7 +34,7 @@ export interface QuestionGeneratorParams {
  */
 async function generateWithGemini(
   params: QuestionGeneratorParams,
-  apiKey: string
+  apiKey: string,
 ): Promise<GeneratedQuestionDraft[] | null> {
   const contextSnippet = params.sections
     .map((s) => `### ${s.heading}\n${s.markdownContent}`)
@@ -83,7 +83,7 @@ Requirements:
             responseMimeType: "application/json",
           },
         }),
-      }
+      },
     );
 
     if (response.ok) {
@@ -99,7 +99,7 @@ Requirements:
               q.options?.B &&
               q.options?.C &&
               q.options?.D &&
-              ["A", "B", "C", "D"].includes(q.correctOptionKey)
+              ["A", "B", "C", "D"].includes(q.correctOptionKey),
           );
         }
       }
@@ -115,15 +115,18 @@ Requirements:
  * Synthesizes grounded academic questions from section headings and extracted content.
  */
 function synthesizeQuestionsFromSections(
-  params: QuestionGeneratorParams
+  params: QuestionGeneratorParams,
 ): GeneratedQuestionDraft[] {
   const { courseCode, topicName, sections, sourceTitle } = params;
   const count = Math.min(Math.max(params.targetCount ?? 5, 3), 8);
   const questions: GeneratedQuestionDraft[] = [];
 
   // Extract key sentences across sections
-  const candidateSections = sections.filter((s) => s.markdownContent.length > 80);
-  const activeSections = candidateSections.length > 0 ? candidateSections : sections;
+  const candidateSections = sections.filter(
+    (s) => s.markdownContent.length > 80,
+  );
+  const activeSections =
+    candidateSections.length > 0 ? candidateSections : sections;
 
   for (let i = 0; i < count; i++) {
     const section = activeSections[i % activeSections.length] ?? {
@@ -145,7 +148,10 @@ function synthesizeQuestionsFromSections(
       questions.push({
         questionText: `In the study of ${courseCode} (${topicName}), what is the primary role or definition associated with "${cleanHeading}"?`,
         options: {
-          A: primarySentence.length > 120 ? `${primarySentence.slice(0, 115)}...` : primarySentence,
+          A:
+            primarySentence.length > 120
+              ? `${primarySentence.slice(0, 115)}...`
+              : primarySentence,
           B: `It is an auxiliary theoretical concept disregarded in modern practical applications.`,
           C: `It denotes an inverted inverse condition that prevents computational analysis.`,
           D: `It serves exclusively as a historical convention without operational significance.`,
@@ -159,7 +165,10 @@ function synthesizeQuestionsFromSections(
         questionText: `When analyzing syllabus problems in ${topicName} regarding "${cleanHeading}", which of the following statements represents the soundest academic principle?`,
         options: {
           A: `Boundary constraints can be completely bypassed by assuming ideal steady-state variables.`,
-          B: primarySentence.length > 120 ? `${primarySentence.slice(0, 115)}...` : primarySentence,
+          B:
+            primarySentence.length > 120
+              ? `${primarySentence.slice(0, 115)}...`
+              : primarySentence,
           C: `Empirical observations consistently contradict the underlying mathematical foundations.`,
           D: `The state parameters remain universally invariant regardless of external perturbations.`,
         },
@@ -173,7 +182,10 @@ function synthesizeQuestionsFromSections(
         options: {
           A: `Arbitrary scaling factors without reference to system constraints`,
           B: `The immediate elimination of all intermediate state variables`,
-          C: primarySentence.length > 120 ? `${primarySentence.slice(0, 115)}...` : primarySentence,
+          C:
+            primarySentence.length > 120
+              ? `${primarySentence.slice(0, 115)}...`
+              : primarySentence,
           D: `The complete reliance on heuristic guesswork without proof`,
         },
         correctOptionKey: "C",
@@ -191,7 +203,7 @@ function synthesizeQuestionsFromSections(
  * Tries LLM generation if configured, falling back smoothly to syllabus semantic synthesis.
  */
 export async function generateGroundedQuestions(
-  params: QuestionGeneratorParams
+  params: QuestionGeneratorParams,
 ): Promise<GeneratedQuestionDraft[]> {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (geminiKey && geminiKey.trim().length > 0) {

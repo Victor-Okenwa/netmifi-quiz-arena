@@ -16,7 +16,7 @@ export async function GET() {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to load battle audio." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 

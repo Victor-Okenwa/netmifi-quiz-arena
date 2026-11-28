@@ -15,6 +15,7 @@ import {
 } from "@/lib/solana/wallet-client";
 import { formatSol } from "@repo/validators";
 import {
+  AlertCircle,
   CheckCircle2,
   Coins,
   ExternalLink,
@@ -31,6 +32,7 @@ import { toast } from "sonner";
 interface LinkedWalletInfo {
   id: string;
   walletAddress: string;
+  isDemo?: boolean;
   /** `null` when the Devnet RPC balance lookup failed (unknown, not zero). */
   balanceLamports: number | null;
   balanceSol: number | null;
@@ -312,9 +314,19 @@ export function WalletLinkStudio() {
             <div className="space-y-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Wallet Address (Devnet)
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Wallet Address (Devnet)
+                    </p>
+                    {linkedWallet.isDemo ? (
+                      <Badge
+                        variant="outline"
+                        className="border-primary/50 text-[10px] text-primary"
+                      >
+                        DEMO WALLET
+                      </Badge>
+                    ) : null}
+                  </div>
                   <p className="font-mono text-xs font-bold break-all text-foreground sm:text-sm">
                     {linkedWallet.walletAddress}
                   </p>
@@ -330,6 +342,22 @@ export function WalletLinkStudio() {
                       : `${linkedWallet.balanceSol.toFixed(4)} SOL`}
                   </p>
                 </div>
+              </div>
+
+              {/* Devnet Network Notice */}
+              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>
+                  <strong>Network:</strong> Solana Devnet. When connecting
+                  Phantom or Solflare, make sure your extension is toggled to{" "}
+                  <strong>Solana Devnet</strong> (in Phantom:{" "}
+                  <em>
+                    Settings ⚙️ → Developer Settings → Testnet Mode → Solana
+                    Devnet
+                  </em>
+                  ). If set to Mainnet, Phantom will show an "Insufficient
+                  balance" error when depositing.
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">

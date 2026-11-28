@@ -65,7 +65,7 @@ export function normalizeSpeechText(text: string): string {
  * over `${normalizedText}|${voiceId}|${modelId}`.
  */
 export async function computeAudioContentHash(
-  options: VoiceSynthesisOptions
+  options: VoiceSynthesisOptions,
 ): Promise<string> {
   const normalizedText = normalizeSpeechText(options.text);
   const voiceId = (options.voiceId ?? DEFAULT_ELEVENLABS_VOICE_ID).trim();
@@ -83,7 +83,7 @@ export async function computeAudioContentHash(
  * Builds a concise, energetic spoken winner announcement script for a completed battle.
  */
 export function buildWinnerAnnouncementScript(
-  params: WinnerAnnouncementScriptParams
+  params: WinnerAnnouncementScriptParams,
 ): string {
   const courseLabel = params.courseCode.trim() || params.courseTitle.trim();
 
@@ -91,7 +91,7 @@ export function buildWinnerAnnouncementScript(
     const p1 = params.winnerName ?? "Player 1";
     const p2 = params.loserName ?? "Player 2";
     return normalizeSpeechText(
-      `Battle complete in ${courseLabel}! It is a draw between ${p1} and ${p2}, with both players finishing at ${params.winnerScore} points!`
+      `Battle complete in ${courseLabel}! It is a draw between ${p1} and ${p2}, with both players finishing at ${params.winnerScore} points!`,
     );
   }
 
@@ -99,7 +99,7 @@ export function buildWinnerAnnouncementScript(
   const opponent = params.loserName ?? "their opponent";
 
   return normalizeSpeechText(
-    `Congratulations! ${winner} has won the ${courseLabel} quiz battle with ${params.winnerScore} points against ${opponent}'s ${params.loserScore} points!`
+    `Congratulations! ${winner} has won the ${courseLabel} quiz battle with ${params.winnerScore} points against ${opponent}'s ${params.loserScore} points!`,
   );
 }
 
@@ -115,7 +115,7 @@ export async function synthesizeSpeechMp3(params: {
 }): Promise<SynthesizedSpeechResult> {
   if (typeof window !== "undefined") {
     throw new Error(
-      "synthesizeSpeechMp3() is server-only and must never be called in the browser."
+      "synthesizeSpeechMp3() is server-only and must never be called in the browser.",
     );
   }
 
@@ -133,7 +133,7 @@ export async function synthesizeSpeechMp3(params: {
   });
 
   const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(
-    voiceId
+    voiceId,
   )}?output_format=mp3_44100_128`;
 
   const response = await fetch(endpoint, {
@@ -158,7 +158,7 @@ export async function synthesizeSpeechMp3(params: {
   if (!response.ok) {
     const errorText = await response.text().catch(() => "Unknown API error");
     throw new Error(
-      `ElevenLabs TTS request failed (${response.status}): ${errorText.slice(0, 200)}`
+      `ElevenLabs TTS request failed (${response.status}): ${errorText.slice(0, 200)}`,
     );
   }
 

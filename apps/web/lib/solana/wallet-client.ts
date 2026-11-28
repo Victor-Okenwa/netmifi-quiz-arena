@@ -114,18 +114,32 @@ export async function sendEscrowStakeDeposit(params: {
     );
   }
 
-  const sendResult = await params.provider.signAndSendTransaction(tx);
-  const signature =
-    typeof sendResult === "string" ? sendResult : sendResult.signature;
+  try {
+    const sendResult = await params.provider.signAndSendTransaction(tx);
+    const signature =
+      typeof sendResult === "string" ? sendResult : sendResult.signature;
 
-  await connection.confirmTransaction(
-    {
-      signature,
-      blockhash,
-      lastValidBlockHeight,
-    },
-    "confirmed",
-  );
+    await connection.confirmTransaction(
+      {
+        signature,
+        blockhash,
+        lastValidBlockHeight,
+      },
+      "confirmed",
+    );
 
-  return signature;
+    return signature;
+  } catch (err: unknown) {
+    const rawMsg = err instanceof Error ? err.message : String(err);
+    if (
+      rawMsg.toLowerCase().includes("insufficient") ||
+      rawMsg.toLowerCase().includes("simulation failed") ||
+      rawMsg.toLowerCase().includes("debit an account")
+    ) {
+      throw new Error(
+        "Phantom reported insufficient balance. Please verify your Phantom wallet network is set to Solana Devnet (Phantom Settings ⚙️ → Developer Settings → Testnet Mode → Solana Devnet).",
+      );
+    }
+    throw err;
+  }
 }

@@ -18,6 +18,7 @@ import {
 } from "@/lib/solana/wallet-client";
 import { formatSol } from "@repo/validators";
 import {
+  AlertCircle,
   CheckCircle2,
   Clock,
   Coins,
@@ -482,6 +483,7 @@ export function BattleLobbyArena({
       });
       const escrowInfo = (await escrowRes.json()) as {
         escrow?: { authorityPublicKey?: string; battleEscrowPda?: string };
+        myLinkedWallet?: string | null;
       };
       const vaultAuthority =
         escrowInfo.escrow?.authorityPublicKey ??
@@ -490,11 +492,19 @@ export function BattleLobbyArena({
       let clientTxSig: string | undefined = undefined;
       const provider = getInjectedSolanaProvider();
 
-      // If user has a real browser wallet (Phantom/Solflare), execute the deposit on Solana Devnet!
-      if (provider && vaultAuthority && stakeAmountLamports > 0) {
+      // Only prompt the injected browser extension if the user's active linked wallet
+      // matches the extension (e.g. Phantom is connected). If the user is on a Demo Wallet,
+      // the deposit executes directly on the server without extension simulation.
+      const myWallet = escrowInfo.myLinkedWallet;
+      const providerPubkey = provider?.publicKey?.toString();
+      const isBrowserWalletActive = Boolean(
+        provider && myWallet && providerPubkey && myWallet === providerPubkey,
+      );
+
+      if (isBrowserWalletActive && vaultAuthority && stakeAmountLamports > 0) {
         toast.info("Please confirm the stake deposit in your Solana wallet...");
         clientTxSig = await sendEscrowStakeDeposit({
-          provider,
+          provider: provider!,
           authorityPublicKey: vaultAuthority,
           stakeAmountLamports,
         });
@@ -787,6 +797,14 @@ export function BattleLobbyArena({
                   </a>
                 </p>
               ) : null}
+
+              <div className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-300">
+                <AlertCircle className="size-3 shrink-0" />
+                <span>
+                  <strong>Network:</strong> Solana Devnet. Ensure Phantom is set
+                  to <em>Developer Settings → Testnet Mode → Solana Devnet</em>.
+                </span>
+              </div>
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-3">

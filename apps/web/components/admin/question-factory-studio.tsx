@@ -47,7 +47,14 @@ export interface StudioTopic {
 export interface IngestionJobItem {
   id: string;
   sourceId: string;
-  status: "pending" | "crawling" | "processing" | "generating" | "review_required" | "completed" | "failed";
+  status:
+    | "pending"
+    | "crawling"
+    | "processing"
+    | "generating"
+    | "review_required"
+    | "completed"
+    | "failed";
   questionsGeneratedCount: number;
   errorMessage?: string | null;
   startedAt?: string | null;
@@ -84,18 +91,28 @@ interface QuestionFactoryStudioProps {
   currentUserId: string;
 }
 
-export function QuestionFactoryStudio({
-  courses,
-}: QuestionFactoryStudioProps) {
-  const [activeTab, setActiveTab] = useState<"ingest" | "review" | "bank" | "jobs">("ingest");
+export function QuestionFactoryStudio({ courses }: QuestionFactoryStudioProps) {
+  const [activeTab, setActiveTab] = useState<
+    "ingest" | "review" | "bank" | "jobs"
+  >("ingest");
 
   // Ingestion form state: Custom Course Generator
   const [courseCode, setCourseCode] = useState<string>("SOL 101");
-  const [courseTitle, setCourseTitle] = useState<string>("Solana Blockchain & Smart Contracts");
-  const [topicName, setTopicName] = useState<string>("Anchor Escrow & Account Architecture");
-  const [academicLevel, setAcademicLevel] = useState<"100L" | "200L" | "300L" | "400L" | "500L">("300L");
-  const [sourceUrl, setSourceUrl] = useState<string>("https://solana.com/docs/intro/overview");
-  const [sourceTitle, setSourceTitle] = useState<string>("Solana Core Developer Documentation");
+  const [courseTitle, setCourseTitle] = useState<string>(
+    "Solana Blockchain & Smart Contracts",
+  );
+  const [topicName, setTopicName] = useState<string>(
+    "Anchor Escrow & Account Architecture",
+  );
+  const [academicLevel, setAcademicLevel] = useState<
+    "100L" | "200L" | "300L" | "400L" | "500L"
+  >("300L");
+  const [sourceUrl, setSourceUrl] = useState<string>(
+    "https://solana.com/docs/intro/overview",
+  );
+  const [sourceTitle, setSourceTitle] = useState<string>(
+    "Solana Core Developer Documentation",
+  );
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [urlWarning, setUrlWarning] = useState<string | null>(null);
@@ -108,11 +125,15 @@ export function QuestionFactoryStudio({
   // Review & Question Bank state
   const [questions, setQuestions] = useState<QuestionDraftItem[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState<boolean>(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "approved" | "rejected">("draft");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "approved" | "rejected"
+  >("draft");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   // Editable drafts in Review Studio
-  const [editedQuestions, setEditedQuestions] = useState<Record<string, Partial<QuestionDraftItem>>>({});
+  const [editedQuestions, setEditedQuestions] = useState<
+    Record<string, Partial<QuestionDraftItem>>
+  >({});
 
   // Real-time Course Code Protection Check
   useEffect(() => {
@@ -123,12 +144,12 @@ export function QuestionFactoryStudio({
     }
 
     const isMatch = courses.some(
-      (c) => c.code.replace(/\s+/g, "").toUpperCase() === cleanInput
+      (c) => c.code.replace(/\s+/g, "").toUpperCase() === cleanInput,
     );
 
     if (isMatch) {
       setCodeWarning(
-        `Course code "${courseCode.trim().toUpperCase()}" already exists in the official university catalog. Official courses are locked to protect accredited curricula. Please use a new custom course code (e.g., SOL 101, WEB 301, AI 201).`
+        `Course code "${courseCode.trim().toUpperCase()}" already exists in the official university catalog. Official courses are locked to protect accredited curricula. Please use a new custom course code (e.g., SOL 101, WEB 301, AI 201).`,
       );
     } else {
       setCodeWarning(null);
@@ -142,7 +163,9 @@ export function QuestionFactoryStudio({
       return;
     }
     if (!isSafeIngestionUrl(sourceUrl.trim())) {
-      setUrlWarning("URL must use HTTPS and point to a public educational web domain (private IP ranges & localhost are blocked).");
+      setUrlWarning(
+        "URL must use HTTPS and point to a public educational web domain (private IP ranges & localhost are blocked).",
+      );
     } else {
       setUrlWarning(null);
     }
@@ -192,7 +215,7 @@ export function QuestionFactoryStudio({
   // Polling for active jobs
   useEffect(() => {
     const hasActiveJob = jobs.some((j) =>
-      ["pending", "crawling", "processing", "generating"].includes(j.status)
+      ["pending", "crawling", "processing", "generating"].includes(j.status),
     );
 
     if (!hasActiveJob) return;
@@ -220,12 +243,16 @@ export function QuestionFactoryStudio({
     }
 
     if (codeWarning) {
-      toast.error("Course protection: You cannot overwrite existing university courses.");
+      toast.error(
+        "Course protection: You cannot overwrite existing university courses.",
+      );
       return;
     }
 
     if (!isSafeIngestionUrl(sourceUrl.trim())) {
-      toast.error("SSRF Block: URL must use HTTPS and cannot resolve to a private or local IP.");
+      toast.error(
+        "SSRF Block: URL must use HTTPS and cannot resolve to a private or local IP.",
+      );
       return;
     }
 
@@ -251,12 +278,14 @@ export function QuestionFactoryStudio({
       }
 
       toast.success(
-        `Custom course ${courseCode.trim().toUpperCase()} registered! Firecrawl is extracting content and generating draft questions.`
+        `Custom course ${courseCode.trim().toUpperCase()} registered! Firecrawl is extracting content and generating draft questions.`,
       );
       fetchJobs();
       setActiveTab("jobs");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Ingestion request failed.");
+      toast.error(
+        err instanceof Error ? err.message : "Ingestion request failed.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -265,7 +294,7 @@ export function QuestionFactoryStudio({
   // Handle question review action
   async function handleReviewAction(
     questionId: string,
-    action: "approve" | "reject"
+    action: "approve" | "reject",
   ) {
     setReviewingId(questionId);
     try {
@@ -291,7 +320,7 @@ export function QuestionFactoryStudio({
       toast.success(
         action === "approve"
           ? "Question approved! Published to live match pool."
-          : "Question rejected and removed from review."
+          : "Question rejected and removed from review.",
       );
 
       setQuestions((prev) =>
@@ -302,8 +331,8 @@ export function QuestionFactoryStudio({
                 ...edits,
                 approvalStatus: action === "approve" ? "approved" : "rejected",
               }
-            : q
-        )
+            : q,
+        ),
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Review action failed.");
@@ -312,7 +341,9 @@ export function QuestionFactoryStudio({
     }
   }
 
-  const draftCount = questions.filter((q) => q.approvalStatus === "draft").length;
+  const draftCount = questions.filter(
+    (q) => q.approvalStatus === "draft",
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -328,7 +359,8 @@ export function QuestionFactoryStudio({
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Generate and verify new academic course question banks from live web resources using Firecrawl and AI.
+            Generate and verify new academic course question banks from live web
+            resources using Firecrawl and AI.
           </p>
         </div>
 
@@ -356,10 +388,14 @@ export function QuestionFactoryStudio({
           Judge & Community Playground — Course Protection Enabled
         </div>
         <p className="mt-1 text-muted-foreground leading-relaxed">
-          You can synthesize brand-new course question banks from any educational web resource.
-          To preserve accredited tertiary curricula, existing official course codes (
+          You can synthesize brand-new course question banks from any
+          educational web resource. To preserve accredited tertiary curricula,
+          existing official course codes (
           <span className="font-mono text-foreground font-semibold">
-            {courses.slice(0, 8).map((c) => c.code).join(", ")}
+            {courses
+              .slice(0, 8)
+              .map((c) => c.code)
+              .join(", ")}
           </span>
           ) cannot be overwritten. Enter a new custom course code (e.g.,{" "}
           <span className="font-mono text-primary font-bold">SOL 101</span>,{" "}
@@ -383,7 +419,8 @@ export function QuestionFactoryStudio({
           <TabsTrigger value="jobs" className="gap-1.5 text-xs sm:text-sm">
             <Clock className="size-3.5 text-primary" />
             Ingestion Jobs
-            {jobs.filter((j) => ["crawling", "generating"].includes(j.status)).length > 0 ? (
+            {jobs.filter((j) => ["crawling", "generating"].includes(j.status))
+              .length > 0 ? (
               <span className="flex size-2 animate-ping rounded-full bg-primary" />
             ) : null}
           </TabsTrigger>
@@ -391,7 +428,10 @@ export function QuestionFactoryStudio({
             <Eye className="size-3.5 text-primary" />
             Review Studio
             {draftCount > 0 ? (
-              <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">
+              <Badge
+                variant="secondary"
+                className="ml-1 px-1.5 py-0 text-[10px]"
+              >
                 {draftCount}
               </Badge>
             ) : null}
@@ -410,7 +450,9 @@ export function QuestionFactoryStudio({
                 CUSTOM COURSE QUESTION FACTORY
               </CardTitle>
               <CardDescription>
-                Define a new university course, specify an academic reference URL, and Firecrawl will extract syllabus content and generate 4-choice questions.
+                Define a new university course, specify an academic reference
+                URL, and Firecrawl will extract syllabus content and generate
+                4-choice questions.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -424,7 +466,9 @@ export function QuestionFactoryStudio({
                       id="courseCode"
                       placeholder="e.g. SOL 101, WEB 301, AI 201"
                       value={courseCode}
-                      onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setCourseCode(e.target.value.toUpperCase())
+                      }
                       className="font-mono uppercase"
                       required
                     />
@@ -435,7 +479,8 @@ export function QuestionFactoryStudio({
                       </p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground">
-                        Must be a unique course code not already in the official catalog.
+                        Must be a unique course code not already in the official
+                        catalog.
                       </p>
                     )}
                   </div>
@@ -475,7 +520,8 @@ export function QuestionFactoryStudio({
                       value={academicLevel}
                       onChange={(e) =>
                         setAcademicLevel(
-                          e.target.value as "100L" | "200L" | "300L" | "400L" | "500L"
+                          e.target.value as
+                            "100L" | "200L" | "300L" | "400L" | "500L",
                         )
                       }
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
@@ -491,7 +537,8 @@ export function QuestionFactoryStudio({
 
                 <div className="space-y-2">
                   <Label htmlFor="sourceTitle">
-                    Source Reference Title <span className="text-primary">*</span>
+                    Source Reference Title{" "}
+                    <span className="text-primary">*</span>
                   </Label>
                   <Input
                     id="sourceTitle"
@@ -504,7 +551,8 @@ export function QuestionFactoryStudio({
 
                 <div className="space-y-2">
                   <Label htmlFor="sourceUrl">
-                    Academic Content URL (HTTPS Only) <span className="text-primary">*</span>
+                    Academic Content URL (HTTPS Only){" "}
+                    <span className="text-primary">*</span>
                   </Label>
                   <Input
                     id="sourceUrl"
@@ -521,7 +569,8 @@ export function QuestionFactoryStudio({
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Protected by SSRF guardrails. Private IPs (10.x, 192.168.x, 169.254.x, localhost) are strictly prohibited.
+                      Protected by SSRF guardrails. Private IPs (10.x,
+                      192.168.x, 169.254.x, localhost) are strictly prohibited.
                     </p>
                   )}
                 </div>
@@ -529,7 +578,11 @@ export function QuestionFactoryStudio({
                 <div className="pt-2">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || Boolean(urlWarning) || Boolean(codeWarning)}
+                    disabled={
+                      isSubmitting ||
+                      Boolean(urlWarning) ||
+                      Boolean(codeWarning)
+                    }
                     className="gap-2"
                   >
                     {isSubmitting ? (
@@ -553,7 +606,8 @@ export function QuestionFactoryStudio({
                 INGESTION PIPELINE MONITOR
               </CardTitle>
               <CardDescription>
-                Real-time tracking of content scraping, normalization, and draft generation jobs.
+                Real-time tracking of content scraping, normalization, and draft
+                generation jobs.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -563,7 +617,8 @@ export function QuestionFactoryStudio({
                 </div>
               ) : jobs.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  No ingestion jobs have been run yet. Use the "Generate Course" tab to start one.
+                  No ingestion jobs have been run yet. Use the "Generate Course"
+                  tab to start one.
                 </p>
               ) : (
                 <div className="divide-y divide-border/60">
@@ -587,7 +642,9 @@ export function QuestionFactoryStudio({
                             }
                             className="font-mono text-[10px] uppercase"
                           >
-                            {job.status === "review_required" ? "Ready for Review" : job.status}
+                            {job.status === "review_required"
+                              ? "Ready for Review"
+                              : job.status}
                           </Badge>
                         </div>
                         <p className="truncate text-xs text-muted-foreground">
@@ -652,7 +709,8 @@ export function QuestionFactoryStudio({
                   HUMAN REVIEW WORKBENCH
                 </CardTitle>
                 <CardDescription>
-                  Review AI-generated draft questions. Edit choices, confirm accuracy, and click Approve to publish live into the arena.
+                  Review AI-generated draft questions. Edit choices, confirm
+                  accuracy, and click Approve to publish live into the arena.
                 </CardDescription>
               </div>
 
@@ -687,10 +745,14 @@ export function QuestionFactoryStudio({
                 <div className="space-y-6">
                   {questions.map((q, idx) => {
                     const currentEdits = editedQuestions[q.id] || {};
-                    const currentText = currentEdits.questionText ?? q.questionText;
-                    const currentExplanation = currentEdits.explanation ?? q.explanation;
-                    const currentDifficulty = currentEdits.difficulty ?? q.difficulty;
-                    const currentCorrectKey = currentEdits.correctOptionKey ?? q.correctOptionKey;
+                    const currentText =
+                      currentEdits.questionText ?? q.questionText;
+                    const currentExplanation =
+                      currentEdits.explanation ?? q.explanation;
+                    const currentDifficulty =
+                      currentEdits.difficulty ?? q.difficulty;
+                    const currentCorrectKey =
+                      currentEdits.correctOptionKey ?? q.correctOptionKey;
                     const currentOptions = currentEdits.options ?? q.options;
 
                     return (
@@ -722,7 +784,9 @@ export function QuestionFactoryStudio({
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Difficulty:</span>
+                            <span className="text-xs text-muted-foreground">
+                              Difficulty:
+                            </span>
                             <select
                               value={currentDifficulty}
                               onChange={(e) =>
@@ -730,7 +794,8 @@ export function QuestionFactoryStudio({
                                   ...prev,
                                   [q.id]: {
                                     ...prev[q.id],
-                                    difficulty: e.target.value as "easy" | "medium" | "hard",
+                                    difficulty: e.target.value as
+                                      "easy" | "medium" | "hard",
                                   },
                                 }))
                               }
@@ -823,7 +888,8 @@ export function QuestionFactoryStudio({
                         {/* Explanation */}
                         <div className="mt-3 space-y-1">
                           <Label className="text-xs text-muted-foreground">
-                            Academic Explanation (Shown during post-battle diagnosis)
+                            Academic Explanation (Shown during post-battle
+                            diagnosis)
                           </Label>
                           <textarea
                             value={currentExplanation}
@@ -855,7 +921,9 @@ export function QuestionFactoryStudio({
                                 size="sm"
                                 variant="outline"
                                 disabled={reviewingId === q.id}
-                                onClick={() => handleReviewAction(q.id, "reject")}
+                                onClick={() =>
+                                  handleReviewAction(q.id, "reject")
+                                }
                                 className="gap-1 text-xs text-destructive hover:bg-destructive/10"
                               >
                                 <XCircle className="size-3.5" />
@@ -867,7 +935,9 @@ export function QuestionFactoryStudio({
                               <Button
                                 size="sm"
                                 disabled={reviewingId === q.id}
-                                onClick={() => handleReviewAction(q.id, "approve")}
+                                onClick={() =>
+                                  handleReviewAction(q.id, "approve")
+                                }
                                 className="gap-1.5 text-xs"
                               >
                                 {reviewingId === q.id ? (
@@ -878,7 +948,10 @@ export function QuestionFactoryStudio({
                                 Approve & Publish to Arena
                               </Button>
                             ) : (
-                              <Badge variant="default" className="gap-1 text-xs">
+                              <Badge
+                                variant="default"
+                                className="gap-1 text-xs"
+                              >
                                 <CheckCircle2 className="size-3.5" />
                                 LIVE IN ARENA
                               </Badge>
@@ -903,7 +976,8 @@ export function QuestionFactoryStudio({
                   LIVE ARENA QUESTION POOL
                 </CardTitle>
                 <CardDescription>
-                  Questions currently marked as approved and active for instant match selection and practice drills.
+                  Questions currently marked as approved and active for instant
+                  match selection and practice drills.
                 </CardDescription>
               </div>
               <Button
@@ -918,9 +992,11 @@ export function QuestionFactoryStudio({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {questions.filter((q) => q.approvalStatus === "approved").length === 0 ? (
+                {questions.filter((q) => q.approvalStatus === "approved")
+                  .length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">
-                    No approved questions found under the active filter. Review and approve questions in the Review Studio.
+                    No approved questions found under the active filter. Review
+                    and approve questions in the Review Studio.
                   </p>
                 ) : (
                   questions
@@ -935,7 +1011,10 @@ export function QuestionFactoryStudio({
                             <span className="font-game text-xs font-bold text-foreground">
                               {q.courseCode} • {q.topicName}
                             </span>
-                            <Badge variant="outline" className="text-[10px] capitalize">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] capitalize"
+                            >
                               {q.difficulty}
                             </Badge>
                           </div>
@@ -943,7 +1022,8 @@ export function QuestionFactoryStudio({
                             {q.questionText}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            Answer [{q.correctOptionKey}]: {q.options[q.correctOptionKey]}
+                            Answer [{q.correctOptionKey}]:{" "}
+                            {q.options[q.correctOptionKey]}
                           </p>
                         </div>
                         <Badge variant="default" className="shrink-0 text-xs">

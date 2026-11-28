@@ -18,7 +18,10 @@ export function isSafeIngestionUrl(rawUrl: string): boolean {
     if (BLOCKED_SSRF_HOSTS.test(parsed.hostname)) {
       return false;
     }
-    if (parsed.hostname.endsWith(".local") || parsed.hostname.endsWith(".internal")) {
+    if (
+      parsed.hostname.endsWith(".local") ||
+      parsed.hostname.endsWith(".internal")
+    ) {
       return false;
     }
     return true;
@@ -91,7 +94,7 @@ export const createBattleSchema = z
     {
       message: `Reward battles must use one of the preset stakes (${REWARD_STAKE_OPTIONS_SOL.join(", ")} SOL); free battles must have zero stake.`,
       path: ["stakeAmountLamports"],
-    }
+    },
   );
 
 export const joinBattleSchema = z.object({
@@ -115,7 +118,7 @@ export const ingestSourceUrlSchema = z.object({
     .max(12, "Course code cannot exceed 12 characters")
     .regex(
       /^[A-Za-z]{2,5}\s*\d{2,4}[A-Za-z]?$/,
-      "Format must be like SOL 101, WEB 301, or AI 401"
+      "Format must be like SOL 101, WEB 301, or AI 401",
     ),
   courseTitle: z.string().trim().min(3).max(120),
   topicName: z.string().trim().min(2).max(100),
@@ -123,12 +126,9 @@ export const ingestSourceUrlSchema = z.object({
     .enum(["100L", "200L", "300L", "400L", "500L"])
     .default("200L"),
   sourceTitle: z.string().trim().min(3).max(200),
-  sourceUrl: z
-    .string()
-    .url("Must be a valid URL")
-    .refine(isSafeIngestionUrl, {
-      message: "URL must use HTTPS and point to a public, non-private host.",
-    }),
+  sourceUrl: z.string().url("Must be a valid URL").refine(isSafeIngestionUrl, {
+    message: "URL must use HTTPS and point to a public, non-private host.",
+  }),
   maxPages: z.number().int().min(1).max(10).default(1),
 });
 
@@ -155,7 +155,13 @@ export const walletLinkVerifySchema = z.object({
   signatureBase64: z.string().trim().min(32),
 });
 
-export const academicLevelSchema = z.enum(["100L", "200L", "300L", "400L", "500L"]);
+export const academicLevelSchema = z.enum([
+  "100L",
+  "200L",
+  "300L",
+  "400L",
+  "500L",
+]);
 
 export const registerStudentSchema = z.object({
   displayName: z
@@ -163,7 +169,11 @@ export const registerStudentSchema = z.object({
     .trim()
     .min(2, "Display name must be at least 2 characters")
     .max(80, "Display name must be at most 80 characters"),
-  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
+  email: z
+    .string()
+    .trim()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -171,7 +181,11 @@ export const registerStudentSchema = z.object({
 });
 
 export const loginStudentSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address").toLowerCase(),
+  email: z
+    .string()
+    .trim()
+    .email("Please enter a valid email address")
+    .toLowerCase(),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -189,7 +203,7 @@ export const academicOnboardingSchema = z.object({
     .max(24, "Username must be at most 24 characters")
     .regex(
       /^[a-z0-9_]+$/,
-      "Username can only contain lowercase letters, numbers, and underscores"
+      "Username can only contain lowercase letters, numbers, and underscores",
     ),
   universityId: z.string().uuid("Please select your university"),
   departmentId: z.string().uuid("Please select your department"),
@@ -201,7 +215,9 @@ export type CreateBattleInput = z.infer<typeof createBattleSchema>;
 export type JoinBattleInput = z.infer<typeof joinBattleSchema>;
 export type SubmitAnswerInput = z.infer<typeof submitAnswerSchema>;
 export type IngestSourceUrlInput = z.infer<typeof ingestSourceUrlSchema>;
-export type QuestionDraftReviewInput = z.infer<typeof questionDraftReviewSchema>;
+export type QuestionDraftReviewInput = z.infer<
+  typeof questionDraftReviewSchema
+>;
 export type WalletLinkVerifyInput = z.infer<typeof walletLinkVerifySchema>;
 export type RegisterStudentInput = z.infer<typeof registerStudentSchema>;
 export type SignInStudentInput = z.infer<typeof loginStudentSchema>;

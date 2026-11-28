@@ -9,8 +9,6 @@ interface BattleResultsPageProps {
   }>;
 }
 
-export default async function BattleResultsPage(
-  props: BattleResultsPageProps
-) {
+export default async function BattleResultsPage(props: BattleResultsPageProps) {
   return <BattleRoomPage {...props} />;
 }

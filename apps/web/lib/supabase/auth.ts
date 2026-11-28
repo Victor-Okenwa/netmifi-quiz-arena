@@ -39,7 +39,10 @@ export interface AuthSessionContext {
 /**
  * Generates a clean default username from an email address and user ID suffix.
  */
-export function generateFallbackUsername(email: string, userId: string): string {
+export function generateFallbackUsername(
+  email: string,
+  userId: string,
+): string {
   const prefix = (email.split("@")[0] ?? "student")
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "")
@@ -61,7 +64,7 @@ export function clampAvatarNumber(num: unknown): number {
  */
 export function buildProfileFromUserMetadata(
   user: User,
-  preferredDisplayName?: string
+  preferredDisplayName?: string,
 ): AuthenticatedStudentProfile {
   const email = (user.email ?? `${user.id}@student.netmifi.com`).toLowerCase();
   const meta = user.user_metadata ?? {};
@@ -132,7 +135,7 @@ export function buildProfileFromUserMetadata(
  * Returns `null` if not found or if the database connection is unavailable.
  */
 export async function getStudentProfileById(
-  userId: string
+  userId: string,
 ): Promise<AuthenticatedStudentProfile | null> {
   try {
     const rows = await db
@@ -174,11 +177,11 @@ export async function getStudentProfileById(
  */
 export async function ensureBaseProfileForUser(
   user: User,
-  preferredDisplayName?: string
+  preferredDisplayName?: string,
 ): Promise<AuthenticatedStudentProfile> {
   const fallbackProfile = buildProfileFromUserMetadata(
     user,
-    preferredDisplayName
+    preferredDisplayName,
   );
 
   try {
@@ -227,7 +230,7 @@ export async function getCurrentAuthContext(): Promise<AuthSessionContext | null
     const dbProfile = await getStudentProfileById(user.id);
     const profile = dbProfile ?? buildProfileFromUserMetadata(user);
     const isOnboarded = Boolean(
-      profile && profile.universityId && profile.departmentId
+      profile && profile.universityId && profile.departmentId,
     );
 
     return {

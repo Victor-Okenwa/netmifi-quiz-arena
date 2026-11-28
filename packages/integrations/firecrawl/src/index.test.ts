@@ -21,10 +21,12 @@ describe("Milestone 8: Firecrawl & Question Factory Pipeline", () => {
 
   it("approves valid public HTTPS URLs", () => {
     expect(
-      isSafeIngestionUrl("https://en.wikipedia.org/wiki/Binary_search_tree")
+      isSafeIngestionUrl("https://en.wikipedia.org/wiki/Binary_search_tree"),
     ).toBe(true);
     expect(
-      isSafeIngestionUrl("https://ocw.mit.edu/courses/electrical-engineering-and-computer-science")
+      isSafeIngestionUrl(
+        "https://ocw.mit.edu/courses/electrical-engineering-and-computer-science",
+      ),
     ).toBe(true);
   });
 
@@ -45,7 +47,7 @@ AVL trees are self-balancing binary search trees where the difference between he
 
     const sections = normalizeMarkdownSections(
       sampleMarkdown,
-      "https://example.com/trees"
+      "https://example.com/trees",
     );
 
     expect(sections.length).toBeGreaterThanOrEqual(2);
@@ -60,7 +62,9 @@ AVL trees are self-balancing binary search trees where the difference between he
       fallbackToEducationalParser: true,
     });
 
-    expect(result.sourceUrl).toBe("https://en.wikipedia.org/wiki/Binary_search_tree");
+    expect(result.sourceUrl).toBe(
+      "https://en.wikipedia.org/wiki/Binary_search_tree",
+    );
     expect(result.title.length).toBeGreaterThan(0);
     expect(result.sections.length).toBeGreaterThan(0);
     expect(result.rawMarkdown.length).toBeGreaterThan(50);

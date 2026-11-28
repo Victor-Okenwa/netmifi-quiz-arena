@@ -47,7 +47,8 @@ export async function GET() {
       jobs,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
+    const message =
+      err instanceof Error ? err.message : "Internal Server Error";
     console.error("[GET /api/admin/jobs] Error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }

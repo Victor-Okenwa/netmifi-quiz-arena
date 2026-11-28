@@ -47,7 +47,7 @@ interface FirecrawlScrapeResponse {
  */
 export function normalizeMarkdownSections(
   rawMarkdown: string,
-  sourceUrl: string
+  sourceUrl: string,
 ): NormalizedContentSection[] {
   if (!rawMarkdown || rawMarkdown.trim().length === 0) {
     return [];
@@ -58,7 +58,10 @@ export function normalizeMarkdownSections(
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
     .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\[(?:Skip to contents?|Jump to search|Edit|Back to top)\]\([^)]*\)/gi, "")
+    .replace(
+      /\[(?:Skip to contents?|Jump to search|Edit|Back to top)\]\([^)]*\)/gi,
+      "",
+    )
     .replace(/\r\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n");
 
@@ -128,11 +131,13 @@ export function normalizeMarkdownSections(
  * Includes SSRF protection, strict error handling, and educational fallback.
  */
 export async function extractAcademicContent(
-  options: FirecrawlScrapeOptions
+  options: FirecrawlScrapeOptions,
 ): Promise<FirecrawlExtractionResult> {
   const {
     url,
-    apiKey = typeof process !== "undefined" ? process?.env?.FIRECRAWL_API_KEY : undefined,
+    apiKey = typeof process !== "undefined"
+      ? process?.env?.FIRECRAWL_API_KEY
+      : undefined,
     timeoutMs = 30_000,
     fallbackToEducationalParser = true,
   } = options;
@@ -140,14 +145,18 @@ export async function extractAcademicContent(
   // 1. Strict SSRF check before making any external network connection
   if (!isSafeIngestionUrl(url)) {
     throw new Error(
-      `SSRF validation failed: "${url}" must use HTTPS and cannot resolve to localhost, private IP ranges, or internal hostnames.`
+      `SSRF validation failed: "${url}" must use HTTPS and cannot resolve to localhost, private IP ranges, or internal hostnames.`,
     );
   }
 
   const extractedAt = new Date().toISOString();
 
   // 2. If API key is available, call Firecrawl v1 Scrape endpoint
-  if (apiKey && apiKey.trim().length > 0 && !apiKey.includes("your-firecrawl")) {
+  if (
+    apiKey &&
+    apiKey.trim().length > 0 &&
+    !apiKey.includes("your-firecrawl")
+  ) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -175,7 +184,11 @@ export async function extractAcademicContent(
           const rawMarkdown = payload.data.markdown;
           const title =
             payload.data.metadata?.title ||
-            new URL(url).pathname.split("/").filter(Boolean).pop()?.replace(/[-_]/g, " ") ||
+            new URL(url).pathname
+              .split("/")
+              .filter(Boolean)
+              .pop()
+              ?.replace(/[-_]/g, " ") ||
             "Academic Reference Document";
 
           const sections = normalizeMarkdownSections(rawMarkdown, url);
@@ -191,12 +204,12 @@ export async function extractAcademicContent(
       } else {
         const errorText = await response.text().catch(() => "");
         console.warn(
-          `[Firecrawl] Scraping failed with HTTP ${response.status}: ${errorText.slice(0, 150)}`
+          `[Firecrawl] Scraping failed with HTTP ${response.status}: ${errorText.slice(0, 150)}`,
         );
       }
     } catch (err) {
       console.warn(
-        `[Firecrawl] Network or timeout error during scrape: ${err instanceof Error ? err.message : String(err)}`
+        `[Firecrawl] Network or timeout error during scrape: ${err instanceof Error ? err.message : String(err)}`,
       );
       if (!fallbackToEducationalParser) {
         throw err;
@@ -211,8 +224,11 @@ export async function extractAcademicContent(
       const parsedUrl = new URL(url);
       const pathname = parsedUrl.pathname.replace(/\/+$/, "");
       const pathSegments = pathname.split("/").filter(Boolean);
-      const leafName = pathSegments[pathSegments.length - 1] ?? "academic-topic";
-      const cleanTitle = decodeURIComponent(leafName).replace(/[-_]/g, " ").toUpperCase();
+      const leafName =
+        pathSegments[pathSegments.length - 1] ?? "academic-topic";
+      const cleanTitle = decodeURIComponent(leafName)
+        .replace(/[-_]/g, " ")
+        .toUpperCase();
 
       // Attempt standard text fetch if public HTTPS endpoint allows it
       let fetchedText = "";
@@ -244,18 +260,19 @@ export async function extractAcademicContent(
         // Fallback to structured syllabus synthesis below
       }
 
-      const generatedMarkdown = fetchedText.length > 100
-        ? `# ${cleanTitle}\n\n## Core Principles\n${fetchedText}`
-        : `# ${cleanTitle} — Syllabus Concept Notes\n\n` +
-          `## Core Principles & Theoretical Foundations\n` +
-          `The study of ${cleanTitle.toLowerCase()} forms an essential pillar of the undergraduate curriculum. ` +
-          `It encompasses fundamental theorems, operational mechanisms, and systematic problem-solving methods required for mastery in academic examinations.\n\n` +
-          `## Key Computational & Analytical Procedures\n` +
-          `Students analyzing ${cleanTitle.toLowerCase()} must evaluate initial state parameters, calculate performance bounds, ` +
-          `and apply standard optimization principles. Precise definitions and algorithmic efficiency are critical evaluation criteria in tertiary assessments.\n\n` +
-          `## Practical Applications & Examination Review\n` +
-          `Practical applications require distinguishing between optimal and sub-optimal implementations, ` +
-          `evaluating time and space complexities, and avoiding common misconceptions in variable handling and boundary conditions.`;
+      const generatedMarkdown =
+        fetchedText.length > 100
+          ? `# ${cleanTitle}\n\n## Core Principles\n${fetchedText}`
+          : `# ${cleanTitle} — Syllabus Concept Notes\n\n` +
+            `## Core Principles & Theoretical Foundations\n` +
+            `The study of ${cleanTitle.toLowerCase()} forms an essential pillar of the undergraduate curriculum. ` +
+            `It encompasses fundamental theorems, operational mechanisms, and systematic problem-solving methods required for mastery in academic examinations.\n\n` +
+            `## Key Computational & Analytical Procedures\n` +
+            `Students analyzing ${cleanTitle.toLowerCase()} must evaluate initial state parameters, calculate performance bounds, ` +
+            `and apply standard optimization principles. Precise definitions and algorithmic efficiency are critical evaluation criteria in tertiary assessments.\n\n` +
+            `## Practical Applications & Examination Review\n` +
+            `Practical applications require distinguishing between optimal and sub-optimal implementations, ` +
+            `evaluating time and space complexities, and avoiding common misconceptions in variable handling and boundary conditions.`;
 
       const sections = normalizeMarkdownSections(generatedMarkdown, url);
 
@@ -268,10 +285,12 @@ export async function extractAcademicContent(
       };
     } catch (fallbackErr) {
       throw new Error(
-        `Failed to extract academic content from ${url}: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`
+        `Failed to extract academic content from ${url}: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`,
       );
     }
   }
 
-  throw new Error(`Unable to extract content from ${url}: Firecrawl returned an error and fallback is disabled.`);
+  throw new Error(
+    `Unable to extract content from ${url}: Firecrawl returned an error and fallback is disabled.`,
+  );
 }

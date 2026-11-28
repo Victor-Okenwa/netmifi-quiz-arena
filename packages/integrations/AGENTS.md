@@ -3,6 +3,7 @@
 ## Rule 6: Firecrawl and ElevenLabs Integration Rules
 
 ### 6.1 Firecrawl (`packages/integrations/firecrawl`) — Question Factory Ingestion
+
 1. **Server-Only & Pipeline Separation**:
    - Keep `FIRECRAWL_API_KEY` strictly server-side.
    - Firecrawl is responsible only for **extracting and normalizing academic source content** (`SOURCE URL → FIRECRAWL → NORMALIZATION`). Keep AI draft question generation and database persistence decoupled.
@@ -15,6 +16,7 @@
    - Preserve source attribution (`source_url`, `source_title`, `course_id`, `topic_id`) on every generated question.
 
 ### 6.2 ElevenLabs (`packages/integrations/elevenlabs`) — Voice Quiz & Announcements
+
 1. **Server-Only & Deterministic Caching**:
    - Keep `ELEVENLABS_API_KEY` strictly server-side.
    - Compute a deterministic content hash (`sha256(text + voiceId + modelId)`) before requesting TTS generation.

@@ -24,17 +24,14 @@ export async function POST(request: Request) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to play winner announcement." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const body: unknown = await request.json();
     const parsed = winnerAudioRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Invalid battleId." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid battleId." }, { status: 400 });
     }
 
     const { battleId } = parsed.data;
@@ -53,22 +50,21 @@ export async function POST(request: Request) {
       .innerJoin(courses, eq(battles.courseId, courses.id))
       .leftJoin(
         audioAssets,
-        eq(battles.winnerAnnouncementAudioId, audioAssets.id)
+        eq(battles.winnerAnnouncementAudioId, audioAssets.id),
       )
       .where(eq(battles.id, battleId))
       .limit(1);
 
     if (!battleRow) {
-      return NextResponse.json(
-        { error: "Battle not found." },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Battle not found." }, { status: 404 });
     }
 
     if (battleRow.status !== "COMPLETED") {
       return NextResponse.json(
-        { error: "Winner announcement is only available for completed battles." },
-        { status: 400 }
+        {
+          error: "Winner announcement is only available for completed battles.",
+        },
+        { status: 400 },
       );
     }
 

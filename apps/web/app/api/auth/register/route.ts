@@ -34,13 +34,10 @@ export async function POST(request: Request) {
           },
         });
 
-      if (
-        adminError &&
-        !adminError.message.toLowerCase().includes("already")
-      ) {
+      if (adminError && !adminError.message.toLowerCase().includes("already")) {
         return NextResponse.json(
           { error: adminError.message },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -50,7 +47,7 @@ export async function POST(request: Request) {
             error:
               "An account with this email already exists. Please sign in instead.",
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -73,7 +70,7 @@ export async function POST(request: Request) {
               "Account created, please sign in with your credentials.",
             redirectTo: "/login",
           },
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -102,7 +99,7 @@ export async function POST(request: Request) {
     if (error || !data.user) {
       return NextResponse.json(
         { error: error?.message ?? "Failed to create student account." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

@@ -22,7 +22,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const courseId = searchParams.get("courseId");
     const topicId = searchParams.get("topicId");
-    const status = searchParams.get("status") as "draft" | "approved" | "rejected" | null;
+    const status = searchParams.get("status") as
+      "draft" | "approved" | "rejected" | null;
     const sourceId = searchParams.get("sourceId");
 
     const conditions = [];
@@ -86,10 +87,7 @@ export async function GET(request: Request) {
       })
       .from(questionOptions)
       .where(
-        eq(
-          questionOptions.questionId,
-          questionIds[0] ?? ""
-        ) // fallback or loop
+        eq(questionOptions.questionId, questionIds[0] ?? ""), // fallback or loop
       );
 
     // Group options by question ID across all found questions
@@ -128,7 +126,8 @@ export async function GET(request: Request) {
       questions: enriched,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
+    const message =
+      err instanceof Error ? err.message : "Internal Server Error";
     console.error("[GET /api/admin/questions] Error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }

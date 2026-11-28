@@ -27,7 +27,7 @@ function formatTruncatedWallet(address: string): string {
 export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(
-    profile.walletAddress ?? null
+    profile.walletAddress ?? null,
   );
   // `null` = balance unknown (RPC lookup failed or not loaded yet).
   const [balanceSol, setBalanceSol] = useState<number | null>(null);
@@ -53,7 +53,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
       setBalanceSol(
         typeof data.linkedWallet?.balanceSol === "number"
           ? data.linkedWallet.balanceSol
-          : null
+          : null,
       );
     } catch {
       // Ignore network errors
@@ -73,7 +73,7 @@ export function ProfileMenuPopover({ profile }: ProfileMenuPopoverProps) {
         setBalanceSol(
           typeof custom.detail.balanceSol === "number"
             ? custom.detail.balanceSol
-            : null
+            : null,
         );
       } else {
         void syncLinkedWallet();

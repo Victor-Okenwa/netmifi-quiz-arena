@@ -4,10 +4,7 @@ import {
   type StudioCourse,
   type StudioTopic,
 } from "@/components/admin/question-factory-studio";
-import {
-  FALLBACK_COURSES,
-  FALLBACK_TOPICS,
-} from "@/lib/academic-fallback";
+import { FALLBACK_COURSES, FALLBACK_TOPICS } from "@/lib/academic-fallback";
 import { requireOnboardedStudent } from "@/lib/supabase/auth";
 import { asc, courses, db, topics } from "@repo/db";
 import { ArrowLeft } from "lucide-react";

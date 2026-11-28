@@ -58,9 +58,7 @@ export async function GET() {
       .leftJoin(topics, eq(battles.topicId, topics.id))
       .innerJoin(profiles, eq(battles.creatorUserId, profiles.id))
       .leftJoin(universities, eq(profiles.universityId, universities.id))
-      .where(
-        and(eq(battles.status, "WAITING"), eq(battles.isPrivate, false))
-      )
+      .where(and(eq(battles.status, "WAITING"), eq(battles.isPrivate, false)))
       .orderBy(desc(battles.createdAt))
       .limit(20);
 
@@ -76,7 +74,7 @@ export async function POST(request: Request) {
     if (!authContext) {
       return NextResponse.json(
         { error: "Please sign in to create a battle." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -107,12 +105,12 @@ export async function POST(request: Request) {
     if (mode === "reward") {
       const affordability = await checkStakeAffordability(
         authContext.user.id,
-        stakeAmountLamports
+        stakeAmountLamports,
       );
       if (!affordability.ok) {
         return NextResponse.json(
           { error: affordability.error },
-          { status: affordability.status }
+          { status: affordability.status },
         );
       }
     }
@@ -127,7 +125,7 @@ export async function POST(request: Request) {
     if (!course) {
       return NextResponse.json(
         { error: "Selected course was not found." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -155,8 +153,8 @@ export async function POST(request: Request) {
         .where(
           and(
             eq(questions.courseId, courseId),
-            eq(questions.approvalStatus, "approved")
-          )
+            eq(questions.approvalStatus, "approved"),
+          ),
         )
         .orderBy(sql`RANDOM()`)
         .limit(questionCount);
@@ -168,7 +166,7 @@ export async function POST(request: Request) {
           error:
             "No approved questions are available for this course yet. Seed or approve questions first.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

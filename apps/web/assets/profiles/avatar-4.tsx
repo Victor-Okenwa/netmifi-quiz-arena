@@ -14,18 +14,29 @@ export function ProfileAvatar4(props: SVGProps<SVGSVGElement>) {
       {...props}
     >
       <defs>
-        <linearGradient id="av4_bg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="av4_bg"
+          x1="0"
+          y1="0"
+          x2="120"
+          y2="120"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#F59E0B" />
           <stop offset="1" stopColor="#78350F" />
         </linearGradient>
       </defs>
       <rect width="120" height="120" rx="60" fill="url(#av4_bg)" />
-      <circle cx="60" cy="60" r="52" stroke="#FDE68A" strokeOpacity="0.35" strokeWidth="2" />
-      {/* Shoulders / Jersey */}
-      <path
-        d="M22 114C26 93 40 84 60 84C80 84 94 93 98 114"
-        fill="#18181B"
+      <circle
+        cx="60"
+        cy="60"
+        r="52"
+        stroke="#FDE68A"
+        strokeOpacity="0.35"
+        strokeWidth="2"
       />
+      {/* Shoulders / Jersey */}
+      <path d="M22 114C26 93 40 84 60 84C80 84 94 93 98 114" fill="#18181B" />
       <path
         d="M44 86C50 93 70 93 76 86"
         stroke="#FBBF24"
@@ -49,10 +60,7 @@ export function ProfileAvatar4(props: SVGProps<SVGSVGElement>) {
       <circle cx="71" cy="56" r="3.2" fill="#FFFFFF" />
       <circle cx="71" cy="56" r="1.6" fill="#09090B" />
       {/* Bright Grin */}
-      <path
-        d="M50 67C53 73 67 73 70 67Z"
-        fill="#FFFFFF"
-      />
+      <path d="M50 67C53 73 67 73 70 67Z" fill="#FFFFFF" />
     </svg>
   );
 }

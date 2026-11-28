@@ -16,8 +16,12 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       return NextResponse.json(
-        { error: issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid ingestion parameters." },
-        { status: 400 }
+        {
+          error: issue
+            ? `${issue.path.join(".")}: ${issue.message}`
+            : "Invalid ingestion parameters.",
+        },
+        { status: 400 },
       );
     }
 
@@ -41,10 +45,11 @@ export async function POST(request: Request) {
         topicId: result.topicId,
         message: "Ingestion job successfully queued and started.",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
+    const message =
+      err instanceof Error ? err.message : "Internal Server Error";
     console.error("[POST /api/admin/ingest] Error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }

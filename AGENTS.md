@@ -19,6 +19,7 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 ## Scoped Rule Index
 
 Domain-specific rules are co-located in their respective workspace directories and loaded automatically when working inside them:
+
 - **Rule 2 (TypeScript, Next.js & UI)**: [`apps/web/AGENTS.md`](./apps/web/AGENTS.md)
 - **Rule 3 (Solana & Anchor Smart Contracts)**: [`programs/AGENTS.md`](./programs/AGENTS.md) and [`packages/solana/AGENTS.md`](./packages/solana/AGENTS.md)
 - **Rule 4 (Database & Drizzle ORM)**: [`packages/db/AGENTS.md`](./packages/db/AGENTS.md)

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     if (error || !data.user) {
       return NextResponse.json(
         { error: error?.message ?? "Invalid email or password." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
